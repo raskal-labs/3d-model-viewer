@@ -1,27 +1,38 @@
 #!/usr/bin/env python3
-"""Editable OBJ transform helper. Uses only Python's standard library.
-Usage: python edit_model.py Porygon2.obj Porygon2-edited.obj
-Edit OFFSETS below to reposition individual named components.
+"""Rebuild Porygon2-upright.obj from Porygon2.obj (stdlib only).
+Run from this directory: python3 edit_model.py
 """
-import sys
 from pathlib import Path
-OFFSETS = {
-    # "pupil_1": (0.0, 0.0, 0.0),
-    # "glint_1": (0.0, 0.0, 0.0),
-}
-def edit(src, dst):
-    current = ""
-    lines = []
-    for line in Path(src).read_text().splitlines(keepends=True):
-        if line.startswith("o "):
-            current = line[2:].strip()
+ROOT = Path(__file__).resolve().parent
+SOURCE = ROOT / "Porygon2.obj"
+OUTPUT = ROOT / "Porygon2-upright.obj"
+MATERIAL = {"bill_1":"blue","body_2":"pink","eye_1_3":"white","eye_1_4":"white","foot_far_5":"blue","foot_near_6":"blue","eye_1_7":"white","eye_1_8":"white","head_9":"pink","neck_10":"pink","eye_1_11":"black","eye_1_12":"black","tail_13":"blue"}
+BILL_SCALE = (1.55,.55,.48)
+def rebuild():
+    lines=SOURCE.read_text().splitlines()
+    obj=""
+    vertices=[]
+    bill=[]
+    for line in lines:
+        if line.startswith("o "): obj=line[2:].strip()
         if line.startswith("v "):
-            values = line.split()
-            dx,dy,dz = OFFSETS.get(current,(0,0,0))
-            x,y,z = map(float,values[1:4])
-            line = f"v {x+dx:.7f} {y+dy:.7f} {z+dz:.7f}\n"
-        lines.append(line)
-    Path(dst).write_text("".join(lines))
-if __name__ == "__main__":
-    if len(sys.argv)!=3: raise SystemExit("Usage: python edit_model.py INPUT.obj OUTPUT.obj")
-    edit(sys.argv[1],sys.argv[2])
+            point=tuple(map(float,line.split()[1:4]))
+            vertices.append((obj,point))
+            if obj=="bill_1": bill.append(point)
+    center=tuple(sum(p[i] for p in bill)/len(bill) for i in range(3))
+    current=""
+    it=iter(vertices)
+    result=[]
+    for line in lines:
+        if line.startswith("o "): current=line[2:].strip()
+        elif line.startswith("usemtl "): line="usemtl "+MATERIAL[current]
+        elif line.startswith("mtllib "): line="mtllib Porygon2.mtl"
+        elif line.startswith("v "):
+            _,(x,y,z)=next(it)
+            if current=="bill_1":
+                x,y,z=(center[0]+(x-center[0])*BILL_SCALE[0],center[1]+(y-center[1])*BILL_SCALE[1],center[2]+(z-center[2])*BILL_SCALE[2])
+            line="v %.7f %.7f %.7f"%(y,-x,z)
+        result.append(line)
+    OUTPUT.write_text("\n".join(result)+"\n")
+    print("Wrote",OUTPUT)
+if __name__=="__main__": rebuild()
