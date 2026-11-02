@@ -288,7 +288,7 @@ try{
  if(model){scene.remove(model);dispose(model);}
  model=root;current=next;scene.add(root);$('name').textContent=entry.name;
  renderer.domElement.setAttribute('aria-label','Rotatable 3D '+entry.name);
- reset();showNotice(storedView(entry.id)?'Restored saved view for '+entry.name+'.':'Using built-in view for '+entry.name+'.');status.textContent=count+' meshes · ready';
+ resetBuiltIn();const saved=storedView(entry.id);if(saved)applyView(saved);showNotice(saved?'Restored saved view for '+entry.name+'.':'Using built-in view for '+entry.name+'.');status.textContent=count+' meshes · ready';
 }catch(e){if(token===loading)status.textContent='Model failed';console.error(e);}
 }
 $('prev').onclick=()=>selectModel(requested-1);$('next').onclick=()=>selectModel(requested+1);
