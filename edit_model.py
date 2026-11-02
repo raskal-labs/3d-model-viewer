@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parent
 SOURCE = ROOT / "Porygon2.obj"
 OUTPUT = ROOT / "Porygon2-upright.obj"
 MATERIAL = {"bill_1":"blue","body_2":"pink","eye_1_3":"white","eye_1_4":"white","foot_far_5":"blue","foot_near_6":"blue","eye_1_7":"white","eye_1_8":"white","head_9":"pink","neck_10":"pink","eye_1_11":"black","eye_1_12":"black","tail_13":"blue"}
-BILL_SCALE = (1.55,.55,.48)
+BILL_SCALE = (.65,1.6,.55)
 def rebuild():
     lines=SOURCE.read_text().splitlines()
     obj=""
