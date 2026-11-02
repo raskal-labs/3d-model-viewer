@@ -9,7 +9,7 @@ Palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype.
 Outlines: Off, Solid, Reactive, Ink; thickness 0–5 render-target pixels.
 Resolution: 80p, 160p, 240p, Native.
 Previous/next buttons or left/right keyboard arrows switch models. Arrow shortcuts leave form controls alone.
-Drag to orbit, pinch to zoom, two-finger drag to pan. Two round touch dials control horizontal yaw and vertical pitch (also keyboard arrow-adjustable when focused). The left/right header buttons remain **model switchers**, not orbit controls. Reset camera restores that model's saved view when present, otherwise frames the model automatically. Defaults restores rendering settings.
+Drag to orbit, pinch to zoom, two-finger drag to pan. Two round touch dials control horizontal yaw and vertical pitch (also keyboard arrow-adjustable when focused). A central **Rotate / Pan** touch pad adds four directional buttons: Rotate orbits around the model; Pan shifts the camera and target together in screen-space, moving the model's image in the chosen direction. Tap once for a measured step or hold for continuous finer movement; keyboard activation of the focused pad directions also works. The mode buttons never change the character model. The left/right header buttons remain **model switchers**, not orbit controls. Reset camera restores that model's saved view when present, otherwise frames the model automatically. Defaults restores rendering settings.
 Settings persist while switching models, including selections made during loading.
 
 
