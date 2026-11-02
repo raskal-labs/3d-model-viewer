@@ -85,7 +85,7 @@ renderer.domElement.setAttribute('aria-label','Rotatable 3D Porygon2');
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
 const surface=new THREE.ShaderMaterial({vertexShader:$('vertex').textContent,fragmentShader:$('surface-frag').textContent,uniforms:{partId:{value:0},styleId:{value:2},palette:{value:colors},lightDir:{value:new THREE.Vector3(.4,.7,.5).normalize()}},side:THREE.DoubleSide});
 const postScene=new THREE.Scene(),postCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
-const post=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,vertexShader:$('quad-vert').textContent,fragmentShader:$('post-frag').textContent,uniforms:{tex:{value:null},pixelStep:{value:new THREE.Vector2()},palette:{value:colors},background:{value:colors[0].clone()},outlineMode:{value:2},outlineWidth:{value:2}}});
+const post=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,vertexShader:$('quad-vert').textContent,fragmentShader:$('post-frag').textContent,uniforms:{tex:{value:null},pixelStep:{value:new THREE.Vector2()},palette:{value:colors},background:{value:rgb('#171a23')},outlineMode:{value:2},outlineWidth:{value:2}}});
 postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),post));
 let target,model;
 function resize(){
@@ -101,7 +101,7 @@ for(const id of ['style','outline','palette','resolution'])$(id).value=state[id]
 $('width').value=state.width;$('widthValue').textContent=state.width+' px';
 $('swatches').replaceChildren(...presets[state.palette].map(h=>{const el=document.createElement('span');el.style.background=h;return el;}));
 presets[state.palette].forEach((h,i)=>colors[i].copy(rgb(h)));
-post.uniforms.background.value.copy(colors[0]);post.uniforms.outlineWidth.value=state.width;post.uniforms.outlineMode.value=outlines.indexOf(state.outline);
+post.uniforms.background.value.copy(rgb('#171a23'));post.uniforms.outlineWidth.value=state.width;post.uniforms.outlineMode.value=outlines.indexOf(state.outline);
 model?.traverse(o=>{if(o.isMesh)o.material.uniforms.styleId.value=styles.indexOf(state.style);});
 resize();
 }
