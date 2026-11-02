@@ -1,18 +1,27 @@
-# Porygon2 Safari viewer
+# Porygon2 Style Lab
 
-Visit /porygon2/ on the published GitHub Pages domain.
+A Safari-compatible GitHub Pages viewer at `/porygon2/`. Open over HTTPS; do not open HTML directly from iOS Files.
 
-- Touch drag: orbit
-- Pinch: zoom
-- Two-finger drag: pan
-- Reset view: restore camera
-- The model is loaded automatically from Porygon2.obj over HTTPS.
-- 160-pixel-high internal render, nearest-neighbour output.
-- Palette: #C84850, #5060C0, #FFFFFF, #000000.
-- Shader source is editable inside index.html.
-- The OBJ is editable with edit_model.py; original MTL/GLB exports remain available in the ChatGPT package.
+## Defaults
+- Style: Pixel
+- Outline: Reactive, 2 internal pixels
+- Palette: Original (black, pink/red, blue, white)
+- Resolution: Native (up to 2x device pixel ratio)
 
-## Known limitations
-The eye placement is not visually verified. Lighting and edge shading are approximations of the supplied sprite; the current viewer has not been verified in mobile Safari. Three.js is loaded from jsDelivr, requiring internet access.
+## Controls
+Styles: Flat, Cel shaded, Pixel, Watercolour, Ink / Sketch, Monochrome.
+Palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype.
+Outline modes: Off, Solid, Reactive, Ink. Width 0–5 px.
+Resolution: 80p, 160p, 240p, Native.
+Touch: drag to orbit, pinch to zoom, two-finger drag to pan.
 
-This branch intentionally leaves the existing root site untouched.
+## Model
+`Porygon2-upright.obj` is the upright model, rotated -90 degrees about Z from the original OBJ. The bill was scaled to be flatter and wider, and its material is blue. The original `Porygon2.obj` is retained for comparison. `Porygon2.mtl` provides four base material definitions. The editable `edit_model.py` regenerates the upright OBJ from the original.
+
+Eye placement is inherited from the original OBJ and remains unverified. The prior eye-adjusted GLB was not imported into this branch, so do not assume its exact eye coordinates are preserved.
+
+## Rendering
+The GLSL shaders are editable in `index.html`. Effects are screen-space approximations, not a texture-baked or fully art-directed match to the reference sprite. The Pixel mode uses exactly four opaque palette colours on the model, with reactive edge colour based on nearby pixels. The watercolour and sketch modes are procedural approximations. The renderer loads Three.js from jsDelivr and needs network access.
+
+## Verification
+Static source and mesh checks are required before merge; a live mobile Safari screenshot remains necessary for visual sign-off.
