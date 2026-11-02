@@ -109,7 +109,7 @@ for(const id of ['style','outline','palette','resolution'])$(id).onchange=()=>{s
 $('width').oninput=()=>{state.width=+$('width').value;sync();};
 $('open').onclick=()=>{$('panel').hidden=!$('panel').hidden;$('open').setAttribute('aria-expanded',String(!$('panel').hidden));};
 $('defaults').onclick=()=>{Object.assign(state,{style:'Pixel',outline:'Reactive',width:2,palette:'Original',resolution:'Native'});sync();};
-function reset(){if(!model)return;const bounds=new THREE.Box3().setFromObject(model),center=bounds.getCenter(new THREE.Vector3()),r=bounds.getSize(new THREE.Vector3()).length();controls.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(r*.35,r*.22,-r*1.2));camera.near=Math.max(.001,r/1000);camera.far=r*100;camera.updateProjectionMatrix();controls.update();}
+function reset(){if(!model)return;const bounds=new THREE.Box3().setFromObject(model),center=bounds.getCenter(new THREE.Vector3()),r=bounds.getSize(new THREE.Vector3()).length();controls.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(0,r*.08,-r*1.4));camera.near=Math.max(.001,r/1000);camera.far=r*100;camera.updateProjectionMatrix();controls.update();}
 $('reset').onclick=reset;
 const parts={'bill_1':1,'body_2':0,'eye_1_3':2,'eye_1_4':2,'foot_far_5':1,'foot_near_6':1,'eye_1_7':2,'eye_1_8':2,'head_9':0,'neck_10':0,'eye_1_11':3,'eye_1_12':3,'tail_13':1};
 new OBJLoader().load('./Porygon2-upright.obj',root=>{
