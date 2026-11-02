@@ -1,18 +1,21 @@
-# Porygon2 Safari viewer
+# Porygon2 Style Lab (GitHub Pages)
 
-Visit /porygon2/ on the published GitHub Pages domain.
+Open https://raskal-labs.github.io/porygon2/ after merging and GitHub Pages publication.
 
-- Touch drag: orbit
-- Pinch: zoom
-- Two-finger drag: pan
-- Reset view: restore camera
-- The model is loaded automatically from Porygon2.obj over HTTPS.
-- 160-pixel-high internal render, nearest-neighbour output.
-- Palette: #C84850, #5060C0, #FFFFFF, #000000.
-- Shader source is editable inside index.html.
-- The OBJ is editable with edit_model.py; original MTL/GLB exports remain available in the ChatGPT package.
+## Controls
+- Six styles: Pixel (default), Flat, Cel shaded, Watercolour, Ink / Sketch, Monochrome / Clay.
+- Six palettes: Original (default), Game Boy, Graphite, Amber, Virtual Boy, Cyanotype.
+- Outlines: Reactive (default), Solid, Ink, Off. Default width 2 pixels.
+- Render resolution: 240p (default), 80p, 160p, Native.
+- Touch: drag orbit, pinch zoom, two-finger pan, reset view.
 
-## Known limitations
-The eye placement is not visually verified. Lighting and edge shading are approximations of the supplied sprite; the current viewer has not been verified in mobile Safari. Three.js is loaded from jsDelivr, requiring internet access.
+## Model
+The viewer loads the existing 13-part Porygon2.obj, rotates the entire model -90 degrees around Z, flattens the bill, and assigns the bill to the blue material group. These transforms are viewer-side so the original OBJ remains intact. This is **not** the final eye-corrected mesh. Eye, pupil and glint placements remain unverified.
 
-This branch intentionally leaves the existing root site untouched.
+The editable GLSL shaders live in index.html; the Python OBJ editor remains in edit_model.py.
+
+## Testing / limitations
+- Three.js modules load from jsDelivr over HTTPS; internet required.
+- Browser smoke test and visual checks are required before merge. In particular: Safari ES modules, shader compile, eye visibility, orientation, all style/palette combinations, outline controls, and touch gestures.
+- Watercolour and sketch are lightweight procedural approximations, not physically simulated media.
+- Lighting palette is limited to four indexed colours in every mode; background is separate.
