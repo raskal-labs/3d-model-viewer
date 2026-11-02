@@ -324,7 +324,7 @@ function nudgeCamera(direction,small=false){
   const dist=camera.position.distanceTo(controls.target);
   // A fixed portion of the projected height produces consistent screen-space pan.
   const height=2*dist*Math.tan(radians(camera.fov)/2);
-  const step=height*(small?.010:.033);
+  const step=height*(small ? 0.010 : 0.033);
   const right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
   const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
   const delta=right.multiplyScalar(-dx*step).addScaledVector(up,-dy*step);
@@ -333,7 +333,7 @@ function nudgeCamera(direction,small=false){
  }
 }
 for(const button of padButtons){
- let held=null,delay=null,pointerWasUsed=false;
+ let held=null,delay=null;
  const stop=()=>{
   if(delay!==null){clearTimeout(delay);delay=null;}
   if(held!==null){clearInterval(held);held=null;}
@@ -341,7 +341,7 @@ for(const button of padButtons){
  };
  button.addEventListener('pointerdown',ev=>{
   if(!model||ev.button!==0)return;
-  ev.preventDefault();stop();pointerWasUsed=true;
+  ev.preventDefault();stop();
   button.setPointerCapture(ev.pointerId);
   button.classList.add('is-pressed');
   nudgeCamera(button.dataset.direction);
@@ -355,8 +355,7 @@ for(const button of padButtons){
  button.addEventListener('blur',stop);
  // Keyboard / assistive-technology activation fires a click without pointerdown.
  button.addEventListener('click',ev=>{
-  if(pointerWasUsed){pointerWasUsed=false;return;}
-  nudgeCamera(button.dataset.direction);
+  if(ev.detail===0)nudgeCamera(button.dataset.direction);
  });
 }
 document.addEventListener('visibilitychange',()=>{
