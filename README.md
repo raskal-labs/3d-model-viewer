@@ -10,6 +10,8 @@ The header **← / →** buttons (or keyboard arrows outside controls) switch ch
 
 The mobile camera controls are now a **collapsible, edge-aligned bottom dock** inspired by the user-supplied layout: the yaw slider runs horizontally above the button row, the pitch slider is vertical on the right edge, and a small 3DS-style analogue pad sits on the left. A narrow **⌄ hide / ⌃ show tab** above the dock rolls the entire control cluster up to leave only the tab on screen. The dock is open by default, but numerical values stay hidden unless enabled.
 
+**Entire-viewer gesture area:** The 3D canvas fills the page; when Gestures are On, touching unused space rotates the model and pinching the canvas zooms the *camera*, not the Safari webpage. Browser page pinch-zoom, double-tap zoom and overscroll are suppressed at the document level, including while Gestures are Off. The HUD remains fixed in place; interactive dock controls and the scrollable Styles panel are exempt from canvas gesture handling. Safari and iOS accessibility zoom can still override webpage restrictions.
+
 The lower button row is **Rotate · Pan · Shift · Reset · •••**. **Shift** remaps the horizontal slider from **Yaw** to **Roll** and the vertical slider from **Pitch** to **Zoom/Distance**; toggle it off to return to Yaw/Pitch. **Reset** is directly accessible in the row. **•••** contains Copy, Values, Gestures, Lock axis, and Expand. Lock constrains circle-pad movement to the dominant horizontal or vertical axis for precise one-axis moves, resetting when the thumb is released. **Expand** enlarges control targets and shows the dedicated roll slider.
 
 The camera HUD has:
