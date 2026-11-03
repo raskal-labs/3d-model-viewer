@@ -8,14 +8,16 @@ Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **N
 ## Camera and controls
 The header **← / →** buttons (or keyboard arrows outside controls) switch character models; the arrows never rotate the camera.
 
+The camera HUD starts in **Compact** mode to preserve model viewing space: a thumb-sized circle pad, shortened horizontal/vertical/roll sliders, hidden numeric readouts, and a narrow icon strip. The **⤢ Expand / ⤡ Compact** button switches between compact and full-sized inspection controls. Icons provide tooltips and accessible names. The detailed coordinate editor stays behind **Styles**.
+
 The camera HUD has:
 - **3DS-style analogue circle pad** with a draggable thumb. In **Rotate** mode, moving the pad orbits the selected model (yaw and pitch). In **Pan** mode, it translates the camera and orbit target together, moving the model's image without moving its geometry. Keyboard arrows work when the circle pad has focus.
 - **Yaw** styled as a horizontal volume slider; **Pitch** as a vertical volume slider. Their directions are independent.
 - **Roll** as a third slider: banks the camera around its viewing axis without rotating or modifying the model's mesh.
-- **↺ Reset** restores this model's saved camera preset, or the automatic built-in view if none is saved.
-- **⎘ Copy** copies the full camera preset JSON without opening settings.
-- **123 Values** hides camera numbers by default, and shows/hides the HUD readouts on demand.
-- **Gestures On/Off** enables/disables orbit, pan, and zoom gestures directly on the 3D canvas. The HUD remains functional while gestures are off.
+- **↺ Reset (toolbar icon)** restores this model's saved camera preset, or the automatic built-in view if none is saved.
+- **⎘ Copy (toolbar icon)** copies the full camera preset JSON without opening settings.
+- **123 Values (toolbar toggle)** hides camera numbers by default, and shows/hides the HUD readouts on demand.
+- **✋ On/Off** enables/disables orbit, pan, and zoom gestures directly on the 3D canvas. The HUD remains functional while gestures are off.
 
 ## Coordinate editor, copy and paste
 Open **Styles → Camera coordinates & presets**. All camera XYZ, orbit-target XYZ, yaw, pitch, roll, distance, and FOV can be entered manually. Enter a value and commit the field to update the scene. A live readout shows the derived angles, distance and FOV.
