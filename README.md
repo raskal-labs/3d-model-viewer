@@ -8,17 +8,16 @@ Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **N
 ## Camera and controls
 The header **← / →** arrows switch character models (Porygon2, Chief, and future additions). They never adjust the camera.
 
-### Ace Attorney-inspired roller layout
-The mobile viewer has a narrow, collapsible inspection dock inspired by the handheld game's object inspection interface:
-- **Bottom horizontal knurled wheel — Yaw:** drag left/right to turn the view around the character. With **Shift** held, this same wheel becomes **Roll**, banking the camera around its viewing axis.
-- **Left vertical knurled wheel — Pitch:** drag up/down to tilt the camera. This wheel always remains Pitch, even with Shift.
-- **Right vertical knurled wheel — Zoom:** drag up/down to move the camera closer or farther. This wheel always remains Zoom.
-- **Small 3DS-style circle pad in the middle:** drag or press keyboard arrow keys when focused. Its action depends on the current mode (Rotate, Pan, Roll, or Zoom). Pan translates the camera and target together without altering the model geometry.
-- **Shift mode selector:** two layered buttons each display both labels. In normal mode, **Rotate** and **Pan** are bright and **Roll** and **Zoom** remain dimmed but visible. Shift reverses the bright/dim treatment and changes the circle pad actions to Roll and Zoom. The horizontal wheel switches to Roll, while the two vertical Pitch/Zoom wheels stay dedicated.
-- **Reset** is always available on the bottom button row. The **••• menu** keeps Copy camera JSON, Values, canvas Gestures, single-axis Pad Lock, and Expand controls.
-- **⌄ Hide / ⌃ Show** folds the entire bottom dock away to just its small tab. This is separate from the **••• menu**, which only expands or collapses the extra actions.
+### Pocket-radio wheels and a DJ fader
+The mobile viewer now uses **two matching, partially recessed 88px radial wheels**, as if mounted inside a handheld electronic device: the **Pitch wheel** pokes out of a narrow left-side opening, and the **Yaw wheel** pokes out from a matching horizontal opening near the bottom. Only the textured outer rim is visible. The virtual wheel textures rotate beneath stationary index marks while you drag; the internal disc diameters are identical, even though their visible slots have different orientations.
 
-The knurled drums use *relative drag*, not linear slider positions. The textured track moves beneath a fixed central indicator. Keyboard arrows on a focused wheel provide discrete adjustments. Numerical readouts are hidden by default; choose **••• → Show values** to display them.
+**Zoom** is intentionally different: a classic **DJ-mixer-style vertical linear fader** on the right, with a fixed centre groove and a brushed-metal thumb that travels a finite distance. Move its thumb upward to zoom closer and downward to zoom out. The slider shows a physical position instead of simulating infinite turning.
+
+The **3DS-inspired circle pad** has two touch regions:
+- Drag its **centre** to use the selected Rotate, Pan, Roll or Zoom mode; the existing two-layer buttons still show both **Rotate/Roll** and **Pan/Zoom**, with the inactive label visibly dimmed. Shift swaps the bright/dim assignments and remaps the bottom wheel from Yaw to Roll.
+- Trace a circle around its **outer rim** to twist the knob and **roll the camera continuously**, independently of the current mode. Passing 360° does not stop or reverse the roll. A rotating peripheral marking shows the current bank. For numerical readout and exported camera JSON, roll can accumulate multiple turns.
+
+**Pitch** is always available on the left wheel. **Reset** stays in the bottom row. **•••** contains Copy JSON, Values, Gestures, axis Lock and Expand. **⌄ Hide / ⌃ Show** folds the entire dock away independently of the overflow menu. Numerical values are hidden by default.
 
 ### Touch and page navigation
 The scene canvas fills the page. When Gestures are enabled, dragging empty canvas space rotates the camera, pinching zooms the **3D camera**, and two-finger dragging pans. Turning Gestures Off disables canvas manipulation but leaves the roller wheels and circle pad available.
