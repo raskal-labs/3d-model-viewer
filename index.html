@@ -102,6 +102,40 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 #orbit-tools.expanded .orbit-slider::-webkit-slider-thumb{width:23px;height:23px;margin-top:-7px}
 #orbit-tools.expanded #quickStatus{font-size:11px;max-height:none;min-height:14px}
 @media(max-width:380px){#orbit-tools.expanded .camera-controls{gap:5px;grid-template-columns:minmax(132px,1fr) minmax(138px,1fr)}#orbit-tools.expanded #circlePad{width:112px;height:112px}#orbit-tools.expanded #stickKnob{width:57px;height:57px}#orbit-tools.expanded .slider-controls{padding:7px 5px;column-gap:5px}}
+
+/* Handheld-sized default: one 3DS circle pad, two shiftable tracks and one mode row. */
+#orbit-tools{bottom:calc(env(safe-area-inset-bottom) + 12px);gap:2px;z-index:4}
+.compact-modes{pointer-events:auto;position:relative;display:flex;align-items:center;justify-content:center;gap:4px;width:min(100%,285px);background:#171d2be8;border:1px solid #43516a;border-radius:9px;padding:3px}
+.compact-modes button{font-size:10px;min-height:26px;padding:4px 5px;white-space:nowrap;border-radius:6px}
+.compact-modes .pad-modes{display:flex;width:auto;gap:3px;flex:2}
+.compact-modes .pad-modes button{flex:1;padding:4px 3px}
+.compact-modes button[aria-pressed="true"]{background:#526b94;border-color:#c1d3f8;color:white}
+#shiftToggle,#axisLock{flex:1;min-width:0}
+.tools-menu{flex:0 0 27px;position:relative;z-index:9}
+.tools-menu summary{list-style:none;cursor:pointer;display:grid;place-items:center;height:26px;border:1px solid #64758f;border-radius:6px;background:#293750;font-size:18px;line-height:1;user-select:none}
+.tools-menu summary::-webkit-details-marker{display:none}
+.tools-popup{position:absolute;bottom:calc(100% + 7px);right:0;width:178px;display:flex;flex-direction:column;gap:4px;padding:7px;border-radius:10px;background:#222c3cf8;border:1px solid #61738d;box-shadow:0 8px 25px #0008}
+.tools-popup button{width:100%;text-align:left;font-size:12px;padding:7px 9px}
+#camera-pad .pad-modes{display:none}
+#camera-pad{gap:0}
+#circlePad{width:78px;height:78px}
+#circlePad::before{width:57px;height:57px}
+#stickKnob{width:36px;height:36px}
+.camera-controls{width:min(100%,277px);grid-template-columns:85px minmax(0,1fr);gap:8px}
+.slider-controls{grid-template-rows:auto 64px;padding:4px 5px;gap:1px}
+.pitch-rail{height:68px}
+#pitchTrack{width:66px}
+.roll-group{display:none}
+#orbit-tools.expanded .camera-controls{width:min(100%,410px);grid-template-columns:125px minmax(0,1fr);gap:10px}
+#orbit-tools.expanded #circlePad{width:112px;height:112px}
+#orbit-tools.expanded #circlePad::before{width:80px;height:80px}
+#orbit-tools.expanded #stickKnob{width:54px;height:54px}
+#orbit-tools.expanded .slider-controls{grid-template-rows:auto 110px auto}
+#orbit-tools.expanded .pitch-rail{height:106px}
+#orbit-tools.expanded #pitchTrack{width:103px}
+#orbit-tools.expanded .roll-group{display:flex}
+#quickStatus:empty{display:none}
+@media(max-width:380px){.camera-controls{width:min(100%,265px);grid-template-columns:81px minmax(0,1fr);gap:6px}#orbit-tools.expanded .camera-controls{grid-template-columns:115px minmax(0,1fr)}}
 </style></head><body>
 <header><button id="prev" aria-label="Previous model">←</button><strong id="name">Porygon2</strong><button id="next" aria-label="Next model">→</button><small id="status" role="status">Loading…</small><button id="open" aria-expanded="false">Styles</button></header>
 <section id="panel" hidden aria-label="Rendering settings">
@@ -153,29 +187,38 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 <button id="reset">Reset camera</button> <button id="defaults">Defaults</button>
 <p>Styles apply to every model; Original preserves Chief’s texture and helmet colours. Left/right switches models. The circle pad rotates or pans; horizontal/vertical sliders adjust yaw and pitch, and Roll banks the camera. Numbers and canvas gestures can be toggled.</p>
 </section>
-<div id="orbit-tools" role="group" aria-label="Camera inspection controls">
-<div class="hud-actions">
-<button id="quickReset" type="button" aria-label="Reset camera" title="Reset camera">↺</button>
-<button id="quickCopy" type="button" aria-label="Copy all camera coordinates" title="Copy all camera coordinates">⎘</button>
-<button id="valuesToggle" type="button" aria-label="Show or hide camera values" aria-pressed="false" title="Show or hide camera values">123</button>
-<button id="gesturesToggle" type="button" aria-label="Enable or disable gestures" aria-pressed="true" title="Gesture input on">✋ On</button>
-<button id="expandHUD" type="button" aria-label="Expand camera controls" aria-expanded="false" title="Expand camera controls">⤢</button>
+<div id="orbit-tools" role="group" aria-label="Compact camera inspection controls">
+<div class="compact-modes">
+ <div class="pad-modes" role="group" aria-label="Circle pad mode"><button id="padRotate" type="button" aria-pressed="true">Rotate</button><button id="padPan" type="button" aria-pressed="false">Pan</button></div>
+ <button id="shiftToggle" type="button" aria-pressed="false" aria-label="Shift sliders to roll and zoom" title="Shift sliders to Roll / Zoom">⇧ Shift</button>
+ <button id="axisLock" type="button" aria-pressed="false" aria-label="Lock circle pad to a single axis" title="Lock circle pad to dominant axis">⌖ Lock</button>
+ <details id="toolsMenu" class="tools-menu">
+  <summary aria-label="Camera tools menu" title="Camera tools">•••</summary>
+  <div class="tools-popup" role="group" aria-label="Camera tools">
+   <button id="quickReset" type="button">↺ Reset view</button>
+   <button id="quickCopy" type="button">⎘ Copy camera JSON</button>
+   <button id="valuesToggle" type="button" aria-pressed="false">123 Show values</button>
+   <button id="gesturesToggle" type="button" aria-pressed="true">✋ Gestures On</button>
+   <button id="expandHUD" type="button" aria-expanded="false">⤢ Expand controls</button>
+  </div>
+ </details>
 </div>
 <div class="camera-controls">
-<div id="camera-pad" role="group" aria-label="3DS-style camera circle pad">
-<div class="pad-modes" role="group" aria-label="Circle pad mode"><button id="padRotate" type="button" aria-pressed="true">Rotate</button><button id="padPan" type="button" aria-pressed="false">Pan</button></div>
-<div id="circlePad" role="group" tabindex="0" aria-label="Analogue circle pad: drag to move camera or use arrow keys when focused"><div id="stickKnob" aria-hidden="true"></div></div>
-<small class="control-label">Circle pad · drag to move</small>
-</div>
-<div class="slider-controls">
-<div class="slider-group" style="grid-column:1;grid-row:1/3">
-<label for="yawTrack">YAW ↔ <output id="yawValue" class="camera-value">0°</output></label>
-<input type="range" class="orbit-slider" id="yawTrack" min="-180" max="180" value="0" step="0.5" aria-label="Horizontal yaw">
-<small class="control-label">Horizontal</small>
-</div>
-<div class="pitch-group"><label for="pitchTrack">PITCH ↕</label><div class="pitch-rail"><input type="range" class="orbit-slider" id="pitchTrack" min="-85" max="85" value="0" step="0.5" aria-label="Vertical pitch"></div><output id="pitchValue" class="camera-value">0°</output></div>
-<div class="slider-group roll-group"><label for="rollTrack">ROLL ⟳</label><input type="range" class="orbit-slider" id="rollTrack" min="-180" max="180" value="0" step="0.5" aria-label="Camera roll / bank"><output id="rollValue" class="camera-value">0°</output></div>
-</div>
+ <div id="camera-pad" role="group" aria-label="3DS-style camera circle pad">
+  <div id="circlePad" role="group" tabindex="0" aria-label="Circle pad: drag to orbit or pan; arrow keys when focused"><div id="stickKnob" aria-hidden="true"></div></div>
+ </div>
+ <div class="slider-controls">
+  <div class="slider-group" style="grid-column:1;grid-row:1/3">
+   <label for="yawTrack"><span id="yawLabel">YAW ↔</span> <output id="yawValue" class="camera-value">0°</output></label>
+   <input type="range" class="orbit-slider" id="yawTrack" min="-180" max="180" value="0" step="0.5" aria-label="Yaw (horizontal)">
+  </div>
+  <div class="pitch-group">
+   <label id="pitchLabel" for="pitchTrack">PITCH ↕</label>
+   <div class="pitch-rail"><input type="range" class="orbit-slider" id="pitchTrack" min="-85" max="85" value="0" step="0.5" aria-label="Pitch (vertical)"></div>
+   <output id="pitchValue" class="camera-value">0°</output>
+  </div>
+  <div class="slider-group roll-group"><label for="rollTrack">ROLL ⟳</label><input type="range" class="orbit-slider" id="rollTrack" min="-180" max="180" value="0" step="0.5" aria-label="Camera roll / bank"><output id="rollValue" class="camera-value">0°</output></div>
+ </div>
 </div>
 <output id="quickStatus" role="status"></output>
 </div>
@@ -286,7 +329,7 @@ $('defaults').onclick=()=>{Object.assign(state,{style:'Pixel',outline:'Reactive'
 const VIEW_STORAGE_PREFIX='raskal-porygon-view:v1:';
 const sessionViews=new Map();
 const radians=THREE.MathUtils.degToRad,degrees=THREE.MathUtils.radToDeg;
-let roll=0,padMode='rotate',gestureEnabled=true,showValues=false;
+let roll=0,padMode='rotate',gestureEnabled=true,showValues=false,shiftMode=false,axisLocked=false,latchedAxis=null;
 let stickActive=false,stickVector={x:0,y:0},stickPointer=null,stickKeys=new Set();
 const asNumber=n=>typeof n==='number'&&Number.isFinite(n);
 function validView(data){
@@ -339,9 +382,9 @@ function updateViewUI(){
  for(const [id,value] of [['yawInput',a.yaw],['pitchInput',a.pitch],['rollInput',roll],['distanceInput',a.radius],['fovInput',camera.fov]]){
   const input=$(id);if(document.activeElement!==input)input.value=fmt(value);
  }
- for(const [id,out,value] of [['yawTrack','yawValue',a.yaw],['pitchTrack','pitchValue',a.pitch],['rollTrack','rollValue',roll]]){
+ for(const [id,out,value] of [['yawTrack','yawValue',shiftMode?roll:a.yaw],['pitchTrack','pitchValue',shiftMode?zoomRatio(a.radius):a.pitch],['rollTrack','rollValue',roll]]){
   const input=$(id);if(document.activeElement!==input)input.value=String(THREE.MathUtils.clamp(value,+input.min,+input.max));
-  $(out).textContent=value.toFixed(1)+'°';
+  $(out).textContent=id==='pitchTrack'&&shiftMode?value.toFixed(2)+'×':value.toFixed(1)+'°';
  }
 }
 function showNotice(msg){$('viewNotice').textContent=msg;$('quickStatus').textContent=msg;}
@@ -360,7 +403,7 @@ function reset(){
 }
 $('reset').onclick=reset;
 $('quickReset').onclick=reset;
-$('expandHUD').onclick=()=>{const hud=$('orbit-tools'),expanded=hud.classList.toggle('expanded');$('expandHUD').setAttribute('aria-expanded',String(expanded));$('expandHUD').setAttribute('aria-label',expanded?'Compact camera controls':'Expand camera controls');$('expandHUD').title=expanded?'Compact camera controls':'Expand camera controls';$('expandHUD').textContent=expanded?'⤡':'⤢';};
+$('expandHUD').onclick=()=>{const hud=$('orbit-tools'),expanded=hud.classList.toggle('expanded');$('expandHUD').setAttribute('aria-expanded',String(expanded));$('expandHUD').setAttribute('aria-label',expanded?'Compact camera controls':'Expand camera controls');$('expandHUD').title=expanded?'Compact camera controls':'Expand camera controls';$('expandHUD').textContent=expanded?'⤡ Compact controls':'⤢ Expand controls';};
 function applyCoordinates(){
  if(!model)return;
  const read=id=>$(id).value.trim()===''?NaN:Number($(id).value);
@@ -385,19 +428,19 @@ function applyAngleInputs(id){
  showNotice('View changed; save to make it default.');
 }
 for(const id of ['yawInput','pitchInput','rollInput','distanceInput','fovInput'])$(id).addEventListener('change',()=>applyAngleInputs(id));
-$('yawTrack').addEventListener('input',()=>setOrbit(Number($('yawTrack').value),orbitAngles().pitch));
-$('pitchTrack').addEventListener('input',()=>setOrbit(orbitAngles().yaw,Number($('pitchTrack').value)));
+$('yawTrack').addEventListener('input',()=>shiftMode?setRoll(Number($('yawTrack').value)):setOrbit(Number($('yawTrack').value),orbitAngles().pitch));
+$('pitchTrack').addEventListener('input',()=>shiftMode?setDistance(baseDistance()*Number($('pitchTrack').value)):setOrbit(orbitAngles().yaw,Number($('pitchTrack').value)));
 $('rollTrack').addEventListener('input',()=>setRoll(Number($('rollTrack').value)));
 $('valuesToggle').onclick=()=>{
  showValues=!showValues;
  $('orbit-tools').classList.toggle('show-values',showValues);
  $('valuesToggle').setAttribute('aria-pressed',String(showValues));
- $('valuesToggle').textContent=showValues?'123 ✓':'123';
+ $('valuesToggle').textContent=showValues?'123 Hide values':'123 Show values';
 };
 $('gesturesToggle').onclick=()=>{
  gestureEnabled=!gestureEnabled;controls.enabled=gestureEnabled;
  $('gesturesToggle').setAttribute('aria-pressed',String(gestureEnabled));
- $('gesturesToggle').textContent=gestureEnabled?'✋ On':'✋ Off';$('gesturesToggle').title=gestureEnabled?'Gesture input on':'Gesture input off';
+ $('gesturesToggle').textContent=gestureEnabled?'✋ Gestures On':'✋ Gestures Off';$('gesturesToggle').title=gestureEnabled?'Gesture input on':'Gesture input off';
  showNotice(gestureEnabled?'Canvas gestures enabled.':'Canvas gestures disabled; sliders and pad still work.');
 };
 $('saveView').onclick=()=>{
@@ -482,6 +525,26 @@ $('applyJSON').onclick=()=>{
   showNotice('Camera JSON applied to '+models[current].name+'. Save to set default.');
  }catch(error){showNotice('Cannot apply preset: '+error.message);}
 };
+
+function baseDistance(){
+ if(!model)return 1;
+ const radius=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).length();
+ return Math.max(.01,radius*1.4*aspectFit);
+}
+function zoomRatio(distance){return THREE.MathUtils.clamp(distance/baseDistance(),.35,3.5);}
+function syncShiftSliders(){
+ $('yawLabel').textContent=shiftMode?'ROLL ⟳':'YAW ↔';
+ $('pitchLabel').textContent=shiftMode?'ZOOM ↕':'PITCH ↕';
+ const yaw=$('yawTrack'),pitch=$('pitchTrack');
+ yaw.min='-180';yaw.max='180';yaw.step='0.5';yaw.setAttribute('aria-label',shiftMode?'Roll / bank (horizontal slider)':'Yaw (horizontal)');
+ pitch.min=shiftMode?'0.35':'-85';pitch.max=shiftMode?'3.5':'85';pitch.step=shiftMode?'0.01':'0.5';
+ pitch.setAttribute('aria-label',shiftMode?'Zoom / distance (vertical slider)':'Pitch (vertical)');
+ $('shiftToggle').setAttribute('aria-pressed',String(shiftMode));
+ $('shiftToggle').setAttribute('aria-label',shiftMode?'Return sliders to yaw and pitch':'Shift sliders to roll and zoom');
+ updateViewUI();
+}
+$('shiftToggle').onclick=()=>{shiftMode=!shiftMode;syncShiftSliders();};
+$('axisLock').onclick=()=>{axisLocked=!axisLocked;latchedAxis=null;$('axisLock').setAttribute('aria-pressed',String(axisLocked));$('axisLock').title=axisLocked?'Circle pad locked to dominant axis':'Circle pad moves freely on both axes';};
 function setPadMode(mode){
  if(mode!=='rotate'&&mode!=='pan')return;
  padMode=mode;
@@ -511,6 +574,7 @@ function stepAnalog(dt){
   const len=Math.hypot(x,y)||1;x/=len;y/=len;
  }
  if(Math.hypot(x,y)<.07)return;
+ if(axisLocked){if(!latchedAxis)latchedAxis=Math.abs(x)>=Math.abs(y)?'x':'y';if(latchedAxis==='x')y=0;else x=0;}
  if(padMode==='rotate'){
   const a=orbitAngles();setOrbit(a.yaw+x*66*dt,a.pitch+y*58*dt);
  }else panView(x*.38*dt,y*.38*dt);
@@ -525,7 +589,7 @@ function moveStick(ev){
  $('stickKnob').style.setProperty('--stick-y',Math.round(-y*($('orbit-tools').classList.contains('expanded')?32:21))+'px');
 }
 function clearStick(){
- stickActive=false;stickPointer=null;stickVector={x:0,y:0};
+ stickActive=false;stickPointer=null;stickVector={x:0,y:0};latchedAxis=null;
  $('stickKnob').style.setProperty('--stick-x','0px');$('stickKnob').style.setProperty('--stick-y','0px');
 }
 $('circlePad').addEventListener('pointerdown',ev=>{
@@ -543,7 +607,7 @@ $('circlePad').addEventListener('keydown',ev=>{
 $('circlePad').addEventListener('keyup',ev=>{if(stickKeys.has(ev.key)){ev.preventDefault();ev.stopPropagation();stickKeys.delete(ev.key);}});
 $('circlePad').addEventListener('blur',()=>{stickKeys.clear();clearStick();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stickKeys.clear();clearStick();}});
-setPadMode('rotate');
+setPadMode('rotate');syncShiftSliders();
 controls.addEventListener('change',updateViewUI);
 const parts={'bill_1':1,'body_2':0,'eye_1_3':2,'eye_1_4':2,'foot_far_5':1,'foot_near_6':1,'eye_1_7':2,'eye_1_8':2,'head_9':0,'neck_10':0,'eye_1_11':3,'eye_1_12':3,'tail_13':1};
 async function selectModel(index){
