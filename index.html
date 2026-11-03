@@ -220,172 +220,268 @@ for(const id of ['style','outline','palette','resolution'])$(id).onchange=()=>{s
 $('width').oninput=()=>{state.width=+$('width').value;sync();};
 $('open').onclick=()=>{$('panel').hidden=!$('panel').hidden;$('open').setAttribute('aria-expanded',String(!$('panel').hidden));};
 $('defaults').onclick=()=>{Object.assign(state,{style:'Pixel',outline:'Reactive',width:2,palette:'Original',resolution:'Native'});sync();};
-function resetBuiltIn(){if(!model)return;const bounds=new THREE.Box3().setFromObject(model),center=bounds.getCenter(new THREE.Vector3()),r=bounds.getSize(new THREE.Vector3()).length();controls.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(current===0?0:r*.75,r*.25,current===0?-r*1.4:r*1.1).multiplyScalar(aspectFit));camera.near=Math.max(.001,r/1000);camera.far=r*100;camera.updateProjectionMatrix();controls.update();updateViewUI();}
-function reset(){if(!model)return;const saved=storedView(models[current].id);if(saved){applyView(saved);}else resetBuiltIn();}
-$('reset').onclick=reset;
 
 const VIEW_STORAGE_PREFIX='raskal-porygon-view:v1:';
 const sessionViews=new Map();
 const radians=THREE.MathUtils.degToRad,degrees=THREE.MathUtils.radToDeg;
+let roll=0,padMode='rotate',gestureEnabled=true,showValues=false;
+let stickActive=false,stickVector={x:0,y:0},stickPointer=null,stickKeys=new Set();
+const asNumber=n=>typeof n==='number'&&Number.isFinite(n);
 function validView(data){
  if(!data||!Array.isArray(data.position)||!Array.isArray(data.target)||data.position.length!==3||data.target.length!==3)return false;
- if(![...data.position,...data.target].every(v=>typeof v==='number'&&Number.isFinite(v)))return false;
+ if(![...data.position,...data.target].every(asNumber))return false;
  return new THREE.Vector3(...data.position).distanceTo(new THREE.Vector3(...data.target))>.01;
 }
 function storedView(id){
  if(sessionViews.has(id))return sessionViews.get(id);
  try{const value=JSON.parse(localStorage.getItem(VIEW_STORAGE_PREFIX+id));return validView(value)?value:null;}catch{return null;}
 }
+function orbitAngles(){
+ const v=camera.position.clone().sub(controls.target),radius=v.length()||1;
+ return {yaw:degrees(Math.atan2(v.x,v.z)),pitch:degrees(Math.asin(THREE.MathUtils.clamp(v.y/radius,-1,1))),radius};
+}
+function wrapAngle(n){return THREE.MathUtils.euclideanModulo(n+180,360)-180;}
 function captureView(){
- return {model:models[current].id,position:camera.position.toArray().map(v=>+v.toFixed(6)),target:controls.target.toArray().map(v=>+v.toFixed(6)),fov:+camera.fov.toFixed(3)};
+ const a=orbitAngles(),round=v=>+v.toFixed(6);
+ return {version:2,model:models[current].id,position:camera.position.toArray().map(round),target:controls.target.toArray().map(round),yaw:round(a.yaw),pitch:round(a.pitch),roll:round(roll),distance:round(a.radius),fov:round(camera.fov)};
 }
 function applyView(value){
  if(!validView(value))return false;
  camera.position.fromArray(value.position);controls.target.fromArray(value.target);
- if(Number.isFinite(value.fov)&&value.fov>=10&&value.fov<=100)camera.fov=value.fov;
+ if(asNumber(value.fov)&&value.fov>=10&&value.fov<=100)camera.fov=value.fov;
+ roll=asNumber(value.roll)?wrapAngle(value.roll):0;
  camera.updateProjectionMatrix();camera.lookAt(controls.target);controls.update();updateViewUI();
  return true;
-}
-function orbitAngles(){
- const offset=camera.position.clone().sub(controls.target);
- const radius=offset.length();
- return {yaw:degrees(Math.atan2(offset.x,offset.z)),pitch:degrees(Math.asin(THREE.MathUtils.clamp(offset.y/radius,-1,1))),radius};
 }
 function setOrbit(yaw,pitch){
  if(!model)return;
  const radius=Math.max(.05,camera.position.distanceTo(controls.target));
  pitch=THREE.MathUtils.clamp(pitch,-85,85);
- const theta=radians(yaw),phi=radians(90-pitch);
- camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(new THREE.Spherical(radius,phi,theta)));
+ camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(new THREE.Spherical(radius,radians(90-pitch),radians(yaw))));
  camera.lookAt(controls.target);controls.update();updateViewUI();
+}
+function setRoll(value){if(!model||!asNumber(value))return;roll=wrapAngle(value);updateViewUI();}
+function setDistance(distance){
+ if(!model||!asNumber(distance)||distance<=.01)return false;
+ const a=orbitAngles();
+ camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(new THREE.Spherical(distance,radians(90-a.pitch),radians(a.yaw))));
+ camera.lookAt(controls.target);controls.update();updateViewUI();return true;
 }
 function updateViewUI(){
  if(!model)return;
- const a=orbitAngles();
- const printable=v=>v.toFixed(3);
- $('viewInfo').textContent='Yaw '+a.yaw.toFixed(1)+'°  |  Pitch '+a.pitch.toFixed(1)+'°\nDistance '+printable(a.radius)+'  |  FOV '+camera.fov.toFixed(1)+'°';
- for(const group of [['camera',camera.position],['target',controls.target]])for(const axis of ['X','Y','Z']){
-  const input=$(group[0]+axis);if(document.activeElement!==input)input.value=printable(group[1][axis.toLowerCase()]);
+ const a=orbitAngles(),fmt=v=>v.toFixed(3);
+ $('viewInfo').textContent='Yaw '+a.yaw.toFixed(1)+'°  |  Pitch '+a.pitch.toFixed(1)+'°  |  Roll '+roll.toFixed(1)+'°\nDistance '+fmt(a.radius)+'  |  FOV '+camera.fov.toFixed(1)+'°';
+ for(const [group,vec] of [['camera',camera.position],['target',controls.target]])for(const axis of ['X','Y','Z']){
+  const input=$(group+axis);if(document.activeElement!==input)input.value=fmt(vec[axis.toLowerCase()]);
  }
- for(const [axis,value,id,valueId] of [['yaw',a.yaw,'yawDial','yawValue'],['pitch',a.pitch,'pitchDial','pitchValue']]){
-  const dial=$(id),v=+value.toFixed(1);
-  dial.setAttribute('aria-valuenow',String(v));$(valueId).textContent=v.toFixed(1)+'°';
-  dial.style.setProperty('--angle',(axis==='yaw'?value:2*value)+'deg');
+ for(const [id,value] of [['yawInput',a.yaw],['pitchInput',a.pitch],['rollInput',roll],['distanceInput',a.radius],['fovInput',camera.fov]]){
+  const input=$(id);if(document.activeElement!==input)input.value=fmt(value);
+ }
+ for(const [id,out,value] of [['yawTrack','yawValue',a.yaw],['pitchTrack','pitchValue',a.pitch],['rollTrack','rollValue',roll]]){
+  const input=$(id);if(document.activeElement!==input)input.value=String(THREE.MathUtils.clamp(value,+input.min,+input.max));
+  $(out).textContent=value.toFixed(1)+'°';
  }
 }
+function showNotice(msg){$('viewNotice').textContent=msg;$('quickStatus').textContent=msg;}
+function resetBuiltIn(){
+ if(!model)return;
+ const bounds=new THREE.Box3().setFromObject(model),center=bounds.getCenter(new THREE.Vector3()),r=bounds.getSize(new THREE.Vector3()).length();
+ controls.target.copy(center);
+ camera.position.copy(center).add(new THREE.Vector3(current===0?0:r*.75,r*.25,current===0?-r*1.4:r*1.1).multiplyScalar(aspectFit));
+ camera.near=Math.max(.001,r/1000);camera.far=r*100;camera.updateProjectionMatrix();
+ roll=0;controls.update();updateViewUI();
+}
+function reset(){
+ if(!model)return;
+ resetBuiltIn();const saved=storedView(models[current].id);if(saved)applyView(saved);
+ showNotice(saved?'Restored '+models[current].name+' saved view.':'Reset '+models[current].name+' to built-in view.');
+}
+$('reset').onclick=reset;
+$('quickReset').onclick=reset;
 function applyCoordinates(){
  if(!model)return;
- const read=group=>['X','Y','Z'].map(axis=>Number($(group+axis).value));
- const pos=read('camera'),target=read('target');
- if(![...pos,...target].every(Number.isFinite)||new THREE.Vector3(...pos).distanceTo(new THREE.Vector3(...target))<=.01){$('viewNotice').textContent='Enter finite coordinates with a nonzero camera distance.';return;}
- applyView({position:pos,target});$('viewNotice').textContent='View updated. Set default view to save it.';
+ const read=id=>$(id).value.trim()===''?NaN:Number($(id).value);
+ const position=['X','Y','Z'].map(a=>read('camera'+a)),target=['X','Y','Z'].map(a=>read('target'+a));
+ if(!validView({position,target})){showNotice('Invalid XYZ: enter finite coordinates and keep camera separate from target.');return;}
+ applyView({position,target,fov:camera.fov,roll});showNotice('Coordinates applied; save to make them default.');
 }
 for(const axis of ['X','Y','Z'])for(const group of ['camera','target'])$(group+axis).addEventListener('change',applyCoordinates);
-function showNotice(msg){$('viewNotice').textContent=msg;}
+function applyAngleInputs(id){
+ if(!model)return;
+ const v=Number($(id).value);
+ if($(id).value.trim()===''||!Number.isFinite(v)){showNotice('Enter a finite number.');return;}
+ const a=orbitAngles();
+ if(id==='yawInput')setOrbit(v,a.pitch);
+ else if(id==='pitchInput')setOrbit(a.yaw,v);
+ else if(id==='rollInput')setRoll(v);
+ else if(id==='distanceInput'){if(!setDistance(v)){showNotice('Distance must be greater than zero.');return;}}
+ else if(id==='fovInput'){
+  if(v<10||v>100){showNotice('FOV must be between 10° and 100°.');return;}
+  camera.fov=v;camera.updateProjectionMatrix();controls.update();updateViewUI();
+ }
+ showNotice('View changed; save to make it default.');
+}
+for(const id of ['yawInput','pitchInput','rollInput','distanceInput','fovInput'])$(id).addEventListener('change',()=>applyAngleInputs(id));
+$('yawTrack').addEventListener('input',()=>setOrbit(Number($('yawTrack').value),orbitAngles().pitch));
+$('pitchTrack').addEventListener('input',()=>setOrbit(orbitAngles().yaw,Number($('pitchTrack').value)));
+$('rollTrack').addEventListener('input',()=>setRoll(Number($('rollTrack').value)));
+$('valuesToggle').onclick=()=>{
+ showValues=!showValues;
+ $('orbit-tools').classList.toggle('show-values',showValues);
+ $('valuesToggle').setAttribute('aria-pressed',String(showValues));
+ $('valuesToggle').textContent=showValues?'123 Hide':'123 Values';
+};
+$('gesturesToggle').onclick=()=>{
+ gestureEnabled=!gestureEnabled;controls.enabled=gestureEnabled;
+ $('gesturesToggle').setAttribute('aria-pressed',String(gestureEnabled));
+ $('gesturesToggle').textContent=gestureEnabled?'Gestures On':'Gestures Off';
+ showNotice(gestureEnabled?'Canvas gestures enabled.':'Canvas gestures disabled; sliders and pad still work.');
+};
 $('saveView').onclick=()=>{
  if(!model)return;
  const value=captureView(),id=models[current].id;sessionViews.set(id,value);
- try{localStorage.setItem(VIEW_STORAGE_PREFIX+id,JSON.stringify(value));showNotice('Saved locally for '+models[current].name+'.');}
- catch{showNotice('Saved for this page only. Browser storage is unavailable.');}
+ try{localStorage.setItem(VIEW_STORAGE_PREFIX+id,JSON.stringify(value));showNotice('Saved '+models[current].name+' camera in this browser.');}
+ catch{showNotice('Saved for this page only; local storage unavailable.');}
 };
 $('clearView').onclick=()=>{
  if(!model)return;
  const id=models[current].id;sessionViews.delete(id);
  try{localStorage.removeItem(VIEW_STORAGE_PREFIX+id);}catch{}
- resetBuiltIn();showNotice('Cleared default for '+models[current].name+'.');
+ resetBuiltIn();showNotice('Cleared '+models[current].name+' saved default.');
 };
-$('copyView').onclick=async()=>{
- if(!model)return;const value=JSON.stringify(captureView(),null,2);
- try{await navigator.clipboard.writeText(value);showNotice('Camera preset copied to clipboard.');}
- catch{showNotice('Clipboard unavailable. Copy the coordinates above instead.');}
-};
-function dialSetup(id,axis){
- const dial=$(id);let drag=null;
- function pointerAngle(ev){const box=dial.getBoundingClientRect(),x=ev.clientX-box.left-box.width/2,y=ev.clientY-box.top-box.height/2;return degrees(Math.atan2(x,-y));}
- dial.addEventListener('pointerdown',ev=>{if(!model)return;ev.preventDefault();drag={last:pointerAngle(ev)};dial.setPointerCapture(ev.pointerId);});
- dial.addEventListener('pointermove',ev=>{
-  if(!drag)return;
-  const next=pointerAngle(ev);let delta=next-drag.last;
-  if(delta>180)delta-=360;if(delta< -180)delta+=360;drag.last=next;
-  const currentAngles=orbitAngles();
-  setOrbit(currentAngles.yaw+(axis==='yaw'?delta:0),currentAngles.pitch+(axis==='pitch'?delta*.65:0));
- });
- const stop=()=>{drag=null;};dial.addEventListener('pointerup',stop);dial.addEventListener('pointercancel',stop);dial.addEventListener('lostpointercapture',stop);
- dial.addEventListener('keydown',ev=>{
-  const direction=['ArrowRight','ArrowUp'].includes(ev.key)?1:['ArrowLeft','ArrowDown'].includes(ev.key)?-1:0;
-  if(!direction)return;ev.preventDefault();const a=orbitAngles(),delta=(ev.shiftKey?1:5)*direction;
-  setOrbit(a.yaw+(axis==='yaw'?delta:0),a.pitch+(axis==='pitch'?delta:0));
- });
+async function copyJSON(value){
+ const json=JSON.stringify(value,null,2);
+ try{await navigator.clipboard.writeText(json);showNotice('Copied camera JSON.');}
+ catch{
+  $('panel').hidden=false;$('open').setAttribute('aria-expanded','true');$('viewPanel').open=true;
+  $('pasteJSON').value=json;$('pasteJSON').focus();$('pasteJSON').select();
+  showNotice('Clipboard blocked: select and copy JSON in the box.');
+ }
 }
-dialSetup('yawDial','yaw');dialSetup('pitchDial','pitch');
-
-/* Direction pad camera navigation. "Pan" moves the model on screen
- * by translating camera and orbit target together (geometry untouched). */
-let padMode='rotate';
-const padButtons=[...document.querySelectorAll('#direction-pad button[data-direction]')];
+$('quickCopy').onclick=()=>{if(model)copyJSON(captureView());};
+$('copyAll').onclick=()=>{if(model)copyJSON(captureView());};
+function selectedData(){
+ const all=captureView(),scope=$('copyField').value;
+ if(scope==='position'||scope==='target')return {[scope]:all[scope]};
+ if(scope==='angles')return {yaw:all.yaw,pitch:all.pitch,roll:all.roll};
+ if(scope==='lens')return {distance:all.distance,fov:all.fov};
+ if(scope.indexOf('.')>0){const [group,key]=scope.split('.'),index={x:0,y:1,z:2}[key];return {[group]:{[key]:all[group][index]}};}
+ return {[scope]:all[scope]};
+}
+$('copySelected').onclick=()=>{if(model)copyJSON(selectedData());};
+$('pasteClipboard').onclick=async()=>{
+ $('viewPanel').open=true;
+ try{$('pasteJSON').value=await navigator.clipboard.readText();showNotice('Clipboard pasted; tap Apply JSON to load view.');}
+ catch{$('pasteJSON').focus();showNotice('Clipboard read blocked; long-press the box and choose Paste.');}
+};
+function mergeVector(existing,override){
+ if(override===undefined)return existing;
+ if(Array.isArray(override)&&override.length===3&&override.every(asNumber))return override.slice();
+ if(override&&typeof override==='object'&&!Array.isArray(override)){
+  const result=existing.slice();
+  for(const [axis,index] of [['x',0],['y',1],['z',2]]){
+   if(Object.prototype.hasOwnProperty.call(override,axis)){if(!asNumber(override[axis]))throw Error('Invalid '+axis+' value.');result[index]=override[axis];}
+  }
+  return result;
+ }
+ throw Error('Coordinates must be XYZ arrays or objects like {"x":1.2}.');
+}
+function interpretPreset(preset){
+ if(!preset||typeof preset!=='object'||Array.isArray(preset))throw Error('Camera JSON must be an object.');
+ if(preset.model && preset.model!==models[current].id)throw Error('Preset belongs to '+preset.model+'. Switch models first.');
+ const currentView=captureView(),next={...currentView};
+ next.position=mergeVector(currentView.position,preset.position);
+ next.target=mergeVector(currentView.target,preset.target);
+ const read=(key,min,max)=>{
+  if(!Object.prototype.hasOwnProperty.call(preset,key))return null;
+  if(!asNumber(preset[key])||preset[key]<min||preset[key]>max)throw Error('Invalid '+key+' value.');
+  return preset[key];
+ };
+ const yaw=read('yaw',-360000,360000),pitch=read('pitch',-85,85),distance=read('distance',.011,1000000);
+ const fov=read('fov',10,100),newRoll=read('roll',-360000,360000);
+ if(fov!==null)next.fov=fov;
+ if(newRoll!==null)next.roll=newRoll;
+ if(yaw!==null||pitch!==null||distance!==null){
+  const rel=new THREE.Vector3(...next.position).sub(new THREE.Vector3(...next.target));
+  const rad=Math.max(rel.length(),.011);
+  const angleYaw=yaw===null?degrees(Math.atan2(rel.x,rel.z)):yaw;
+  const anglePitch=pitch===null?degrees(Math.asin(THREE.MathUtils.clamp(rel.y/rad,-1,1))):pitch;
+  const radius=distance===null?rad:distance;
+  const newPos=new THREE.Vector3(...next.target).add(new THREE.Vector3().setFromSpherical(new THREE.Spherical(radius,radians(90-anglePitch),radians(angleYaw))));
+  next.position=newPos.toArray();
+ }
+ if(!validView(next))throw Error('Invalid camera and target: distance is too small or a number is non-finite.');
+ return next;
+}
+$('applyJSON').onclick=()=>{
+ if(!model)return;
+ try{const parsed=JSON.parse($('pasteJSON').value),next=interpretPreset(parsed);applyView(next);
+  showNotice('Camera JSON applied to '+models[current].name+'. Save to set default.');
+ }catch(error){showNotice('Cannot apply preset: '+error.message);}
+};
 function setPadMode(mode){
  if(mode!=='rotate'&&mode!=='pan')return;
  padMode=mode;
  $('padRotate').setAttribute('aria-pressed',String(mode==='rotate'));
  $('padPan').setAttribute('aria-pressed',String(mode==='pan'));
- for(const b of padButtons)b.setAttribute('aria-label',(mode==='pan'?'Pan ':'Rotate ')+b.dataset.direction);
- $('direction-pad').setAttribute('aria-label',(mode==='pan'?'Pan':'Rotate')+' camera directions');
+ $('circlePad').setAttribute('aria-label','Camera circle pad, '+mode+' mode; drag or use arrow keys.');
 }
-$('padRotate').addEventListener('click',()=>setPadMode('rotate'));
-$('padPan').addEventListener('click',()=>setPadMode('pan'));
-function nudgeCamera(direction,small=false){
+$('padRotate').onclick=()=>setPadMode('rotate');
+$('padPan').onclick=()=>setPadMode('pan');
+function panView(dx,dy){
  if(!model)return;
- const axes={left:[-1,0],right:[1,0],up:[0,1],down:[0,-1]};
- const [dx,dy]=axes[direction]||[0,0];
- if(padMode==='rotate'){
-  const a=orbitAngles(),step=small?1.1:3.5;
-  setOrbit(a.yaw+dx*step,a.pitch+dy*step);
- }else{
-  camera.updateMatrixWorld();
-  const dist=camera.position.distanceTo(controls.target);
-  // A fixed portion of the projected height produces consistent screen-space pan.
-  const height=2*dist*Math.tan(radians(camera.fov)/2);
-  const step=height*(small ? 0.010 : 0.033);
-  const right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
-  const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
-  const delta=right.multiplyScalar(-dx*step).addScaledVector(up,-dy*step);
-  camera.position.add(delta);controls.target.add(delta);
-  camera.lookAt(controls.target);controls.update();updateViewUI();
+ // dx and dy denote desired *image* movement in projected screen directions.
+ camera.updateMatrixWorld();
+ const dist=camera.position.distanceTo(controls.target),height=2*dist*Math.tan(radians(camera.fov)/2);
+ const right=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+ const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
+ const delta=right.multiplyScalar(-dx*height).addScaledVector(up,-dy*height);
+ camera.position.add(delta);controls.target.add(delta);
+ camera.lookAt(controls.target);controls.update();updateViewUI();
+}
+function stepAnalog(dt){
+ if(!model||(!stickActive&&stickKeys.size===0))return;
+ let x=stickVector.x,y=stickVector.y;
+ if(stickKeys.size){
+  x=(stickKeys.has('ArrowRight')?1:0)-(stickKeys.has('ArrowLeft')?1:0);
+  y=(stickKeys.has('ArrowUp')?1:0)-(stickKeys.has('ArrowDown')?1:0);
+  const len=Math.hypot(x,y)||1;x/=len;y/=len;
  }
+ if(Math.hypot(x,y)<.07)return;
+ if(padMode==='rotate'){
+  const a=orbitAngles();setOrbit(a.yaw+x*66*dt,a.pitch+y*58*dt);
+ }else panView(x*.38*dt,y*.38*dt);
 }
-for(const button of padButtons){
- let held=null,delay=null;
- const stop=()=>{
-  if(delay!==null){clearTimeout(delay);delay=null;}
-  if(held!==null){clearInterval(held);held=null;}
-  button.classList.remove('is-pressed');
- };
- button.addEventListener('pointerdown',ev=>{
-  if(!model||ev.button!==0)return;
-  ev.preventDefault();stop();
-  button.setPointerCapture(ev.pointerId);
-  button.classList.add('is-pressed');
-  nudgeCamera(button.dataset.direction);
-  delay=setTimeout(()=>{
-   delay=null;held=setInterval(()=>nudgeCamera(button.dataset.direction,true),38);
-  },280);
- });
- button.addEventListener('pointerup',stop);
- button.addEventListener('pointercancel',stop);
- button.addEventListener('lostpointercapture',stop);
- button.addEventListener('blur',stop);
- // Keyboard / assistive-technology activation fires a click without pointerdown.
- button.addEventListener('click',ev=>{
-  if(ev.detail===0)nudgeCamera(button.dataset.direction);
- });
+function moveStick(ev){
+ const box=$('circlePad').getBoundingClientRect();
+ let x=(ev.clientX-box.left-box.width/2)/(box.width*.36);
+ let y=(box.height/2-(ev.clientY-box.top))/(box.height*.36);
+ const length=Math.hypot(x,y);if(length>1){x/=length;y/=length;}
+ stickVector={x,y};
+ $('stickKnob').style.setProperty('--stick-x',Math.round(x*32)+'px');
+ $('stickKnob').style.setProperty('--stick-y',Math.round(-y*32)+'px');
 }
-document.addEventListener('visibilitychange',()=>{
- if(document.hidden)for(const b of padButtons)b.dispatchEvent(new Event('blur'));
+function clearStick(){
+ stickActive=false;stickPointer=null;stickVector={x:0,y:0};
+ $('stickKnob').style.setProperty('--stick-x','0px');$('stickKnob').style.setProperty('--stick-y','0px');
+}
+$('circlePad').addEventListener('pointerdown',ev=>{
+ if(!model||ev.button!==0)return;
+ ev.preventDefault();stickActive=true;stickPointer=ev.pointerId;
+ $('circlePad').setPointerCapture(ev.pointerId);moveStick(ev);stepAnalog(.065);
 });
+$('circlePad').addEventListener('pointermove',ev=>{if(stickActive&&ev.pointerId===stickPointer)moveStick(ev);});
+for(const eventName of ['pointerup','pointercancel','lostpointercapture'])$('circlePad').addEventListener(eventName,clearStick);
+$('circlePad').addEventListener('keydown',ev=>{
+ if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(ev.key))return;
+ ev.preventDefault();ev.stopPropagation();
+ if(!stickKeys.has(ev.key)){stickKeys.add(ev.key);stepAnalog(.065);}
+});
+$('circlePad').addEventListener('keyup',ev=>{if(stickKeys.has(ev.key)){ev.preventDefault();ev.stopPropagation();stickKeys.delete(ev.key);}});
+$('circlePad').addEventListener('blur',()=>{stickKeys.clear();clearStick();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stickKeys.clear();clearStick();}});
 setPadMode('rotate');
-
 controls.addEventListener('change',updateViewUI);
-
 const parts={'bill_1':1,'body_2':0,'eye_1_3':2,'eye_1_4':2,'foot_far_5':1,'foot_near_6':1,'eye_1_7':2,'eye_1_8':2,'head_9':0,'neck_10':0,'eye_1_11':3,'eye_1_12':3,'tail_13':1};
 async function selectModel(index){
 requested=(index+models.length)%models.length;
@@ -413,10 +509,11 @@ try{
 }catch(e){if(token===loading)status.textContent='Model failed';console.error(e);}
 }
 $('prev').onclick=()=>selectModel(requested-1);$('next').onclick=()=>selectModel(requested+1);
-addEventListener('keydown',e=>{if(e.target.closest('input,select,button,textarea'))return;if(e.key==='ArrowLeft'){e.preventDefault();selectModel(requested-1);}if(e.key==='ArrowRight'){e.preventDefault();selectModel(requested+1);}});
+addEventListener('keydown',e=>{if(e.target.closest('input,select,button,textarea,#orbit-tools'))return;if(e.key==='ArrowLeft'){e.preventDefault();selectModel(requested-1);}if(e.key==='ArrowRight'){e.preventDefault();selectModel(requested+1);}});
 selectModel(0);
 addEventListener('error',e=>{status.textContent='Viewer error';console.error(e);});
 addEventListener('resize',resize);sync();
-function frame(){requestAnimationFrame(frame);controls.update();renderer.setRenderTarget(target);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
+let frameLast=performance.now();
+function frame(now=performance.now()){requestAnimationFrame(frame);const dt=Math.min(.05,Math.max(0,(now-frameLast)/1000));frameLast=now;controls.update();stepAnalog(dt);camera.rotateZ(radians(roll));renderer.setRenderTarget(target);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
 frame();
 </script></body></html>
