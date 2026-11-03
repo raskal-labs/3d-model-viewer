@@ -8,18 +8,18 @@ Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **N
 ## Camera and controls
 The header **← / →** buttons (or keyboard arrows outside controls) switch character models; the arrows never rotate the camera.
 
-The camera HUD starts in **Compact** mode to preserve model viewing space: a thumb-sized circle pad, two short sliders, hidden numeric readouts and a single mode row. The **••• tools → Expand controls** button switches to larger controls. The detailed coordinate editor stays behind **Styles**.
+The mobile camera controls are now a **collapsible, edge-aligned bottom dock** inspired by the user-supplied layout: the yaw slider runs horizontally above the button row, the pitch slider is vertical on the right edge, and a small 3DS-style analogue pad sits on the left. A narrow **⌄ hide / ⌃ show tab** above the dock rolls the entire control cluster up to leave only the tab on screen. The dock is open by default, but numerical values stay hidden unless enabled.
 
-The most compact mobile layout now uses one top mode row (**Rotate**, **Pan**, **⇧ Shift**, **⌖ Lock**, **••• tools**) above a small analog circle pad and only two slider rails. **Shift** remaps the horizontal slider from **Yaw** to **Roll** and the vertical slider from **Pitch** to **Zoom/Distance**; toggle it off to return to Yaw/Pitch. **Lock** constrains circle-pad movement to its dominant horizontal or vertical axis for precise one-axis moves, resetting when the thumb is released. The **••• tools** menu contains Reset, Copy, Values, Gestures and Expand; this keeps nonessential controls off the viewport by default. Expanded view additionally exposes a dedicated Roll slider. This design keeps pitch and yaw in their requested horizontal/vertical slider orientations and retains the third axis without showing three rails at once.
+The lower button row is **Rotate · Pan · Shift · Reset · •••**. **Shift** remaps the horizontal slider from **Yaw** to **Roll** and the vertical slider from **Pitch** to **Zoom/Distance**; toggle it off to return to Yaw/Pitch. **Reset** is directly accessible in the row. **•••** contains Copy, Values, Gestures, Lock axis, and Expand. Lock constrains circle-pad movement to the dominant horizontal or vertical axis for precise one-axis moves, resetting when the thumb is released. **Expand** enlarges control targets and shows the dedicated roll slider.
 
 The camera HUD has:
 - **3DS-style analogue circle pad** with a draggable thumb. In **Rotate** mode, moving the pad orbits the selected model (yaw and pitch). In **Pan** mode, it translates the camera and orbit target together, moving the model's image without moving its geometry. Keyboard arrows work when the circle pad has focus.
 - **Yaw** styled as a horizontal volume slider; **Pitch** as a vertical volume slider. Their directions are independent.
 - **Roll** as a third slider: banks the camera around its viewing axis without rotating or modifying the model's mesh.
-- **↺ Reset (toolbar icon)** restores this model's saved camera preset, or the automatic built-in view if none is saved.
-- **⎘ Copy (toolbar icon)** copies the full camera preset JSON without opening settings.
-- **123 Values (toolbar toggle)** hides camera numbers by default, and shows/hides the HUD readouts on demand.
-- **✋ On/Off** enables/disables orbit, pan, and zoom gestures directly on the 3D canvas. The HUD remains functional while gestures are off.
+- **Reset (bottom-row button)** restores this model's saved camera preset, or the automatic built-in view if none is saved.
+- **⎘ Copy (••• menu)** copies the full camera preset JSON without opening settings.
+- **123 Values (••• menu toggle)** hides camera numbers by default, and shows/hides the HUD readouts on demand.
+- **✋ On/Off (••• menu)** enables/disables orbit, pan, and zoom gestures directly on the 3D canvas. The HUD remains functional while gestures are off.
 
 ## Coordinate editor, copy and paste
 Open **Styles → Camera coordinates & presets**. All camera XYZ, orbit-target XYZ, yaw, pitch, roll, distance, and FOV can be entered manually. Enter a value and commit the field to update the scene. A live readout shows the derived angles, distance and FOV.
