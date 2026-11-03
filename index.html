@@ -57,6 +57,51 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 #pasteJSON{width:100%;min-height:80px;resize:vertical;background:#121a28;color:#f2f7ff;border:1px solid #64728a;border-radius:7px;padding:8px;font:12px/1.4 ui-monospace,monospace}
 #viewNotice{display:block;min-height:18px;font-size:11px;color:#b9d6fc}
 @media(max-width:380px){.camera-controls{gap:5px;grid-template-columns:minmax(132px,1fr) minmax(138px,1fr)}#circlePad{width:112px;height:112px}#stickKnob{width:57px;height:57px}.hud-actions button{font-size:11px;padding:7px 2px}header{gap:7px}header button{padding:7px}.slider-controls{padding:7px 5px;column-gap:5px}}
+
+/* Compact inspection mode is the default, sized to leave the model unobstructed. */
+#orbit-tools{bottom:calc(env(safe-area-inset-bottom) + 14px);gap:3px}
+.hud-actions{width:min(100%,356px);padding:3px;gap:3px;border-radius:9px}
+.hud-actions button{font-size:11px;padding:5px 2px;min-height:28px;border-radius:6px}
+.camera-controls{grid-template-columns:minmax(100px,1fr) minmax(130px,1.3fr);gap:5px;width:min(100%,350px)}
+#camera-pad{gap:3px}
+.pad-modes{width:110px;gap:3px}
+.pad-modes button{padding:3px 2px;font-size:10px;min-height:23px}
+#circlePad{width:83px;height:83px;border-width:3px;box-shadow:inset 0 0 0 3px #172238,inset 0 0 0 5px #415572,0 3px 7px #0007}
+#circlePad::before{width:61px;height:61px}
+#stickKnob{width:39px;height:39px}
+#stickKnob::after{inset:7px}
+#camera-pad .control-label{display:none}
+.slider-controls{grid-template-columns:minmax(0,1fr) 27px;grid-template-rows:auto 74px auto;column-gap:5px;row-gap:1px;padding:4px 5px;border-radius:10px}
+.slider-group{gap:2px}
+.slider-group label,.pitch-group label{font-size:10px}
+.slider-group output{font-size:10px}
+.slider-group small{display:none}
+.pitch-rail{height:79px;width:24px}
+#pitchTrack{width:77px;height:23px}
+.orbit-slider::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px}
+.roll-group{gap:5px}
+#quickStatus{font-size:10px;min-height:0;max-height:15px}
+#help{display:none}
+#orbit-tools.expanded{bottom:calc(env(safe-area-inset-bottom) + 37px);gap:8px}
+#orbit-tools.expanded .hud-actions{width:min(100%,430px);padding:5px}
+#orbit-tools.expanded .hud-actions button{font-size:12px;padding:8px 3px}
+#orbit-tools.expanded .camera-controls{width:min(100%,460px);grid-template-columns:minmax(135px,1fr) minmax(150px,1fr);gap:10px}
+#orbit-tools.expanded #camera-pad{gap:8px}
+#orbit-tools.expanded .pad-modes{width:154px}
+#orbit-tools.expanded .pad-modes button{font-size:12px;padding:6px 4px}
+#orbit-tools.expanded #circlePad{width:128px;height:128px;border-width:5px}
+#orbit-tools.expanded #circlePad::before{width:92px;height:92px}
+#orbit-tools.expanded #stickKnob{width:65px;height:65px}
+#orbit-tools.expanded #stickKnob::after{inset:11px}
+#orbit-tools.expanded #camera-pad .control-label{display:block}
+#orbit-tools.expanded .slider-controls{grid-template-columns:minmax(0,1fr) 29px;grid-template-rows:auto 131px auto;column-gap:10px;row-gap:4px;padding:7px 8px}
+#orbit-tools.expanded .slider-group label,#orbit-tools.expanded .pitch-group label{font-size:11px}
+#orbit-tools.expanded .pitch-rail{height:126px;width:26px}
+#orbit-tools.expanded #pitchTrack{width:123px;height:22px}
+#orbit-tools.expanded .slider-group small{display:block}
+#orbit-tools.expanded .orbit-slider::-webkit-slider-thumb{width:23px;height:23px;margin-top:-7px}
+#orbit-tools.expanded #quickStatus{font-size:11px;max-height:none;min-height:14px}
+@media(max-width:380px){#orbit-tools.expanded .camera-controls{gap:5px;grid-template-columns:minmax(132px,1fr) minmax(138px,1fr)}#orbit-tools.expanded #circlePad{width:112px;height:112px}#orbit-tools.expanded #stickKnob{width:57px;height:57px}#orbit-tools.expanded .slider-controls{padding:7px 5px;column-gap:5px}}
 </style></head><body>
 <header><button id="prev" aria-label="Previous model">←</button><strong id="name">Porygon2</strong><button id="next" aria-label="Next model">→</button><small id="status" role="status">Loading…</small><button id="open" aria-expanded="false">Styles</button></header>
 <section id="panel" hidden aria-label="Rendering settings">
@@ -110,10 +155,11 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 </section>
 <div id="orbit-tools" role="group" aria-label="Camera inspection controls">
 <div class="hud-actions">
-<button id="quickReset" type="button" title="Reset camera">↺ Reset</button>
-<button id="quickCopy" type="button" title="Copy all camera coordinates">⎘ Copy</button>
-<button id="valuesToggle" type="button" aria-pressed="false" title="Show camera numbers">123 Values</button>
-<button id="gesturesToggle" type="button" aria-pressed="true" title="Toggle dragging and pinch gestures on the 3D canvas">Gestures On</button>
+<button id="quickReset" type="button" aria-label="Reset camera" title="Reset camera">↺</button>
+<button id="quickCopy" type="button" aria-label="Copy all camera coordinates" title="Copy all camera coordinates">⎘</button>
+<button id="valuesToggle" type="button" aria-label="Show or hide camera values" aria-pressed="false" title="Show or hide camera values">123</button>
+<button id="gesturesToggle" type="button" aria-label="Enable or disable gestures" aria-pressed="true" title="Gesture input on">✋ On</button>
+<button id="expandHUD" type="button" aria-label="Expand camera controls" aria-expanded="false" title="Expand camera controls">⤢</button>
 </div>
 <div class="camera-controls">
 <div id="camera-pad" role="group" aria-label="3DS-style camera circle pad">
@@ -314,6 +360,7 @@ function reset(){
 }
 $('reset').onclick=reset;
 $('quickReset').onclick=reset;
+$('expandHUD').onclick=()=>{const hud=$('orbit-tools'),expanded=hud.classList.toggle('expanded');$('expandHUD').setAttribute('aria-expanded',String(expanded));$('expandHUD').setAttribute('aria-label',expanded?'Compact camera controls':'Expand camera controls');$('expandHUD').title=expanded?'Compact camera controls':'Expand camera controls';$('expandHUD').textContent=expanded?'⤡':'⤢';};
 function applyCoordinates(){
  if(!model)return;
  const read=id=>$(id).value.trim()===''?NaN:Number($(id).value);
@@ -345,12 +392,12 @@ $('valuesToggle').onclick=()=>{
  showValues=!showValues;
  $('orbit-tools').classList.toggle('show-values',showValues);
  $('valuesToggle').setAttribute('aria-pressed',String(showValues));
- $('valuesToggle').textContent=showValues?'123 Hide':'123 Values';
+ $('valuesToggle').textContent=showValues?'123 ✓':'123';
 };
 $('gesturesToggle').onclick=()=>{
  gestureEnabled=!gestureEnabled;controls.enabled=gestureEnabled;
  $('gesturesToggle').setAttribute('aria-pressed',String(gestureEnabled));
- $('gesturesToggle').textContent=gestureEnabled?'Gestures On':'Gestures Off';
+ $('gesturesToggle').textContent=gestureEnabled?'✋ On':'✋ Off';$('gesturesToggle').title=gestureEnabled?'Gesture input on':'Gesture input off';
  showNotice(gestureEnabled?'Canvas gestures enabled.':'Canvas gestures disabled; sliders and pad still work.');
 };
 $('saveView').onclick=()=>{
@@ -474,8 +521,8 @@ function moveStick(ev){
  let y=(box.height/2-(ev.clientY-box.top))/(box.height*.36);
  const length=Math.hypot(x,y);if(length>1){x/=length;y/=length;}
  stickVector={x,y};
- $('stickKnob').style.setProperty('--stick-x',Math.round(x*32)+'px');
- $('stickKnob').style.setProperty('--stick-y',Math.round(-y*32)+'px');
+ $('stickKnob').style.setProperty('--stick-x',Math.round(x*($('orbit-tools').classList.contains('expanded')?32:21))+'px');
+ $('stickKnob').style.setProperty('--stick-y',Math.round(-y*($('orbit-tools').classList.contains('expanded')?32:21))+'px');
 }
 function clearStick(){
  stickActive=false;stickPointer=null;stickVector={x:0,y:0};
@@ -530,6 +577,6 @@ selectModel(0);
 addEventListener('error',e=>{status.textContent='Viewer error';console.error(e);});
 addEventListener('resize',resize);sync();
 let frameLast=performance.now();
-function frame(now=performance.now()){requestAnimationFrame(frame);const dt=Math.min(.05,Math.max(0,(now-frameLast)/1000));frameLast=now;controls.update();stepAnalog(dt);camera.rotateZ(radians(roll));renderer.setRenderTarget(target);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
+function frame(now=performance.now()){requestAnimationFrame(frame);const dt=Math.min(.05,Math.max(0,(now-frameLast)/1000));frameLast=now;controls.update();stepAnalog(dt);camera.lookAt(controls.target);camera.rotateZ(radians(roll));renderer.setRenderTarget(target);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
 frame();
 </script></body></html>
