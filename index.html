@@ -89,6 +89,45 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 #pasteJSON{width:100%;min-height:80px;resize:vertical;background:#121a28;color:#f2f7ff;border:1px solid #64728a;border-radius:7px;padding:8px;font:12px/1.4 ui-monospace,monospace}
 #viewNotice{display:block;min-height:18px;font-size:11px;color:#b9d6fc}
 @media(max-width:375px){#dockBody{height:163px}.roller.horizontal{left:54px;right:54px}.compact-modes button{font-size:10px}.mode-button .active-word{font-size:11px}}
+
+/* Matched, partially-recessed radio-style wheels: identical 88px discs under orthogonal slots. */
+.roller{border:2px solid #8292a9;overflow:visible;border-radius:7px;background:linear-gradient(115deg,#0d1726 0%,#314359 40%,#172539 100%);box-shadow:inset 0 2px 6px #060c18,0 2px 3px #0007;cursor:grab}
+.roller.is-dragging{cursor:grabbing;border-color:#c8d8ec}
+.roller .wheel-aperture{position:absolute;inset:2px;overflow:hidden;border-radius:4px;background:linear-gradient(135deg,#111c2c,#2b3f58);pointer-events:none}
+.roller .roller-surface{position:absolute;inset:auto;width:88px;height:88px;border:3px solid #1b2a3d;border-radius:50%;transform:rotate(var(--wheel-angle,0deg));background:repeating-conic-gradient(from 0deg,#273951 0deg 3deg,#7990a9 4deg 6deg,#364b65 7deg 10deg,#9fb1c4 11deg 13deg,#20334b 14deg 17deg);box-shadow:inset 0 0 0 8px #273a4d66,inset 0 0 13px #0008,0 0 4px #0a111e;mask-image:none;pointer-events:none}
+.roller .roller-surface::after{content:"";position:absolute;inset:6px;border-radius:50%;border:2px solid #a7bad06b;box-shadow:inset 0 0 7px #0008}
+.roller.horizontal,.roller.vertical{width:83px;height:25px;cursor:grab}
+.roller.horizontal{left:calc(50% - 42px);right:auto;bottom:49px;top:auto}
+.roller.vertical{width:25px;height:83px;left:8px;right:auto;top:3px}
+.roller.horizontal .roller-surface{left:calc(50% - 44px);top:-64px}
+.roller.vertical .roller-surface{left:-64px;top:calc(50% - 44px)}
+.roller.horizontal .roller-index,.roller.vertical .roller-index{position:absolute;z-index:3;width:8px;height:8px;background:#d6e8fa;border:1px solid #f3f8ff;border-radius:1px;box-shadow:0 1px 2px #0008}
+.roller.horizontal .roller-index{left:calc(50% - 4px);top:17px}
+.roller.vertical .roller-index{left:17px;top:calc(50% - 4px)}
+.roller-label{z-index:3}
+.roller.vertical .roller-label{bottom:-18px}
+.roller.horizontal .roller-label{top:-18px}
+.roller .roller-end{display:none}
+/* The zoom input is a proper finite-travel, deck-style fader, not a rotary wheel. */
+.zoom-fader{pointer-events:none;position:absolute;right:6px;top:1px;width:37px;height:111px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.zoom-fader label,.zoom-fader output{pointer-events:none;font:10px ui-monospace,Menlo,monospace;color:#dbe8fa}
+.zoom-fader .fader-rail{pointer-events:none;position:relative;flex:1;width:34px;border:2px solid #667f9e;border-radius:8px;background:linear-gradient(90deg,#25344a 0%,#455972 40%,#1d2d42 100%);box-shadow:inset 0 3px 6px #0009,0 2px 5px #0006}
+.zoom-fader .fader-rail::before{content:"";position:absolute;top:5px;bottom:5px;left:calc(50% - 2px);width:4px;border-radius:3px;background:#0b1421;box-shadow:1px 0 1px #92a5b765;pointer-events:none}
+.zoom-fader input[type=range]{pointer-events:auto;position:absolute;top:50%;left:50%;width:76px;height:32px;transform:translate(-50%,-50%) rotate(-90deg);-webkit-appearance:none;appearance:none;background:transparent;margin:0;touch-action:none;cursor:ns-resize}
+.zoom-fader input[type=range]::-webkit-slider-runnable-track{height:5px;background:transparent;border:none}
+.zoom-fader input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:32px;margin-top:-14px;border:2px solid #edf5ff;border-radius:7px;background:repeating-linear-gradient(90deg,#92a8c3 0px,#d7e7f8 4px,#99aec6 7px,#667d9c 9px);box-shadow:0 2px 6px #000a,inset 0 2px 4px #fff9}
+.zoom-fader input[type=range]::-moz-range-track{background:transparent;border:none}
+.zoom-fader input[type=range]::-moz-range-thumb{width:24px;height:32px;border:2px solid #edf5ff;border-radius:7px;background:linear-gradient(90deg,#8199b8,#d8e6f7,#8199b8)}
+.zoom-fader input[type=range]:focus-visible{outline:2px solid #bed4fc;outline-offset:3px}
+#circlePad::after{content:"";position:absolute;inset:1px;border-radius:50%;border:2px dotted #a9c5e6;transform:rotate(var(--roll-angle,0deg));pointer-events:none;opacity:.8}
+#circlePad{touch-action:none}
+#circlePad.is-twisting{border-color:#e2ecff;cursor:grabbing}
+#orbit-tools.expanded .roller.horizontal,#orbit-tools.expanded .roller.vertical{width:83px;height:25px}
+#orbit-tools.expanded .roller.vertical{width:25px;height:83px;top:16px}
+#orbit-tools.expanded .roller.horizontal{left:calc(50% - 42px);right:auto;bottom:56px}
+#orbit-tools.expanded .zoom-fader{height:145px;right:9px;top:6px}
+#orbit-tools.expanded .zoom-fader input[type=range]{width:109px}
+@media(max-width:375px){.roller.horizontal{left:calc(50% - 42px)}.zoom-fader{right:4px}}
 </style></head><body>
 <header><button id="prev" aria-label="Previous model">←</button><strong id="name">Porygon2</strong><button id="next" aria-label="Next model">→</button><small id="status" role="status">Loading…</small><button id="open" aria-expanded="false">Styles</button></header>
 <section id="panel" hidden aria-label="Rendering settings">
@@ -146,16 +185,17 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
  <button id="dockTab" type="button" aria-expanded="true" aria-controls="dockBody" aria-label="Hide camera controls" title="Roll up controls">⌄</button>
  <div id="dockBody">
   <div id="camera-pad" role="group" aria-label="3DS-style analogue circle pad">
-   <div id="circlePad" role="group" tabindex="0" aria-label="Circle pad: drag to rotate or pan; arrow keys when focused"><div id="stickKnob" aria-hidden="true"></div></div>
+   <div id="circlePad" role="group" tabindex="0" aria-label="Circle pad: drag center to move; twist its outer rim clockwise or counterclockwise to roll the camera continuously; arrow keys when focused"><div id="stickKnob" aria-hidden="true"></div></div>
   </div>
   <div id="pitchWheel" class="roller vertical left-wheel" role="slider" tabindex="0" aria-label="Pitch rotary wheel" aria-valuemin="-85" aria-valuemax="85" aria-valuenow="0">
-   <span class="roller-end start">▲</span><div class="roller-surface"></div><span class="roller-index"></span><span class="roller-end end">▼</span><span class="roller-label">PITCH <output id="pitchValue" class="camera-value">0°</output></span>
+   <span class="wheel-aperture"><span class="roller-surface"></span></span><span class="roller-index"></span><span class="roller-label">PITCH <output id="pitchValue" class="camera-value">0°</output></span>
   </div>
-  <div id="zoomWheel" class="roller vertical right-wheel" role="slider" tabindex="0" aria-label="Zoom rotary wheel" aria-valuemin="0.35" aria-valuemax="3.5" aria-valuenow="1">
-   <span class="roller-end start">▲</span><div class="roller-surface"></div><span class="roller-index"></span><span class="roller-end end">▼</span><span class="roller-label">ZOOM <output id="zoomValue" class="camera-value">1.0×</output></span>
+  <div class="zoom-fader" role="group" aria-label="Zoom fader">
+   <label for="zoomFader">ZOOM</label><div class="fader-rail"><input id="zoomFader" type="range" min="0.35" max="3.5" step="0.01" value="1" aria-label="Zoom DJ-style physical fader, up is closer"></div>
+   <output id="zoomValue" class="camera-value">1.0×</output>
   </div>
   <div id="yawWheel" class="roller horizontal bottom-wheel" role="slider" tabindex="0" aria-label="Yaw rotary wheel" aria-valuemin="-180" aria-valuemax="180" aria-valuenow="0">
-   <span class="roller-end start">◀</span><div class="roller-surface"></div><span class="roller-index"></span><span class="roller-end end">▶</span><span class="roller-label"><span id="yawLabel">YAW</span> <output id="yawValue" class="camera-value">0°</output></span>
+   <span class="wheel-aperture"><span class="roller-surface"></span></span><span class="roller-index"></span><span class="roller-label"><span id="yawLabel">YAW</span> <output id="yawValue" class="camera-value">0°</output></span>
   </div>
   <div class="compact-modes">
    <div class="pad-modes" role="group" aria-label="Circle pad action">
@@ -331,7 +371,7 @@ function applyView(value){
  if(!validView(value))return false;
  camera.position.fromArray(value.position);controls.target.fromArray(value.target);
  if(asNumber(value.fov)&&value.fov>=10&&value.fov<=100)camera.fov=value.fov;
- roll=asNumber(value.roll)?wrapAngle(value.roll):0;
+ roll=asNumber(value.roll)?value.roll:0;
  camera.updateProjectionMatrix();camera.lookAt(controls.target);controls.update();updateViewUI();
  return true;
 }
@@ -342,7 +382,7 @@ function setOrbit(yaw,pitch){
  camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(new THREE.Spherical(radius,radians(90-pitch),radians(yaw))));
  camera.lookAt(controls.target);controls.update();updateViewUI();
 }
-function setRoll(value){if(!model||!asNumber(value))return;roll=wrapAngle(value);updateViewUI();}
+function setRoll(value){if(!model||!asNumber(value))return;roll=value;updateViewUI();}
 function setDistance(distance){
  if(!model||!asNumber(distance)||distance<=.01)return false;
  const a=orbitAngles();
@@ -359,14 +399,18 @@ function updateViewUI(){
  for(const [id,value] of [['yawInput',a.yaw],['pitchInput',a.pitch],['rollInput',roll],['distanceInput',a.radius],['fovInput',camera.fov]]){
   const input=$(id);if(document.activeElement!==input)input.value=fmt(value);
  }
- for(const [id,out,value,min,max,suffix] of [['yawWheel','yawValue',shiftMode?roll:a.yaw,-180,180,'°'],['pitchWheel','pitchValue',a.pitch,-85,85,'°'],['zoomWheel','zoomValue',z,.35,3.5,'×']]){
+ for(const [id,out,value,min,max] of [['yawWheel','yawValue',shiftMode?roll:a.yaw,-180,180],['pitchWheel','pitchValue',a.pitch,-85,85]]){
   const wheel=$(id);
   wheel.setAttribute('aria-valuenow',String(+value.toFixed(3)));
-  wheel.setAttribute('aria-valuetext',value.toFixed(id==='zoomWheel'?2:1)+suffix);
+  wheel.setAttribute('aria-valuetext',value.toFixed(1)+' degrees');
   wheel.setAttribute('aria-valuemin',String(min));wheel.setAttribute('aria-valuemax',String(max));
-  wheel.style.setProperty('--ticks',Math.round(value*(id==='zoomWheel'?54:1.5))+'px');
-  $(out).textContent=value.toFixed(id==='zoomWheel'?2:1)+suffix;
+  $(out).textContent=value.toFixed(1)+'°';
  }
+ const fader=$('zoomFader');
+ if(document.activeElement!==fader)fader.value=z.toFixed(2);
+ fader.setAttribute('aria-valuetext',z.toFixed(2)+' times zoom');
+ $('zoomValue').textContent=z.toFixed(2)+'×';
+ $('circlePad').style.setProperty('--roll-angle',(THREE.MathUtils.euclideanModulo(roll,360)).toFixed(2)+'deg');
 }
 function showNotice(msg){$('viewNotice').textContent=msg;$('quickStatus').textContent=msg;}
 function resetBuiltIn(){
@@ -418,10 +462,9 @@ function adjustWheel(kind,pixels){
   if(shiftMode)setRoll(roll+pixels*.72);
   else setOrbit(a.yaw+pixels*.72,a.pitch);
  }else if(kind==='pitch')setOrbit(a.yaw,a.pitch-pixels*.53);
- else if(kind==='zoom')setDistance(THREE.MathUtils.clamp(a.radius*Math.exp(pixels*.012),baseDistance()*.35,baseDistance()*3.5));
 }
 function wheelSetup(id,kind){
- const wheel=$(id),vertical=kind!=='yaw';let active=null;
+ const wheel=$(id),vertical=kind!=='yaw';let active=null,discAngle=0;
  wheel.addEventListener('pointerdown',event=>{
   if(!model||event.button!==0)return;
   event.preventDefault();active={id:event.pointerId,point:vertical?event.clientY:event.clientX};
@@ -431,6 +474,8 @@ function wheelSetup(id,kind){
   if(!active||event.pointerId!==active.id)return;
   const point=vertical?event.clientY:event.clientX,delta=point-active.point;
   active.point=point;adjustWheel(kind,delta);
+  discAngle+=delta*2.6;
+  wheel.style.setProperty('--wheel-angle',discAngle.toFixed(2)+'deg');
  });
  const stop=()=>{active=null;wheel.classList.remove('is-dragging');};
  for(const eventName of ['pointerup','pointercancel','lostpointercapture','blur'])wheel.addEventListener(eventName,stop);
@@ -445,7 +490,7 @@ function wheelSetup(id,kind){
 }
 wheelSetup('yawWheel','yaw');
 wheelSetup('pitchWheel','pitch');
-wheelSetup('zoomWheel','zoom');
+$('zoomFader').addEventListener('input',()=>{if(model)setDistance(baseDistance()/Number($('zoomFader').value));});
 
 $('valuesToggle').onclick=()=>{
  showValues=!showValues;
@@ -560,7 +605,7 @@ function baseDistance(){
  const radius=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).length();
  return Math.max(.01,radius*1.4*aspectFit);
 }
-function zoomRatio(distance){return THREE.MathUtils.clamp(distance/baseDistance(),.35,3.5);}
+function zoomRatio(distance){return THREE.MathUtils.clamp(baseDistance()/Math.max(.01,distance),.35,3.5);}
 function syncShiftSliders(){
  // Both labels stay in the same button: the inactive layer remains muted but visible.
  for(const [id,primary,alternate] of [['padRotate','Rotate','Roll'],['padPan','Pan','Zoom']]){
@@ -625,20 +670,49 @@ function moveStick(ev){
  let y=(box.height/2-(ev.clientY-box.top))/(box.height*.36);
  const length=Math.hypot(x,y);if(length>1){x/=length;y/=length;}
  stickVector={x,y};
- $('stickKnob').style.setProperty('--stick-x',Math.round(x*($('orbit-tools').classList.contains('expanded')?23:16))+'px');
- $('stickKnob').style.setProperty('--stick-y',Math.round(-y*($('orbit-tools').classList.contains('expanded')?23:16))+'px');
+ $('stickKnob').style.setProperty('--stick-x',Math.round(x*($('orbit-tools').classList.contains('expanded')?23:12))+'px');
+ $('stickKnob').style.setProperty('--stick-y',Math.round(-y*($('orbit-tools').classList.contains('expanded')?23:12))+'px');
 }
 function clearStick(){
  stickActive=false;stickPointer=null;stickVector={x:0,y:0};latchedAxis=null;
  $('stickKnob').style.setProperty('--stick-x','0px');$('stickKnob').style.setProperty('--stick-y','0px');
 }
+/* Continuous outer-rim twist: a circular swipe changes roll independently
+ * of the selected Rotate/Pan/Roll/Zoom mode. Inner-zone drag remains a thumbstick. */
+let twistPointer=null,twistAngle=0;
+function rimAngle(ev){
+ const box=$('circlePad').getBoundingClientRect();
+ return Math.atan2(ev.clientY-(box.top+box.height/2),ev.clientX-(box.left+box.width/2));
+}
 $('circlePad').addEventListener('pointerdown',ev=>{
  if(!model||ev.button!==0)return;
- ev.preventDefault();stickActive=true;stickPointer=ev.pointerId;
- $('circlePad').setPointerCapture(ev.pointerId);moveStick(ev);stepAnalog(.065);
+ ev.preventDefault();
+ const box=$('circlePad').getBoundingClientRect();
+ const radius=Math.hypot(ev.clientX-(box.left+box.width/2),ev.clientY-(box.top+box.height/2));
+ const outer=radius/Math.min(box.width,box.height)*2>.58;
+ $('circlePad').setPointerCapture(ev.pointerId);
+ if(outer){
+  twistPointer=ev.pointerId;twistAngle=rimAngle(ev);
+  $('circlePad').classList.add('is-twisting');
+ }else{
+  stickActive=true;stickPointer=ev.pointerId;
+  moveStick(ev);stepAnalog(.065);
+ }
 });
-$('circlePad').addEventListener('pointermove',ev=>{if(stickActive&&ev.pointerId===stickPointer)moveStick(ev);});
-for(const eventName of ['pointerup','pointercancel','lostpointercapture'])$('circlePad').addEventListener(eventName,clearStick);
+$('circlePad').addEventListener('pointermove',ev=>{
+ if(twistPointer===ev.pointerId){
+  const next=rimAngle(ev);let delta=next-twistAngle;
+  if(delta>Math.PI)delta-=2*Math.PI;
+  if(delta< -Math.PI)delta+=2*Math.PI;
+  twistAngle=next;
+  setRoll(roll+degrees(delta));
+ }else if(stickActive&&ev.pointerId===stickPointer)moveStick(ev);
+});
+function endPadPointer(ev){
+ if(twistPointer===ev.pointerId){twistPointer=null;$('circlePad').classList.remove('is-twisting');}
+ if(stickPointer===ev.pointerId)clearStick();
+}
+for(const eventName of ['pointerup','pointercancel','lostpointercapture'])$('circlePad').addEventListener(eventName,endPadPointer);
 $('circlePad').addEventListener('keydown',ev=>{
  if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(ev.key))return;
  ev.preventDefault();ev.stopPropagation();
@@ -646,7 +720,7 @@ $('circlePad').addEventListener('keydown',ev=>{
 });
 $('circlePad').addEventListener('keyup',ev=>{if(stickKeys.has(ev.key)){ev.preventDefault();ev.stopPropagation();stickKeys.delete(ev.key);}});
 $('circlePad').addEventListener('blur',()=>{stickKeys.clear();clearStick();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){stickKeys.clear();clearStick();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stickKeys.clear();clearStick();twistPointer=null;$('circlePad').classList.remove('is-twisting');}});
 setPadMode('rotate');syncShiftSliders();
 controls.addEventListener('change',updateViewUI);
 const parts={'bill_1':1,'body_2':0,'eye_1_3':2,'eye_1_4':2,'foot_far_5':1,'foot_near_6':1,'eye_1_7':2,'eye_1_8':2,'head_9':0,'neck_10':0,'eye_1_11':3,'eye_1_12':3,'tail_13':1};
@@ -681,6 +755,6 @@ selectModel(0);
 addEventListener('error',e=>{status.textContent='Viewer error';console.error(e);});
 addEventListener('resize',resize);sync();
 let frameLast=performance.now();
-function frame(now=performance.now()){requestAnimationFrame(frame);const dt=Math.min(.05,Math.max(0,(now-frameLast)/1000));frameLast=now;controls.update();stepAnalog(dt);camera.lookAt(controls.target);camera.rotateZ(radians(roll));renderer.setRenderTarget(target);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
+function frame(now=performance.now()){requestAnimationFrame(frame);const dt=Math.min(.05,Math.max(0,(now-frameLast)/1000));frameLast=now;controls.update();stepAnalog(dt);camera.lookAt(controls.target);camera.rotateZ(radians(THREE.MathUtils.euclideanModulo(roll,360)));renderer.setRenderTarget(target);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
 frame();
 </script></body></html>
