@@ -6,27 +6,29 @@ GitHub Pages viewer at `/porygon2/`. Serve over HTTPS; opening HTML directly fro
 Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **Native** (pixel ratio capped at 2). Six styles: Flat, Cel shaded, Pixel, Watercolour, Ink / Sketch, Monochrome. Six palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype. Outline modes: Off, Solid, Reactive, Ink; render resolutions: 80p, 160p, 240p, Native.
 
 ## Camera and controls
-The header **← / →** buttons (or keyboard arrows outside controls) switch character models; the arrows never rotate the camera.
+The header **← / →** arrows switch character models (Porygon2, Chief, and future additions). They never adjust the camera.
 
-The mobile camera controls are now a **collapsible, edge-aligned bottom dock** inspired by the user-supplied layout: the yaw slider runs horizontally above the button row, the pitch slider is vertical on the right edge, and a small 3DS-style analogue pad sits on the left. A narrow **⌄ hide / ⌃ show tab** above the dock rolls the entire control cluster up to leave only the tab on screen. The dock is open by default, but numerical values stay hidden unless enabled.
+### Ace Attorney-inspired roller layout
+The mobile viewer has a narrow, collapsible inspection dock inspired by the handheld game's object inspection interface:
+- **Bottom horizontal knurled wheel — Yaw:** drag left/right to turn the view around the character. With **Shift** held, this same wheel becomes **Roll**, banking the camera around its viewing axis.
+- **Left vertical knurled wheel — Pitch:** drag up/down to tilt the camera. This wheel always remains Pitch, even with Shift.
+- **Right vertical knurled wheel — Zoom:** drag up/down to move the camera closer or farther. This wheel always remains Zoom.
+- **Small 3DS-style circle pad in the middle:** drag or press keyboard arrow keys when focused. Its action depends on the current mode (Rotate, Pan, Roll, or Zoom). Pan translates the camera and target together without altering the model geometry.
+- **Shift mode selector:** two layered buttons each display both labels. In normal mode, **Rotate** and **Pan** are bright and **Roll** and **Zoom** remain dimmed but visible. Shift reverses the bright/dim treatment and changes the circle pad actions to Roll and Zoom. The horizontal wheel switches to Roll, while the two vertical Pitch/Zoom wheels stay dedicated.
+- **Reset** is always available on the bottom button row. The **••• menu** keeps Copy camera JSON, Values, canvas Gestures, single-axis Pad Lock, and Expand controls.
+- **⌄ Hide / ⌃ Show** folds the entire bottom dock away to just its small tab. This is separate from the **••• menu**, which only expands or collapses the extra actions.
 
-**Entire-viewer gesture area:** The 3D canvas fills the page; when Gestures are On, touching unused space rotates the model and pinching the canvas zooms the *camera*, not the Safari webpage. Browser page pinch-zoom, double-tap zoom and overscroll are suppressed at the document level, including while Gestures are Off. The HUD remains fixed in place; interactive dock controls and the scrollable Styles panel are exempt from canvas gesture handling. Safari and iOS accessibility zoom can still override webpage restrictions.
+The knurled drums use *relative drag*, not linear slider positions. The textured track moves beneath a fixed central indicator. Keyboard arrows on a focused wheel provide discrete adjustments. Numerical readouts are hidden by default; choose **••• → Show values** to display them.
 
-The lower button row is **Rotate · Pan · Shift · Reset · •••**. **Shift** remaps the horizontal slider from **Yaw** to **Roll** and the vertical slider from **Pitch** to **Zoom/Distance**; toggle it off to return to Yaw/Pitch. **Reset** is directly accessible in the row. **•••** contains Copy, Values, Gestures, Lock axis, and Expand. Lock constrains circle-pad movement to the dominant horizontal or vertical axis for precise one-axis moves, resetting when the thumb is released. **Expand** enlarges control targets and shows the dedicated roll slider.
+### Touch and page navigation
+The scene canvas fills the page. When Gestures are enabled, dragging empty canvas space rotates the camera, pinching zooms the **3D camera**, and two-finger dragging pans. Turning Gestures Off disables canvas manipulation but leaves the roller wheels and circle pad available.
 
-The camera HUD has:
-- **3DS-style analogue circle pad** with a draggable thumb. In **Rotate** mode, moving the pad orbits the selected model (yaw and pitch). In **Pan** mode, it translates the camera and orbit target together, moving the model's image without moving its geometry. Keyboard arrows work when the circle pad has focus.
-- **Yaw** styled as a horizontal volume slider; **Pitch** as a vertical volume slider. Their directions are independent.
-- **Roll** as a third slider: banks the camera around its viewing axis without rotating or modifying the model's mesh.
-- **Reset (bottom-row button)** restores this model's saved camera preset, or the automatic built-in view if none is saved.
-- **⎘ Copy (••• menu)** copies the full camera preset JSON without opening settings.
-- **123 Values (••• menu toggle)** hides camera numbers by default, and shows/hides the HUD readouts on demand.
-- **✋ On/Off (••• menu)** enables/disables orbit, pan, and zoom gestures directly on the 3D canvas. The HUD remains functional while gestures are off.
+The HTML body is fixed, page scrolling and rubber-band overscroll are suppressed, and native pinch/double-tap **webpage** zoom is blocked where Safari permits. The **Styles** panel itself remains scrollable for its settings. Browser chrome and iOS accessibility zoom are outside the website's control.
 
 ## Coordinate editor, copy and paste
 Open **Styles → Camera coordinates & presets**. All camera XYZ, orbit-target XYZ, yaw, pitch, roll, distance, and FOV can be entered manually. Enter a value and commit the field to update the scene. A live readout shows the derived angles, distance and FOV.
 
-**Copy all** exports a versioned, model-specific preset containing position and target arrays, yaw, pitch, roll, distance, and FOV. **Copy selected** exports a useful subset; choose Camera XYZ, Target XYZ, Yaw/Pitch/Roll, Distance/FOV, or individual coordinates in the dropdown. The always-visible **⎘ Copy** is an additional shortcut for all values.
+**Copy all** exports a versioned, model-specific preset containing position and target arrays, yaw, pitch, roll, distance, and FOV. **Copy selected** exports a useful subset; choose Camera XYZ, Target XYZ, Yaw/Pitch/Roll, Distance/FOV, or individual coordinates in the dropdown. The **••• → Copy camera JSON** action is an additional shortcut for all values.
 
 **Paste clipboard** attempts a clipboard read (which may require Safari permission); alternatively paste/type JSON into the text box. **Apply JSON** restores either a complete preset or partial values. Examples:
 
