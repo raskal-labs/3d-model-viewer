@@ -41,6 +41,22 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 .orbit-slider:focus-visible{outline:2px solid #d1e1ff;outline-offset:7px}
 #orbit-tools:not(.show-values) .camera-value{display:none}
 #quickStatus{font-size:11px;color:#d1dff6;max-width:min(95vw,460px);min-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+
+/* Detailed coordinates are collapsed under Styles until explicitly requested. */
+#viewPanel{border-top:1px solid #516075;margin-top:13px;padding-top:11px}
+#viewPanel summary{font-weight:600;cursor:pointer;margin-bottom:10px}
+#viewPanel h4{font-size:12px;margin:13px 0 6px}
+.view-info{font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-line;padding:7px 9px;background:#121a28;border-radius:7px;color:#d7e8ff}
+.coord-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.coord-grid label{display:block;font-size:11px;color:#d5e1f2;margin:0}
+.coord-grid input{display:block;width:100%;min-width:0;padding:8px 4px;margin-top:4px;background:#121a28;color:white;border:1px solid #64728a;border-radius:6px;font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.coord-grid h4{grid-column:1/-1;margin:9px 0 0}
+.view-buttons{display:flex;flex-wrap:wrap;gap:6px;margin:11px 0}
+.view-buttons button{flex:1;min-width:94px;font-size:12px}
+#copyField{width:100%;min-width:100%;max-width:100%}
+#pasteJSON{width:100%;min-height:80px;resize:vertical;background:#121a28;color:#f2f7ff;border:1px solid #64728a;border-radius:7px;padding:8px;font:12px/1.4 ui-monospace,monospace}
+#viewNotice{display:block;min-height:18px;font-size:11px;color:#b9d6fc}
+@media(max-width:380px){.camera-controls{gap:5px;grid-template-columns:minmax(132px,1fr) minmax(138px,1fr)}#circlePad{width:112px;height:112px}#stickKnob{width:57px;height:57px}.hud-actions button{font-size:11px;padding:7px 2px}header{gap:7px}header button{padding:7px}.slider-controls{padding:7px 5px;column-gap:5px}}
 </style></head><body>
 <header><button id="prev" aria-label="Previous model">←</button><strong id="name">Porygon2</strong><button id="next" aria-label="Next model">→</button><small id="status" role="status">Loading…</small><button id="open" aria-expanded="false">Styles</button></header>
 <section id="panel" hidden aria-label="Rendering settings">
