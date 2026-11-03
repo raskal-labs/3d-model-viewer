@@ -5,137 +5,96 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 #panel{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 58px);right:12px;width:min(340px,calc(100vw - 24px));max-height:calc(100dvh - 85px);overflow:auto;padding:16px;background:#202635f5;border:1px solid #536075;border-radius:14px;box-shadow:0 12px 30px #0008}#panel[hidden]{display:none}label{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 12px}select{min-width:145px;max-width:170px}input[type=range]{width:130px;accent-color:#8a9cfa}#swatches{display:flex;gap:3px;margin:0 0 14px}#swatches span{height:22px;flex:1;border:1px solid #ffffff30}#panel p{color:#bbc6d7;font-size:12px;line-height:1.5}#help{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);left:12px;right:12px;text-align:center;font-size:12px;color:#bfc9d8;pointer-events:none}
 
 
-/* Camera inspection HUD: analogous circle pad and volume-slider tracks. */
-#orbit-tools{position:absolute;z-index:2;bottom:calc(env(safe-area-inset-bottom) + 37px);left:10px;right:10px;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:8px}
-#orbit-tools>*{pointer-events:auto}
-.hud-actions{display:flex;justify-content:center;gap:5px;background:#171d2bdc;border:1px solid #43516a;border-radius:12px;padding:5px;backdrop-filter:blur(7px);width:min(100%,430px)}
-.hud-actions button{font-size:12px;flex:1;min-width:0;padding:8px 3px;white-space:nowrap}
-.hud-actions button[aria-pressed="true"]{border-color:#adc2f4;background:#3c5375}
-.camera-controls{display:grid;grid-template-columns:minmax(135px,1fr) minmax(150px,1fr);align-items:center;gap:10px;width:min(100%,460px)}
-#camera-pad{display:flex;align-items:center;flex-direction:column;gap:8px;min-width:0}
-.pad-modes{display:flex;justify-content:center;gap:4px;width:154px;max-width:100%}
-.pad-modes button{min-width:0;flex:1;padding:6px 4px;font-size:12px;background:#253146}
-.pad-modes button[aria-pressed="true"]{background:#536c98;border-color:#c0d2fb}
-#circlePad{width:128px;height:128px;border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab;position:relative;display:grid;place-items:center;background:radial-gradient(circle at 37% 29%,#526783 0%,#33445e 48%,#1b2639 76%);border:5px solid #667e9f;box-shadow:inset 0 0 0 4px #172238,inset 0 0 0 7px #415572,0 4px 10px #0007}
-#circlePad:active{cursor:grabbing}#circlePad:focus-visible{outline:2px solid #d1e1ff;outline-offset:3px}
-#circlePad::before{content:"";width:92px;height:92px;border-radius:50%;border:1px solid #6b82a2;box-shadow:inset 0 2px 8px #0006;position:absolute;pointer-events:none}
-#stickKnob{width:65px;height:65px;border-radius:50%;pointer-events:none;position:relative;transform:translate(var(--stick-x,0px),var(--stick-y,0px));background:radial-gradient(circle at 37% 28%,#7a90b0,#526786 63%,#354660 100%);border:2px solid #91a6c2;box-shadow:0 3px 8px #0008,inset 0 2px 4px #b9c9e033}
-#stickKnob::after{content:"";position:absolute;inset:11px;border-radius:50%;border:1px solid #99adca6b}
-.control-label{color:#d8e2f4;text-align:center;font-size:11px;line-height:1.25}
-.slider-controls{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 29px;grid-template-rows:auto 131px auto;column-gap:10px;row-gap:4px;padding:7px 8px;background:#171d2bdc;border:1px solid #43516a;border-radius:13px;backdrop-filter:blur(7px)}
-.slider-group{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px}
-.slider-group label{display:block;margin:0;color:#dbe7fa;font-size:11px}
-.slider-group output{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:#c7d9fc}
-#yawTrack{width:100%}
-.pitch-group{grid-column:2;grid-row:1/3;display:flex;align-items:center;flex-direction:column}
-.pitch-group label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;margin:0 0 4px}
-.pitch-rail{height:126px;width:26px;position:relative}
-#pitchTrack{position:absolute;width:123px;height:22px;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-90deg)}
-.roll-group{grid-column:1/-1;grid-row:3;display:flex;flex-direction:row;align-items:center;gap:7px}
-.roll-group label{min-width:33px}#rollTrack{width:100%}
-.orbit-slider{appearance:none;-webkit-appearance:none;background:transparent;margin:5px 0;touch-action:none;cursor:pointer}
-.orbit-slider::-webkit-slider-runnable-track{height:11px;border-radius:10px;background:linear-gradient(180deg,#121c2e 0%,#283950 45%,#172335 100%);border:1px solid #61738b;box-shadow:inset 0 2px 3px #0006}
-.orbit-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:23px;height:23px;margin-top:-7px;border-radius:8px;background:linear-gradient(90deg,#94aacd,#e0e9f8 48%,#8b9fbd);border:2px solid #e1ebff;box-shadow:0 2px 4px #0009}
-.orbit-slider::-moz-range-track{height:11px;border-radius:10px;background:#26364b;border:1px solid #65768c}
-.orbit-slider::-moz-range-thumb{width:21px;height:21px;border-radius:8px;background:#b7c8e2;border:2px solid #e1ebff}
-.orbit-slider:focus-visible{outline:2px solid #d1e1ff;outline-offset:7px}
-#orbit-tools:not(.show-values) .camera-value{display:none}
-#quickStatus{font-size:11px;color:#d1dff6;max-width:min(95vw,460px);min-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 
-/* Detailed coordinates are collapsed under Styles until explicitly requested. */
+/* Character inspection dock: foreground only where a control is needed. */
+#orbit-tools{position:absolute;z-index:4;bottom:calc(env(safe-area-inset-bottom) + 10px);left:8px;right:8px;display:flex;flex-direction:column;align-items:center;pointer-events:none}
+#dockTab{pointer-events:auto;position:relative;z-index:2;min-height:24px;min-width:72px;padding:1px 14px 2px;border:1px solid #8295b5;border-bottom:0;border-radius:13px 13px 0 0;background:#28364acc;color:#dbe8ff;font-size:17px;line-height:19px;box-shadow:0 -3px 8px #0004;backdrop-filter:blur(6px)}
+#dockTab:focus-visible{outline:2px solid #bbd0fc}
+#dockBody{pointer-events:auto;position:relative;width:min(100%,430px);height:154px;flex-shrink:0;border-radius:13px 13px 10px 10px;background:linear-gradient(0deg,#263348ea 0 41px,transparent 42px);border:1px solid transparent}
+#dockBody[hidden]{display:none}
+#orbit-tools.is-folded #dockTab{border-bottom:1px solid #8295b5;border-radius:12px;min-height:29px;min-width:92px}
+#camera-pad{position:absolute;bottom:52px;left:5px;width:82px;height:82px;display:flex;align-items:center;justify-content:center}
+#circlePad{position:relative;width:76px;height:76px;display:grid;place-items:center;cursor:grab;border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;background:radial-gradient(circle at 35% 27%,#5f7592,#33445d 58%,#1d2b41);border:3px solid #748aaa;box-shadow:inset 0 0 0 4px #1c2940,0 3px 8px #0008}
+#circlePad:active{cursor:grabbing}
+#circlePad:focus-visible{outline:2px solid #d3e3ff;outline-offset:3px}
+#circlePad::before{content:"";position:absolute;width:57px;height:57px;border-radius:50%;border:1px solid #8296b2;box-shadow:inset 0 2px 8px #0006;pointer-events:none}
+#stickKnob{width:36px;height:36px;border-radius:50%;pointer-events:none;position:relative;transform:translate(var(--stick-x,0px),var(--stick-y,0px));background:radial-gradient(circle at 37% 27%,#8da4c3,#536984 70%,#384860);border:2px solid #afc0da;box-shadow:0 3px 8px #0007}
+#stickKnob::after{content:"";position:absolute;inset:7px;border-radius:50%;border:1px solid #a6b9d065}
+.camera-controls{display:contents}
+.slider-controls{display:contents}
+.slider-group{position:absolute;min-width:0}
+.slider-group label,.pitch-group label{font-size:10px;line-height:1.1;color:#d4e2fb}
+.slider-group output,.pitch-group output{font:10px ui-monospace,Menlo,monospace;color:#e3efff}
+.slider-group[style]{position:absolute!important;left:95px;right:54px;bottom:55px;height:37px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px}
+.slider-group[style] label{margin:0 0 2px 2px}
+#yawTrack{width:100%;height:23px}
+.pitch-group{position:absolute;right:6px;top:0;bottom:52px;width:39px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px}
+.pitch-group label{font-size:10px;margin-bottom:0;writing-mode:horizontal-tb;transform:none}
+.pitch-rail{height:100%;width:30px;position:relative}
+#pitchTrack{position:absolute;top:50%;left:50%;width:91px;height:24px;transform:translate(-50%,-50%) rotate(-90deg)}
+.orbit-slider{appearance:none;-webkit-appearance:none;margin:0;background:transparent;touch-action:none;cursor:pointer}
+.orbit-slider::-webkit-slider-runnable-track{height:10px;background:linear-gradient(180deg,#122033,#34465f,#182537);border:1px solid #788fae;border-radius:9px;box-shadow:inset 0 2px 3px #0006}
+.orbit-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:27px;height:27px;margin-top:-9px;border-radius:9px;border:2px solid #d9e7ff;background:linear-gradient(90deg,#92a9c9,#e0eaff 49%,#90a8cb);box-shadow:0 2px 5px #0009}
+.orbit-slider::-moz-range-track{height:10px;background:#354660;border:1px solid #788fae;border-radius:9px}
+.orbit-slider::-moz-range-thumb{width:26px;height:26px;background:#c0d3f2;border:2px solid #e3eeff;border-radius:9px}
+.orbit-slider:focus-visible{outline:2px solid #c5d7fa;outline-offset:5px}
+.roll-group{display:none}
+.compact-modes{position:absolute;left:0;right:0;bottom:0;height:43px;display:flex;justify-content:center;align-items:center;gap:4px;padding:4px 6px;background:#263348f7;border:1px solid #586d8a;border-radius:9px}
+.pad-modes{display:contents}
+.compact-modes button{flex:1;min-width:0;height:33px;padding:3px 5px;white-space:nowrap;font-size:12px;border-radius:7px}
+.pad-modes button[aria-pressed="true"],#shiftToggle[aria-pressed="true"]{background:#526d97;border-color:#b9cdf1;color:#fff}
+.tools-menu{position:relative;z-index:12;flex:0 0 36px}
+.tools-menu summary{display:grid;place-items:center;height:33px;list-style:none;cursor:pointer;user-select:none;font-size:17px;background:#34435e;border:1px solid #7a8da9;border-radius:7px}
+.tools-menu summary::-webkit-details-marker{display:none}
+.tools-menu summary:focus-visible{outline:2px solid #d1e3ff}
+.tools-popup{position:absolute;bottom:calc(100% + 7px);right:-4px;width:190px;max-width:calc(100vw - 24px);padding:7px;display:flex;flex-direction:column;gap:5px;border:1px solid #7185a3;border-radius:12px;background:#253247fa;backdrop-filter:blur(12px);box-shadow:0 12px 28px #000a}
+.tools-popup button{flex:none;width:100%;height:auto;min-height:36px;text-align:left;font-size:12px;padding:8px}
+#quickStatus{display:none;position:absolute;bottom:100%;right:0;max-width:100%;background:#28384bdc;border-radius:7px;padding:4px 8px;font-size:11px;color:#d7e4fb;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#quickStatus:not(:empty){display:block}
+#orbit-tools:not(.show-values) .camera-value{display:none}
+#help{display:none}
+/* The expanded inspector only enlarges the input targets, not the main viewport. */
+#orbit-tools.expanded #dockBody{height:220px;width:min(100%,460px)}
+#orbit-tools.expanded #camera-pad{width:120px;height:120px;bottom:52px;left:10px}
+#orbit-tools.expanded #circlePad{width:112px;height:112px}
+#orbit-tools.expanded #circlePad::before{width:83px;height:83px}
+#orbit-tools.expanded #stickKnob{width:52px;height:52px}
+#orbit-tools.expanded #stickKnob::after{inset:11px}
+#orbit-tools.expanded .slider-group[style]{left:145px;right:69px;bottom:62px}
+#orbit-tools.expanded .pitch-group{right:14px;bottom:54px}
+#orbit-tools.expanded #pitchTrack{width:147px}
+#orbit-tools.expanded .roll-group{display:flex;left:145px;right:65px;bottom:120px;height:28px;align-items:center;gap:7px}
+#orbit-tools.expanded .roll-group label{min-width:33px}
+#orbit-tools.expanded #rollTrack{flex:1;min-width:0;width:100%}
+#orbit-tools.is-folded #quickStatus{display:none}
 #viewPanel{border-top:1px solid #516075;margin-top:13px;padding-top:11px}
 #viewPanel summary{font-weight:600;cursor:pointer;margin-bottom:10px}
 #viewPanel h4{font-size:12px;margin:13px 0 6px}
 .view-info{font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-line;padding:7px 9px;background:#121a28;border-radius:7px;color:#d7e8ff}
 .coord-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .coord-grid label{display:block;font-size:11px;color:#d5e1f2;margin:0}
-.coord-grid input{display:block;width:100%;min-width:0;padding:8px 4px;margin-top:4px;background:#121a28;color:white;border:1px solid #64728a;border-radius:6px;font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.coord-grid input{display:block;width:100%;min-width:0;padding:8px 4px;margin-top:4px;background:#121a28;color:white;border:1px solid #64728a;border-radius:6px;font:12px ui-monospace,Menlo,monospace}
 .coord-grid h4{grid-column:1/-1;margin:9px 0 0}
 .view-buttons{display:flex;flex-wrap:wrap;gap:6px;margin:11px 0}
 .view-buttons button{flex:1;min-width:94px;font-size:12px}
 #copyField{width:100%;min-width:100%;max-width:100%}
 #pasteJSON{width:100%;min-height:80px;resize:vertical;background:#121a28;color:#f2f7ff;border:1px solid #64728a;border-radius:7px;padding:8px;font:12px/1.4 ui-monospace,monospace}
 #viewNotice{display:block;min-height:18px;font-size:11px;color:#b9d6fc}
-@media(max-width:380px){.camera-controls{gap:5px;grid-template-columns:minmax(132px,1fr) minmax(138px,1fr)}#circlePad{width:112px;height:112px}#stickKnob{width:57px;height:57px}.hud-actions button{font-size:11px;padding:7px 2px}header{gap:7px}header button{padding:7px}.slider-controls{padding:7px 5px;column-gap:5px}}
-
-/* Compact inspection mode is the default, sized to leave the model unobstructed. */
-#orbit-tools{bottom:calc(env(safe-area-inset-bottom) + 14px);gap:3px}
-.hud-actions{width:min(100%,356px);padding:3px;gap:3px;border-radius:9px}
-.hud-actions button{font-size:11px;padding:5px 2px;min-height:28px;border-radius:6px}
-.camera-controls{grid-template-columns:minmax(100px,1fr) minmax(130px,1.3fr);gap:5px;width:min(100%,350px)}
-#camera-pad{gap:3px}
-.pad-modes{width:110px;gap:3px}
-.pad-modes button{padding:3px 2px;font-size:10px;min-height:23px}
-#circlePad{width:83px;height:83px;border-width:3px;box-shadow:inset 0 0 0 3px #172238,inset 0 0 0 5px #415572,0 3px 7px #0007}
-#circlePad::before{width:61px;height:61px}
-#stickKnob{width:39px;height:39px}
-#stickKnob::after{inset:7px}
-#camera-pad .control-label{display:none}
-.slider-controls{grid-template-columns:minmax(0,1fr) 27px;grid-template-rows:auto 74px auto;column-gap:5px;row-gap:1px;padding:4px 5px;border-radius:10px}
-.slider-group{gap:2px}
-.slider-group label,.pitch-group label{font-size:10px}
-.slider-group output{font-size:10px}
-.slider-group small{display:none}
-.pitch-rail{height:79px;width:24px}
-#pitchTrack{width:77px;height:23px}
-.orbit-slider::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px}
-.roll-group{gap:5px}
-#quickStatus{font-size:10px;min-height:0;max-height:15px}
-#help{display:none}
-#orbit-tools.expanded{bottom:calc(env(safe-area-inset-bottom) + 37px);gap:8px}
-#orbit-tools.expanded .hud-actions{width:min(100%,430px);padding:5px}
-#orbit-tools.expanded .hud-actions button{font-size:12px;padding:8px 3px}
-#orbit-tools.expanded .camera-controls{width:min(100%,460px);grid-template-columns:minmax(135px,1fr) minmax(150px,1fr);gap:10px}
-#orbit-tools.expanded #camera-pad{gap:8px}
-#orbit-tools.expanded .pad-modes{width:154px}
-#orbit-tools.expanded .pad-modes button{font-size:12px;padding:6px 4px}
-#orbit-tools.expanded #circlePad{width:128px;height:128px;border-width:5px}
-#orbit-tools.expanded #circlePad::before{width:92px;height:92px}
-#orbit-tools.expanded #stickKnob{width:65px;height:65px}
-#orbit-tools.expanded #stickKnob::after{inset:11px}
-#orbit-tools.expanded #camera-pad .control-label{display:block}
-#orbit-tools.expanded .slider-controls{grid-template-columns:minmax(0,1fr) 29px;grid-template-rows:auto 131px auto;column-gap:10px;row-gap:4px;padding:7px 8px}
-#orbit-tools.expanded .slider-group label,#orbit-tools.expanded .pitch-group label{font-size:11px}
-#orbit-tools.expanded .pitch-rail{height:126px;width:26px}
-#orbit-tools.expanded #pitchTrack{width:123px;height:22px}
-#orbit-tools.expanded .slider-group small{display:block}
-#orbit-tools.expanded .orbit-slider::-webkit-slider-thumb{width:23px;height:23px;margin-top:-7px}
-#orbit-tools.expanded #quickStatus{font-size:11px;max-height:none;min-height:14px}
-@media(max-width:380px){#orbit-tools.expanded .camera-controls{gap:5px;grid-template-columns:minmax(132px,1fr) minmax(138px,1fr)}#orbit-tools.expanded #circlePad{width:112px;height:112px}#orbit-tools.expanded #stickKnob{width:57px;height:57px}#orbit-tools.expanded .slider-controls{padding:7px 5px;column-gap:5px}}
-
-/* Handheld-sized default: one 3DS circle pad, two shiftable tracks and one mode row. */
-#orbit-tools{bottom:calc(env(safe-area-inset-bottom) + 12px);gap:2px;z-index:4}
-.compact-modes{pointer-events:auto;position:relative;display:flex;align-items:center;justify-content:center;gap:4px;width:min(100%,285px);background:#171d2be8;border:1px solid #43516a;border-radius:9px;padding:3px}
-.compact-modes button{font-size:10px;min-height:26px;padding:4px 5px;white-space:nowrap;border-radius:6px}
-.compact-modes .pad-modes{display:flex;width:auto;gap:3px;flex:2}
-.compact-modes .pad-modes button{flex:1;padding:4px 3px}
-.compact-modes button[aria-pressed="true"]{background:#526b94;border-color:#c1d3f8;color:white}
-#shiftToggle,#axisLock{flex:1;min-width:0}
-.tools-menu{flex:0 0 27px;position:relative;z-index:9}
-.tools-menu summary{list-style:none;cursor:pointer;display:grid;place-items:center;height:26px;border:1px solid #64758f;border-radius:6px;background:#293750;font-size:18px;line-height:1;user-select:none}
-.tools-menu summary::-webkit-details-marker{display:none}
-.tools-popup{position:absolute;bottom:calc(100% + 7px);right:0;width:178px;display:flex;flex-direction:column;gap:4px;padding:7px;border-radius:10px;background:#222c3cf8;border:1px solid #61738d;box-shadow:0 8px 25px #0008}
-.tools-popup button{width:100%;text-align:left;font-size:12px;padding:7px 9px}
-#camera-pad .pad-modes{display:none}
-#camera-pad{gap:0}
-#circlePad{width:78px;height:78px}
-#circlePad::before{width:57px;height:57px}
-#stickKnob{width:36px;height:36px}
-.camera-controls{width:min(100%,277px);grid-template-columns:85px minmax(0,1fr);gap:8px}
-.slider-controls{grid-template-rows:auto 64px;padding:4px 5px;gap:1px}
-.pitch-rail{height:68px}
-#pitchTrack{width:66px}
-.roll-group{display:none}
-#orbit-tools.expanded .camera-controls{width:min(100%,410px);grid-template-columns:125px minmax(0,1fr);gap:10px}
-#orbit-tools.expanded #circlePad{width:112px;height:112px}
-#orbit-tools.expanded #circlePad::before{width:80px;height:80px}
-#orbit-tools.expanded #stickKnob{width:54px;height:54px}
-#orbit-tools.expanded .slider-controls{grid-template-rows:auto 110px auto}
-#orbit-tools.expanded .pitch-rail{height:106px}
-#orbit-tools.expanded #pitchTrack{width:103px}
-#orbit-tools.expanded .roll-group{display:flex}
-#quickStatus:empty{display:none}
-@media(max-width:380px){.camera-controls{width:min(100%,265px);grid-template-columns:81px minmax(0,1fr);gap:6px}#orbit-tools.expanded .camera-controls{grid-template-columns:115px minmax(0,1fr)}}
+@media(max-width:390px){
+ #dockBody{height:146px}
+ #camera-pad{width:75px;height:75px;bottom:52px}
+ #circlePad{width:68px;height:68px}
+ #circlePad::before{width:49px;height:49px}
+ #stickKnob{width:33px;height:33px}
+ .slider-group[style]{left:82px;right:49px}
+ .pitch-group{right:4px;bottom:49px}
+ .compact-modes button{font-size:11px}
+ .tools-menu{flex-basis:32px}
+ #orbit-tools.expanded #dockBody{height:207px}
+ #orbit-tools.expanded .slider-group[style]{left:134px;right:61px}
+ #orbit-tools.expanded .roll-group{left:134px;right:61px}
+}
+@media(prefers-reduced-motion:reduce){#dockTab{scroll-behavior:auto}}
 </style></head><body>
 <header><button id="prev" aria-label="Previous model">←</button><strong id="name">Porygon2</strong><button id="next" aria-label="Next model">→</button><small id="status" role="status">Loading…</small><button id="open" aria-expanded="false">Styles</button></header>
 <section id="panel" hidden aria-label="Rendering settings">
@@ -187,40 +146,38 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 <button id="reset">Reset camera</button> <button id="defaults">Defaults</button>
 <p>Styles apply to every model; Original preserves Chief’s texture and helmet colours. Left/right switches models. The circle pad rotates or pans; horizontal/vertical sliders adjust yaw and pitch, and Roll banks the camera. Numbers and canvas gestures can be toggled.</p>
 </section>
-<div id="orbit-tools" role="group" aria-label="Compact camera inspection controls">
-<div class="compact-modes">
- <div class="pad-modes" role="group" aria-label="Circle pad mode"><button id="padRotate" type="button" aria-pressed="true">Rotate</button><button id="padPan" type="button" aria-pressed="false">Pan</button></div>
- <button id="shiftToggle" type="button" aria-pressed="false" aria-label="Shift sliders to roll and zoom" title="Shift sliders to Roll / Zoom">⇧ Shift</button>
- <button id="axisLock" type="button" aria-pressed="false" aria-label="Lock circle pad to a single axis" title="Lock circle pad to dominant axis">⌖ Lock</button>
- <details id="toolsMenu" class="tools-menu">
-  <summary aria-label="Camera tools menu" title="Camera tools">•••</summary>
-  <div class="tools-popup" role="group" aria-label="Camera tools">
-   <button id="quickReset" type="button">↺ Reset view</button>
-   <button id="quickCopy" type="button">⎘ Copy camera JSON</button>
-   <button id="valuesToggle" type="button" aria-pressed="false">123 Show values</button>
-   <button id="gesturesToggle" type="button" aria-pressed="true">✋ Gestures On</button>
-   <button id="expandHUD" type="button" aria-expanded="false">⤢ Expand controls</button>
+
+<div id="orbit-tools" role="group" aria-label="Collapsible camera inspection dock">
+ <button id="dockTab" type="button" aria-expanded="true" aria-controls="dockBody" aria-label="Hide camera controls" title="Roll up camera controls">⌄</button>
+ <div id="dockBody">
+  <div class="camera-controls">
+   <div id="camera-pad" role="group" aria-label="3DS-inspired circle pad"><div id="circlePad" role="group" tabindex="0" aria-label="Analogue circle pad: drag to rotate or pan; arrow keys when focused"><div id="stickKnob" aria-hidden="true"></div></div></div>
+   <div class="slider-controls">
+    <div class="slider-group" style="grid-column:1;grid-row:1/3">
+     <label for="yawTrack"><span id="yawLabel">YAW ↔</span> <output id="yawValue" class="camera-value">0°</output></label>
+     <input type="range" class="orbit-slider" id="yawTrack" min="-180" max="180" value="0" step="0.5" aria-label="Yaw (horizontal)">
+    </div>
+    <div class="pitch-group">
+     <label id="pitchLabel" for="pitchTrack">PITCH ↕</label><div class="pitch-rail"><input type="range" class="orbit-slider" id="pitchTrack" min="-85" max="85" value="0" step="0.5" aria-label="Pitch (vertical)"></div>
+     <output id="pitchValue" class="camera-value">0°</output>
+    </div>
+    <div class="slider-group roll-group"><label for="rollTrack">ROLL ⟳</label><input type="range" class="orbit-slider" id="rollTrack" min="-180" max="180" value="0" step="0.5" aria-label="Camera roll / bank"><output id="rollValue" class="camera-value">0°</output></div>
+   </div>
   </div>
- </details>
-</div>
-<div class="camera-controls">
- <div id="camera-pad" role="group" aria-label="3DS-style camera circle pad">
-  <div id="circlePad" role="group" tabindex="0" aria-label="Circle pad: drag to orbit or pan; arrow keys when focused"><div id="stickKnob" aria-hidden="true"></div></div>
+  <div class="compact-modes">
+   <div class="pad-modes" role="group" aria-label="Circle pad mode"><button id="padRotate" type="button" aria-pressed="true">Rotate</button><button id="padPan" type="button" aria-pressed="false">Pan</button></div>
+   <button id="shiftToggle" type="button" aria-pressed="false" aria-label="Shift sliders to roll and zoom" title="Shift sliders to Roll / Zoom">Shift</button>
+   <button id="quickReset" type="button" title="Reset view to model default">Reset</button>
+   <details id="toolsMenu" class="tools-menu"><summary aria-label="More camera tools" title="More camera tools">•••</summary><div class="tools-popup" role="group" aria-label="Camera tools">
+    <button id="quickCopy" type="button">⎘ Copy camera JSON</button>
+    <button id="valuesToggle" type="button" aria-pressed="false">123 Show values</button>
+    <button id="gesturesToggle" type="button" aria-pressed="true">✋ Gestures On</button>
+    <button id="axisLock" type="button" aria-pressed="false" aria-label="Lock circle pad to a single axis" title="Lock circle pad to dominant axis">⌖ Lock axis</button>
+    <button id="expandHUD" type="button" aria-expanded="false">⤢ Expand controls</button>
+   </div></details>
+  </div>
+  <output id="quickStatus" role="status"></output>
  </div>
- <div class="slider-controls">
-  <div class="slider-group" style="grid-column:1;grid-row:1/3">
-   <label for="yawTrack"><span id="yawLabel">YAW ↔</span> <output id="yawValue" class="camera-value">0°</output></label>
-   <input type="range" class="orbit-slider" id="yawTrack" min="-180" max="180" value="0" step="0.5" aria-label="Yaw (horizontal)">
-  </div>
-  <div class="pitch-group">
-   <label id="pitchLabel" for="pitchTrack">PITCH ↕</label>
-   <div class="pitch-rail"><input type="range" class="orbit-slider" id="pitchTrack" min="-85" max="85" value="0" step="0.5" aria-label="Pitch (vertical)"></div>
-   <output id="pitchValue" class="camera-value">0°</output>
-  </div>
-  <div class="slider-group roll-group"><label for="rollTrack">ROLL ⟳</label><input type="range" class="orbit-slider" id="rollTrack" min="-180" max="180" value="0" step="0.5" aria-label="Camera roll / bank"><output id="rollValue" class="camera-value">0°</output></div>
- </div>
-</div>
-<output id="quickStatus" role="status"></output>
 </div>
 <div id="help">Drag to rotate · Pinch to zoom · Two fingers to pan</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"}}</script>
@@ -526,6 +483,18 @@ $('applyJSON').onclick=()=>{
  }catch(error){showNotice('Cannot apply preset: '+error.message);}
 };
 
+
+const dockTab=$('dockTab'),dockBody=$('dockBody');
+dockTab.addEventListener('click',()=>{
+ const folded=!dockBody.hidden;
+ dockBody.hidden=folded;
+ $('orbit-tools').classList.toggle('is-folded',folded);
+ dockTab.setAttribute('aria-expanded',String(!folded));
+ dockTab.setAttribute('aria-label',folded?'Show camera controls':'Hide camera controls');
+ dockTab.title=folded?'Roll down camera controls':'Roll up camera controls';
+ dockTab.textContent=folded?'⌃':'⌄';
+ if(folded){$('toolsMenu').open=false;stickKeys.clear();clearStick();}
+});
 function baseDistance(){
  if(!model)return 1;
  const radius=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).length();
