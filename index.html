@@ -95,6 +95,7 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 .roller.is-dragging{cursor:grabbing;border-color:#c8d8ec}
 .roller .wheel-aperture{position:absolute;inset:2px;overflow:hidden;border-radius:4px;background:linear-gradient(135deg,#111c2c,#2b3f58);pointer-events:none}
 .roller .roller-surface{position:absolute;inset:auto;width:88px;height:88px;border:3px solid #1b2a3d;border-radius:50%;transform:rotate(var(--wheel-angle,0deg));background:repeating-conic-gradient(from 0deg,#273951 0deg 3deg,#7990a9 4deg 6deg,#364b65 7deg 10deg,#9fb1c4 11deg 13deg,#20334b 14deg 17deg);box-shadow:inset 0 0 0 8px #273a4d66,inset 0 0 13px #0008,0 0 4px #0a111e;mask-image:none;pointer-events:none}
+.roller.horizontal .roller-surface,.roller.vertical .roller-surface{background:repeating-conic-gradient(from 0deg,#273951 0deg 3deg,#7990a9 4deg 6deg,#364b65 7deg 10deg,#9fb1c4 11deg 13deg,#20334b 14deg 17deg);mask-image:none}
 .roller .roller-surface::after{content:"";position:absolute;inset:6px;border-radius:50%;border:2px solid #a7bad06b;box-shadow:inset 0 0 7px #0008}
 .roller.horizontal,.roller.vertical{width:83px;height:25px;cursor:grab}
 .roller.horizontal{left:calc(50% - 42px);right:auto;bottom:49px;top:auto}
@@ -399,7 +400,7 @@ function updateViewUI(){
  for(const [id,value] of [['yawInput',a.yaw],['pitchInput',a.pitch],['rollInput',roll],['distanceInput',a.radius],['fovInput',camera.fov]]){
   const input=$(id);if(document.activeElement!==input)input.value=fmt(value);
  }
- for(const [id,out,value,min,max] of [['yawWheel','yawValue',shiftMode?roll:a.yaw,-180,180],['pitchWheel','pitchValue',a.pitch,-85,85]]){
+ for(const [id,out,value,min,max] of [['yawWheel','yawValue',shiftMode?roll:a.yaw,shiftMode?-360000:-180,shiftMode?360000:180],['pitchWheel','pitchValue',a.pitch,-85,85]]){
   const wheel=$(id);
   wheel.setAttribute('aria-valuenow',String(+value.toFixed(3)));
   wheel.setAttribute('aria-valuetext',value.toFixed(1)+' degrees');
@@ -662,7 +663,7 @@ function stepAnalog(dt){
   const a=orbitAngles();setOrbit(a.yaw+x*66*dt,a.pitch+y*58*dt);
  }else if(padMode==='pan')panView(x*.38*dt,y*.38*dt);
  else if(padMode==='roll')setRoll(roll+x*90*dt);
- else if(padMode==='zoom'){const a=orbitAngles();setDistance(THREE.MathUtils.clamp(a.radius*Math.exp(-y*1.6*dt),baseDistance()*.35,baseDistance()*3.5));}
+ else if(padMode==='zoom'){const a=orbitAngles();setDistance(THREE.MathUtils.clamp(a.radius*Math.exp(-y*1.6*dt),baseDistance()/3.5,baseDistance()/.35));}
 }
 function moveStick(ev){
  const box=$('circlePad').getBoundingClientRect();
