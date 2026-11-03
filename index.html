@@ -1,6 +1,6 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Porygon2 & Chief · Style Lab</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>Porygon2 & Chief · Style Lab</title>
 <style>
-:root{color-scheme:dark;font:14px system-ui;background:#171a23;color:#fff}*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}canvas{display:block;touch-action:none;image-rendering:pixelated}
+:root{color-scheme:dark;font:14px system-ui;background:#171a23;color:#fff}*{box-sizing:border-box}html,body{margin:0;height:100%;width:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-text-size-adjust:100%}body{position:fixed;inset:0}canvas{display:block;touch-action:none;image-rendering:pixelated}
 header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 12px) 14px 12px;display:flex;gap:12px;align-items:center;background:linear-gradient(#171a23ed,transparent);pointer-events:none}header>*{pointer-events:auto}header small{font-size:11px;color:#b8c5d6}button,select{font:inherit;color:white;background:#323a4e;border:1px solid #657187;border-radius:8px;padding:8px 10px}button{cursor:pointer}#open{margin-left:auto}
 #panel{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 58px);right:12px;width:min(340px,calc(100vw - 24px));max-height:calc(100dvh - 85px);overflow:auto;padding:16px;background:#202635f5;border:1px solid #536075;border-radius:14px;box-shadow:0 12px 30px #0008}#panel[hidden]{display:none}label{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 12px}select{min-width:145px;max-width:170px}input[type=range]{width:130px;accent-color:#8a9cfa}#swatches{display:flex;gap:3px;margin:0 0 14px}#swatches span{height:22px;flex:1;border:1px solid #ffffff30}#panel p{color:#bbc6d7;font-size:12px;line-height:1.5}#help{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);left:12px;right:12px;text-align:center;font-size:12px;color:#bfc9d8;pointer-events:none}
 
@@ -12,6 +12,12 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 #dockTab:focus-visible{outline:2px solid #bbd0fc}
 #dockBody{pointer-events:auto;position:relative;width:min(100%,430px);height:154px;flex-shrink:0;border-radius:13px 13px 10px 10px;background:linear-gradient(0deg,#263348ea 0 41px,transparent 42px);border:1px solid transparent}
 #dockBody[hidden]{display:none}
+/* Empty dock space lets canvas drag/zoom gestures pass through; controls still receive input. */
+#dockBody{pointer-events:none}
+#dockBody button,#dockBody input,#dockBody summary,#dockBody textarea,#circlePad{pointer-events:auto}
+/* Input panels remain scrollable without allowing page-level rubberband/pinch zoom. */
+#panel{touch-action:pan-y;overscroll-behavior:contain}
+#panel input,#panel textarea,#panel select{touch-action:manipulation}
 #orbit-tools.is-folded #dockTab{border-bottom:1px solid #8295b5;border-radius:12px;min-height:29px;min-width:92px}
 #camera-pad{position:absolute;bottom:52px;left:5px;width:82px;height:82px;display:flex;align-items:center;justify-content:center}
 #circlePad{position:relative;width:76px;height:76px;display:grid;place-items:center;cursor:grab;border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;background:radial-gradient(circle at 35% 27%,#5f7592,#33445d 58%,#1d2b41);border:3px solid #748aaa;box-shadow:inset 0 0 0 4px #1c2940,0 3px 8px #0008}
@@ -251,6 +257,24 @@ const renderer=new THREE.WebGLRenderer({antialias:false,alpha:false});
 renderer.outputColorSpace=THREE.LinearSRGBColorSpace;document.body.prepend(renderer.domElement);
 renderer.domElement.setAttribute('aria-label','Rotatable 3D Porygon2');
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.enablePan=true;
+
+/* Safari's browser-level pinch gesture is independent of OrbitControls.
+ * Keep the viewport fixed; canvas touch gestures still belong to OrbitControls.
+ * Touching buttons, sliders or editable fields retains normal UI handling.
+ * The system's accessibility zoom feature remains outside page control. */
+for(const eventName of ['gesturestart','gesturechange','gestureend']){
+ document.addEventListener(eventName,event=>event.preventDefault(),{passive:false});
+}
+document.addEventListener('touchmove',event=>{
+ if(event.touches.length>1)event.preventDefault();
+},{passive:false});
+document.addEventListener('dblclick',event=>{
+ if(!event.target.closest('button,input,select,textarea,summary,[contenteditable]'))event.preventDefault();
+},{passive:false});
+document.addEventListener('wheel',event=>{
+ if(event.ctrlKey)event.preventDefault();
+},{passive:false});
+
 const surface=new THREE.ShaderMaterial({vertexShader:$('vertex').textContent,fragmentShader:$('surface-frag').textContent,uniforms:{diffuse:{value:new THREE.Color(1,1,1)},colorMap:{value:null},textured:{value:0},originalPalette:{value:1},partId:{value:0},styleId:{value:2},palette:{value:colors},lightDir:{value:new THREE.Vector3(.4,.7,.5).normalize()}},side:THREE.DoubleSide});
 const postScene=new THREE.Scene(),postCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
 const post=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,vertexShader:$('quad-vert').textContent,fragmentShader:$('post-frag').textContent,uniforms:{tex:{value:null},pixelStep:{value:new THREE.Vector2()},palette:{value:colors},background:{value:rgb('#171a23')},outlineMode:{value:2},outlineWidth:{value:2}}});
