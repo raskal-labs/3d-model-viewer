@@ -8,7 +8,9 @@ Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **N
 ## Camera and controls
 The header **← / →** buttons (or keyboard arrows outside controls) switch character models; the arrows never rotate the camera.
 
-The camera HUD starts in **Compact** mode to preserve model viewing space: a thumb-sized circle pad, shortened horizontal/vertical/roll sliders, hidden numeric readouts, and a narrow icon strip. The **⤢ Expand / ⤡ Compact** button switches between compact and full-sized inspection controls. Icons provide tooltips and accessible names. The detailed coordinate editor stays behind **Styles**.
+The camera HUD starts in **Compact** mode to preserve model viewing space: a thumb-sized circle pad, two short sliders, hidden numeric readouts and a single mode row. The **••• tools → Expand controls** button switches to larger controls. The detailed coordinate editor stays behind **Styles**.
+
+The most compact mobile layout now uses one top mode row (**Rotate**, **Pan**, **⇧ Shift**, **⌖ Lock**, **••• tools**) above a small analog circle pad and only two slider rails. **Shift** remaps the horizontal slider from **Yaw** to **Roll** and the vertical slider from **Pitch** to **Zoom/Distance**; toggle it off to return to Yaw/Pitch. **Lock** constrains circle-pad movement to its dominant horizontal or vertical axis for precise one-axis moves, resetting when the thumb is released. The **••• tools** menu contains Reset, Copy, Values, Gestures and Expand; this keeps nonessential controls off the viewport by default. Expanded view additionally exposes a dedicated Roll slider. This design keeps pitch and yaw in their requested horizontal/vertical slider orientations and retains the third axis without showing three rails at once.
 
 The camera HUD has:
 - **3DS-style analogue circle pad** with a draggable thumb. In **Rotate** mode, moving the pad orbits the selected model (yaw and pitch). In **Pan** mode, it translates the camera and orbit target together, moving the model's image without moving its geometry. Keyboard arrows work when the circle pad has focus.
