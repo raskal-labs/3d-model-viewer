@@ -538,7 +538,14 @@ export function createRenderLab(ctx) {
       }
       if(Array.isArray(incoming.customPalette)&&incoming.customPalette.length===4&&incoming.customPalette.every(v=>/^#[0-9a-fA-F]{6}$/.test(v)))cfg.customPalette=incoming.customPalette;
       presets.Custom=cfg.customPalette.slice();
-      if(parsed.appearance?.palette in presets)state.palette=parsed.appearance.palette;
+      if(parsed.appearance && typeof parsed.appearance==='object'){
+        for(const key of ['style','outline','palette','resolution']){
+          const selector=$(key);
+          const candidate=parsed.appearance[key];
+          if(typeof candidate==='string'&&Array.from(selector.options).some(o=>o.value===candidate))state[key]=candidate;
+        }
+        if(Number.isFinite(parsed.appearance.width))state.width=Math.max(0,Math.min(5,Math.round(parsed.appearance.width)));
+      }
       syncAppearance();syncUI();persist();setCompare(Boolean(cfg.compare));
       notify('Imported look preset.');
     }catch{notify('Invalid look preset.');}
