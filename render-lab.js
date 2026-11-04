@@ -34,7 +34,7 @@ export function createRenderLab(ctx) {
   }
 
   const css = document.createElement('style');
-  css.textContent = \`
+  css.textContent = `
     #renderLabRoot{font-size:12px;display:grid;gap:7px;margin:10px 0}
     #renderLabRoot details{border:1px solid #526379;border-radius:9px;background:#131d2b}
     #renderLabRoot summary{cursor:pointer;padding:9px 11px;font-weight:650;list-style:none}
@@ -64,7 +64,7 @@ export function createRenderLab(ctx) {
     #labImageOverlay{position:fixed;inset:0;z-index:1;pointer-events:none;
       width:100%;height:100%;object-fit:contain;display:none}
     #renderLabRoot .lab-small{font-size:11px;opacity:.86}
-  \`;
+  `;
   document.head.append(css);
   const panel = $('panel');
   const root = document.createElement('div');
@@ -83,17 +83,17 @@ export function createRenderLab(ctx) {
   root.append(original);
   const section = (title, name, markup) => {
     const el = document.createElement('details');
-    el.innerHTML = \`<summary>\${title}</summary><div class="lab-inner">\${markup}</div>\`;
+    el.innerHTML = `<summary>${title}</summary><div class="lab-inner">${markup}</div>`;
     el.dataset.section = name;
     root.append(el);
     return el;
   };
   const row = (title, id, options) =>
-    \`<div class="lab-row"><label for="\${id}">\${title}</label><select id="\${id}">\${options.map(v=>\`<option>\${v}</option>\`).join('')}</select></div>\`;
+    `<div class="lab-row"><label for="${id}">${title}</label><select id="${id}">${options.map(v=>`<option>${v}</option>`).join('')}</select></div>`;
   const slider = (title,id,min,max,step,def=0) =>
-    \`<div class="lab-row"><label for="\${id}">\${title}</label><input id="\${id}" type="range" min="\${min}" max="\${max}" step="\${step}" value="\${def}"></div>\`;
+    `<div class="lab-row"><label for="${id}">${title}</label><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${def}"></div>`;
   const toggle = (title,id) =>
-    \`<div class="lab-row"><label for="\${id}">\${title}</label><input id="\${id}" type="checkbox"></div>\`;
+    `<div class="lab-row"><label for="${id}">${title}</label><input id="${id}" type="checkbox"></div>`;
   const lighting = section('Scene & Lighting','scene',
     row('Backdrop','labBackdrop',['Dark','Studio','White','Black','Chroma Green','Chroma Blue','Sunset','Game Boy','Custom']) +
     '<div class="lab-row"><label for="labBackground">Custom colour</label><input id="labBackground" type="color"></div>' +
@@ -104,7 +104,7 @@ export function createRenderLab(ctx) {
   const pal = section('Palette & Materials','palette',
     '<div class="lab-note">Edit any swatch to create a custom palette. Changes are reversible.</div>' +
     '<div class="lab-swatches" id="labPaletteSwatches">' +
-    Array.from({length:4},(_,i)=>\`<input type="color" id="labColour\${i}" aria-label="Palette colour \${i+1}">\`).join('')+'</div>' +
+    Array.from({length:4},(_,i)=>`<input type="color" id="labColour${i}" aria-label="Palette colour ${i+1}">`).join('')+'</div>' +
     row('Output colours','labQuantize',['Off','2','4','8','16']) +
     slider('Dither','labDither',0,1,.05) +
     row('Texture sampling','labFilter',['Nearest','Linear']) +
@@ -238,7 +238,7 @@ export function createRenderLab(ctx) {
     const bgSolid=$('labBackground');if(bgSolid)bgSolid.value=bg;
   };
   // Final image postprocessing: all colour and screen effects remain independent of the base style shader.
-  const filterFragment = \`
+  const filterFragment = `
     precision highp float;varying vec2 vUv;
     uniform sampler2D source;uniform vec2 dims;uniform float time;
     uniform float grain,scanlines,vignette,crt,pixelGrid,halftone,chromatic,bloom,sepia,threshold,posterize,dither,brightness,contrast,saturation;
@@ -316,7 +316,7 @@ export function createRenderLab(ctx) {
       }
       gl_FragColor=vec4(clamp(col,0.,1.),1.);
     }
-  \`;
+  `;
   const fxMat = new THREE.ShaderMaterial({
     depthTest:false,depthWrite:false,
     uniforms: {
