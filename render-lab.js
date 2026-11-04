@@ -23,6 +23,13 @@ export function createRenderLab(ctx) {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(LKEY) || '{}') || {}; } catch {}
   const cfg = { ...defaults, ...saved };
+  delete cfg.appearance;
+  if(saved.appearance && typeof saved.appearance==='object'){
+    for(const key of ['style','outline','palette','resolution']){
+      if(typeof saved.appearance[key]==='string')state[key]=saved.appearance[key];
+    }
+    if(Number.isFinite(saved.appearance.width))state.width=Math.max(0,Math.min(5,saved.appearance.width));
+  }
   if (!Array.isArray(cfg.customPalette) || cfg.customPalette.length !== 4 ||
       cfg.customPalette.some(s => !/^#[0-9a-fA-F]{6}$/.test(s))) {
     cfg.customPalette = defaults.customPalette.slice();
@@ -95,7 +102,8 @@ export function createRenderLab(ctx) {
   const toggle = (title,id) =>
     `<div class="lab-row"><label for="${id}">${title}</label><input id="${id}" type="checkbox"></div>`;
   const lighting = section('Scene & Lighting','scene',
-    row('Backdrop','labBackdrop',['Dark','Studio','White','Black','Chroma Green','Chroma Blue','Sunset','Game Boy','Custom']) +
+    row('Quick look','labLook',['Custom','Clean','Game Boy','Virtual Boy','CRT TV','PS1','Blueprint']) +
+    row('Backdrop','labBackdrop',['Dark','Studio','White','Black','Chroma Green','Chroma Blue','Sunset','Game Boy','Checkerboard','Custom']) +
     '<div class="lab-row"><label for="labBackground">Custom colour</label><input id="labBackground" type="color"></div>' +
     row('Lighting','labLight',['Original','Unlit','Studio','Soft','Hard','Dramatic','Rim','Overhead','Underlit','Custom']) +
     slider('Light direction ↔','labAzimuth',-180,180,1,40) +
@@ -155,7 +163,7 @@ export function createRenderLab(ctx) {
   imageOverlay.id = 'labImageOverlay'; imageOverlay.alt = '';
   document.body.append(imageOverlay);
   let overlayObjectURL = null;
-  const persist = () => { try { localStorage.setItem(LKEY, JSON.stringify(cfg)); } catch {} };
+  const persist = () => { try { localStorage.setItem(LKEY, JSON.stringify({...cfg,appearance:{...state}})); } catch {} };
   const hexToVec = hex => new THREE.Vector3(
     parseInt(hex.slice(1,3),16)/255,
     parseInt(hex.slice(3,5),16)/255,
@@ -164,6 +172,14 @@ export function createRenderLab(ctx) {
     Dark:'#171a23',Studio:'#727b8a',White:'#ffffff',Black:'#000000',
     'Chroma Green':'#00ff00','Chroma Blue':'#0000ff',Sunset:'#bb6b61',
     'Game Boy':'#9bbc0f'
+  };
+  const looks = {
+    Clean: {backdrop:'Studio',light:'Studio',quantize:0,grain:0,scanlines:0,crt:0,vignette:0,pixelGrid:0,halftone:0,dither:0},
+    'Game Boy': {backdrop:'Game Boy',light:'Soft',quantize:4,grain:0,scanlines:0,crt:0,vignette:.15,pixelGrid:.2,dither:.25},
+    'Virtual Boy': {backdrop:'Black',light:'Dramatic',quantize:4,grain:0,scanlines:.2,crt:.15,vignette:.3,pixelGrid:0,dither:0},
+    'CRT TV': {backdrop:'Black',light:'Studio',quantize:0,grain:.08,scanlines:.75,crt:.75,vignette:.4,pixelGrid:0,dither:0},
+    PS1: {backdrop:'Dark',light:'Hard',quantize:16,grain:.2,scanlines:0,crt:0,vignette:.15,pixelGrid:0,dither:.3},
+    Blueprint: {backdrop:'Chroma Blue',light:'Unlit',quantize:2,grain:0,scanlines:0,crt:0,vignette:0,pixelGrid:0,dither:0}
   };
   const lightModes = {
     Original:[.4,.7,.5,1],Studio:[.5,.8,.65,1.1],Soft:[.2,.9,.6,.65],
@@ -232,9 +248,25 @@ export function createRenderLab(ctx) {
   const showParts = () => {
     for (const m of allMeshes(getModel()))m.visible=cfg.part==='All'||m.uuid===cfg.part;
   };
+  $('labLook').onchange=e=>{
+    const preset=looks[e.target.value];if(!preset)return;
+    Object.assign(cfg,preset);
+    if(e.target.value==='Game Boy')state.palette='Game Boy';
+    else if(e.target.value==='Virtual Boy')state.palette='Virtual Boy';
+    else if(e.target.value==='Blueprint'){state.palette='Cyanotype';cfg.wireframe=true;}
+    else if(e.target.value==='PS1')state.resolution='240p';
+    else if(e.target.value==='Clean'){state.palette='Original';state.resolution='Native';cfg.wireframe=false;}
+    syncAppearance();syncUI();persist();notify('Applied '+e.target.value+' look.');
+  };
   const applyBackground = () => {
     const bg=cfg.backdrop==='Custom'?cfg.background:backdropColours[cfg.backdrop]||'#171a23';
     post.uniforms.background.value.copy(hexToVec(bg));
+    if(post.uniforms.background2){
+      const second=cfg.backdrop==='Studio'?'#303849':cfg.backdrop==='Sunset'?'#e9ae75':bg;
+      post.uniforms.background2.value.copy(hexToVec(second));
+      post.uniforms.gradientMode.value=['Studio','Sunset'].includes(cfg.backdrop)?1:0;
+      post.uniforms.checkerMode.value=cfg.backdrop==='Checkerboard'?1:0;
+    }
     const bgSolid=$('labBackground');if(bgSolid)bgSolid.value=bg;
   };
   // Final image postprocessing: all colour and screen effects remain independent of the base style shader.
@@ -389,6 +421,12 @@ export function createRenderLab(ctx) {
     el.addEventListener(el.type==='range'||el.type==='color'?'input':'change',()=>{
       cfg[key]=el.type==='checkbox'?el.checked:el.value;
       if(['lightAzimuth','lightElevation','lightStrength'].includes(key))cfg.light='Custom';
+      if(key==='light'&&lightModes[cfg.light]){
+        const v=new THREE.Vector3(...lightModes[cfg.light].slice(0,3)).normalize();
+        cfg.lightAzimuth=Math.round(THREE.MathUtils.radToDeg(Math.atan2(v.x,v.z)));
+        cfg.lightElevation=Math.round(THREE.MathUtils.radToDeg(Math.asin(v.y)));
+        cfg.lightStrength=lightModes[cfg.light][3];
+      }
       if(key==='background')cfg.backdrop='Custom';
       syncUI();persist();if(key==='compare')setCompare(cfg.compare);
     });
@@ -452,7 +490,8 @@ export function createRenderLab(ctx) {
     new THREE.TextureLoader().load(url,texture=>{
       URL.revokeObjectURL(url);
       texture.colorSpace=THREE.SRGBColorSpace;
-      texture.flipY=false;
+      const existing=allMeshes(getModel()).flatMap(m=>Array.isArray(m.material)?m.material:[m.material]).find(m=>m.uniforms?.colorMap?.value);
+      texture.flipY=existing?.uniforms.colorMap.value.flipY ?? true;
       texture.minFilter=cfg.filter==='Linear'?THREE.LinearFilter:THREE.NearestFilter;
       texture.magFilter=cfg.filter==='Linear'?THREE.LinearFilter:THREE.NearestFilter;
       const applied=applyTexture(texture);
@@ -496,8 +535,26 @@ export function createRenderLab(ctx) {
     $('labLoadJSON').value='';
   };
   const snapshot=()=>{
-    // Capture after a draw to ensure the WebGL backing buffer is current.
-    renderer.domElement.toBlob(blob=>{
+    // Compose DOM reference image and comparison labels with the WebGL output.
+    const canvas=document.createElement('canvas');
+    canvas.width=renderer.domElement.width;canvas.height=renderer.domElement.height;
+    const context=canvas.getContext('2d');context.drawImage(renderer.domElement,0,0);
+    if(imageOverlay.src && imageOverlay.complete && imageOverlay.naturalWidth){
+      const scale=Math.min(canvas.width/imageOverlay.naturalWidth,canvas.height/imageOverlay.naturalHeight);
+      const iw=imageOverlay.naturalWidth*scale,ih=imageOverlay.naturalHeight*scale;
+      context.globalAlpha=+cfg.overlayOpacity;
+      context.drawImage(imageOverlay,(canvas.width-iw)/2,(canvas.height-ih)/2,iw,ih);
+      context.globalAlpha=1;
+    }
+    if(cfg.compare){
+      const ratio=renderer.domElement.width/Math.max(1,innerWidth);
+      context.font=`${Math.round(13*ratio)}px system-ui`;
+      context.fillStyle='#ffffff';context.shadowColor='#000000';context.shadowBlur=5;
+      context.textAlign='center';
+      context.fillText(models[getCurrent()].name,canvas.width*.25,72*ratio);
+      context.fillText(models[cfg.compareIndex]?.name||'',canvas.width*.75,72*ratio);
+    }
+    canvas.toBlob(blob=>{
       if(!blob){notify('PNG capture unavailable in this browser.');return;}
       const url=URL.createObjectURL(blob),a=document.createElement('a');
       a.href=url;a.download='porygon-'+models[getCurrent()].id+(cfg.compare?'-comparison':'')+'.png';
@@ -507,7 +564,7 @@ export function createRenderLab(ctx) {
   $('labScreenshot').onclick=snapshot;
   const loadSecondary=async()=>{
     if(!cfg.compare)return;
-    let index=cfg.compareIndex;
+    let index=Number.isInteger(cfg.compareIndex)&&cfg.compareIndex>=0&&cfg.compareIndex<models.length?cfg.compareIndex:0;
     if(index===getCurrent()&&models.length>1)index=(index+1)%models.length;
     cfg.compareIndex=index;
     if(secondaryCache.has(index)){
@@ -549,6 +606,7 @@ export function createRenderLab(ctx) {
   };
   compareBtn.onclick=()=>setCompare(!cfg.compare);
   const onModelChanged=()=>{
+    currentTexture=null;
     if(secondaryModel)secondaryModel.visible=false;
     if(cfg.compare){
       if(cfg.compareIndex===getCurrent()&&models.length>1)cfg.compareIndex=(getCurrent()+1)%models.length;
