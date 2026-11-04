@@ -50,7 +50,7 @@ export function createRenderLab(ctx) {
     #renderLabRoot details[open] summary::after{content:'−'}
     .lab-inner{padding:2px 10px 10px;display:grid;gap:8px}
     .lab-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:26px}
-    .lab-row label{min-width:80px;flex:1;margin:0}
+    .lab-row label{min-width:0;flex:1;margin:0}
     .lab-row select,.lab-row input[type=color],.lab-row input[type=range],.lab-row input[type=file]{min-width:0;max-width:62%;flex:1}
     .lab-row select{max-width:64%;padding:5px;color:#eaf2ff;background:#26354d;border:1px solid #566980;border-radius:5px}
     .lab-row input[type=color]{height:30px;max-width:62px;border:0;background:transparent}
@@ -59,7 +59,19 @@ export function createRenderLab(ctx) {
     .lab-swatches{display:flex;gap:8px;justify-content:space-around}
     .lab-swatches input[type=color]{width:45px;height:36px}
     .lab-actions{display:flex;gap:6px;flex-wrap:wrap}
-    .lab-actions button{flex:1;min-height:32px}
+    .lab-actions button{flex:1 1 110px;min-width:0;min-height:40px;white-space:normal}
+    #renderLabRoot, #renderLabRoot details, #renderLabRoot .lab-inner {min-width:0;max-width:100%}
+    .lab-row input[type=file]{width:100%;font-size:12px}
+    @media(max-width:600px){
+      .lab-row{align-items:stretch;flex-wrap:wrap;gap:5px}
+      .lab-row label{flex:1 0 100%}
+      .lab-row select,.lab-row input[type=range],.lab-row input[type=file]{width:100%;max-width:100%;flex:1 1 100%}
+      .lab-row input[type=checkbox]{width:22px;height:22px;flex:none}
+      .lab-row:has(input[type=checkbox]){flex-wrap:nowrap;align-items:center}
+      .lab-row:has(input[type=checkbox]) label{flex:1}
+      #labNativeSettings > label{display:grid;gap:6px}
+      #labNativeSettings select,#labNativeSettings input[type=range]{width:100%;max-width:100%}
+    }
     .lab-note{font-size:11px;color:#b6c8dc;line-height:1.45}
     header{gap:6px}
     header strong{min-width:0;max-width:98px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -693,5 +705,5 @@ export function createRenderLab(ctx) {
   });
   syncUI();
   if(cfg.compare)loadSecondary();
-  return { onModelChanged, onSync, render, releaseModel, isCompare:()=>Boolean(cfg.compare), save:persist };
+  return { onModelChanged, onSync, render, releaseModel, isCompare:()=>Boolean(cfg.compare), save:persist, stopSpin:()=>{ if(cfg.spin){cfg.spin=false;syncUI();persist();notify('Turntable stopped for camera navigation.');} } };
 }
