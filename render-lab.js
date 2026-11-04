@@ -50,7 +50,7 @@ export function createRenderLab(ctx) {
     #renderLabRoot details[open] summary::after{content:'−'}
     .lab-inner{padding:2px 10px 10px;display:grid;gap:8px}
     .lab-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:26px}
-    .lab-row label{min-width:80px;flex:1}
+    .lab-row label{min-width:80px;flex:1;margin:0}
     .lab-row select,.lab-row input[type=color],.lab-row input[type=range],.lab-row input[type=file]{min-width:0;max-width:62%;flex:1}
     .lab-row select{max-width:64%;padding:5px;color:#eaf2ff;background:#26354d;border:1px solid #566980;border-radius:5px}
     .lab-row input[type=color]{height:30px;max-width:62px;border:0;background:transparent}
@@ -644,7 +644,7 @@ export function createRenderLab(ctx) {
     renderer.setRenderTarget(target);renderer.setScissorTest(false);
     const primary=getModel();
     if(cfg.compare&&secondaryModel&&primary){
-      const w=target.width,h=target.height,l=Math.floor(w/2),r=w-l;
+      const w=target.width,h=target.height,l=Math.floor(w/2),r=w-l,pixelRatio=renderer.getPixelRatio();
       const primaryBounds=new THREE.Box3().setFromObject(primary);
       const secondaryBounds=new THREE.Box3().setFromObject(secondaryModel);
       const a=primaryBounds.getSize(new THREE.Vector3()).length()||1;
@@ -657,10 +657,10 @@ export function createRenderLab(ctx) {
       secondCamera.quaternion.copy(camera.quaternion);
       secondCamera.near=Math.max(.001,b/1000);secondCamera.far=b*100;secondCamera.updateProjectionMatrix();
       renderer.setScissorTest(true);
-      renderer.setViewport(0,0,l,h);renderer.setScissor(0,0,l,h);
+      renderer.setViewport(0,0,l/pixelRatio,h/pixelRatio);renderer.setScissor(0,0,l/pixelRatio,h/pixelRatio);
       primary.visible=true;secondaryModel.visible=false;
       renderer.clear();renderer.render(scene,camera);
-      renderer.setViewport(l,0,r,h);renderer.setScissor(l,0,r,h);
+      renderer.setViewport(l/pixelRatio,0,r/pixelRatio,h/pixelRatio);renderer.setScissor(l/pixelRatio,0,r/pixelRatio,h/pixelRatio);
       primary.visible=false;secondaryModel.visible=true;
       renderer.clear();renderer.render(scene,secondCamera);
       primary.visible=true;secondaryModel.visible=false;
@@ -668,11 +668,10 @@ export function createRenderLab(ctx) {
     }else{
       if(primary)primary.visible=true;
       if(secondaryModel)secondaryModel.visible=false;
-      renderer.setViewport(0,0,target.width,target.height);
+      // setRenderTarget already establishes the target-sized viewport.
       renderer.clear();renderer.render(scene,camera);
     }
     renderer.setRenderTarget(fxTarget);
-    renderer.setViewport(0,0,target.width,target.height);
     renderer.clear();renderer.render(postScene,postCamera);
     renderer.setRenderTarget(null);
     renderer.setViewport(0,0,innerWidth,innerHeight);
