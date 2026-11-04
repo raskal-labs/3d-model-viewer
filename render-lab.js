@@ -43,7 +43,7 @@ export function createRenderLab(ctx) {
   const css = document.createElement('style');
   css.textContent = `
     #renderLabRoot{font-size:12px;display:grid;gap:7px;margin:10px 0}
-    #renderLabRoot details{border:1px solid #526379;border-radius:9px;background:#131d2b}
+    #renderLabRoot details{border:1px solid #abc4e060;border-radius:9px;background:#101d2c73}
     #renderLabRoot summary{cursor:pointer;padding:9px 11px;font-weight:650;list-style:none}
     #renderLabRoot summary::-webkit-details-marker{display:none}
     #renderLabRoot summary::after{content:'＋';float:right;opacity:.65}
@@ -72,7 +72,14 @@ export function createRenderLab(ctx) {
       #labNativeSettings > label{display:grid;gap:6px}
       #labNativeSettings select,#labNativeSettings input[type=range]{width:100%;max-width:100%}
     }
-    .lab-note{font-size:11px;color:#b6c8dc;line-height:1.45}
+    .appearance-group{display:grid;gap:7px;padding:6px 0}.appearance-label{font-size:13px;color:#c0d3ed}
+    .appearance-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+    .appearance-options button{min-width:0;min-height:44px;padding:7px;text-align:left;font-size:14px;background:#1b2b41a3;border-color:#a3bed170;display:flex;align-items:center;gap:6px}
+    .appearance-options button[aria-pressed=true]{background:#5274a5b8;border-color:#e6f1ff;box-shadow:inset 0 0 0 1px #dbe9ff}
+    .palette-chips{display:flex;flex:none;gap:1px}.palette-chips i{width:8px;height:18px;border:1px solid #ffffff55}
+    .appearance-width{display:grid!important;gap:6px;margin:4px 0!important}.appearance-width span{display:flex;align-items:center;gap:8px}.appearance-width input{flex:1;min-width:0}
+    .lab-note{font-size:11px;color:#d4e2f5;line-height:1.45;margin:0}
+
     header{gap:6px}
     header strong{min-width:0;max-width:98px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     header small{min-width:0;max-width:75px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -96,15 +103,48 @@ export function createRenderLab(ctx) {
   // Native render settings are kept as-is, just collected under one fold.
   const original = document.createElement('details');
   original.id = 'labAppearance';
-  original.innerHTML = '<summary>Style · Palette · Resolution</summary><div class="lab-inner" id="labNativeSettings"></div>';
-  const nodes = ['style','outline','width','palette','swatches','resolution'].map(id => $(id));
+  original.innerHTML = '<summary>Appearance</summary><div class="lab-inner" id="labNativeSettings"></div>';
   const inner = original.querySelector('#labNativeSettings');
-  for (const node of nodes) {
-    if (!node) continue;
-    const parent = node.closest('label') || node;
-    inner.append(parent);
+  root.append(original);panel.insertBefore(root, $('viewPanel'));
+  // Keep the underlying selectors as the single source of truth for presets and imports.
+  const names=['style','outline','palette','resolution'];
+  for(const id of names){const el=$(id);el.closest('label').hidden=true;inner.append(el.closest('label'));}
+  $('swatches').hidden=true;inner.append($('swatches'));
+  const widthLabel=$('width').closest('label');
+  const groups={};
+  const descriptions={
+    style:'Surface shading',palette:'Model colours',outline:'Edge treatment',resolution:'Internal render height'
+  };
+  for(const id of names){
+    const group=document.createElement('div');group.className='appearance-group';
+    group.innerHTML=`<div class="appearance-label">${descriptions[id]}</div><div class="appearance-options" role="group" aria-label="${descriptions[id]}"></div>`;
+    const options=group.querySelector('.appearance-options');groups[id]=options;
+    for(const opt of $(id).options){
+      const button=document.createElement('button');button.type='button';button.dataset.value=opt.value;
+      const name=document.createElement('span');name.textContent=opt.value;button.append(name);
+      if(id==='palette'){
+        const chips=document.createElement('span');chips.className='palette-chips';
+        for(let i=0;i<4;i++)chips.append(document.createElement('i'));button.prepend(chips);
+      }
+      button.addEventListener('click',()=>{$(id).value=opt.value;$(id).dispatchEvent(new Event('change',{bubbles:true}));});
+      options.append(button);
+    }
+    inner.append(group);
+    if(id==='resolution'){const note=document.createElement('p');note.className='lab-note';note.textContent='Lower values make larger pixels. Native matches the screen, capped at 2× pixel density.';group.append(note);}
+    if(id==='outline'){widthLabel.classList.add('appearance-width');inner.append(widthLabel);}
   }
-  root.append(original);
+  const colours=document.createElement('div');colours.className='appearance-group';
+  colours.innerHTML='<div class="appearance-label">Custom palette</div><p class="lab-note">Tap a colour to edit. Changes create a custom palette.</p><div class="lab-swatches" id="labPaletteSwatches">'+Array.from({length:4},(_,i)=>`<input type="color" id="labColour${i}" aria-label="Palette colour ${i+1}">`).join('')+'</div>';
+  inner.append(colours);
+  function syncAppearanceChoices(){
+    for(const id of names)for(const button of groups[id].children){
+      const active=button.dataset.value===state[id];button.setAttribute('aria-pressed',String(active));
+      if(id==='palette'){
+        const swatches=presets[button.dataset.value]||presets.Original;
+        [...button.querySelectorAll('i')].forEach((el,i)=>el.style.background=swatches[i]);
+      }
+    }
+  }
   const section = (title, name, markup) => {
     const el = document.createElement('details');
     el.innerHTML = `<summary>${title}</summary><div class="lab-inner">${markup}</div>`;
@@ -127,9 +167,7 @@ export function createRenderLab(ctx) {
     slider('Light height','labElevation',-90,90,1,45) +
     slider('Strength','labStrength',0,2,.05,1));
   const pal = section('Palette & Materials','palette',
-    '<div class="lab-note">Edit any swatch to create a custom palette. Changes are reversible.</div>' +
-    '<div class="lab-swatches" id="labPaletteSwatches">' +
-    Array.from({length:4},(_,i)=>`<input type="color" id="labColour${i}" aria-label="Palette colour ${i+1}">`).join('')+'</div>' +
+    '<div class="lab-note">Choose or edit model colours in Appearance. Output colour reduction affects the complete image.</div>' +
     row('Output colours','labQuantize',['Off','2','4','8','16']) +
     slider('Dither','labDither',0,1,.05) +
     row('Texture sampling','labFilter',['Nearest','Linear']) +
@@ -164,7 +202,6 @@ export function createRenderLab(ctx) {
     '<div class="lab-row"><label for="labLoadJSON">Import look JSON</label><input type="file" id="labLoadJSON" accept="application/json,.json"></div>' +
     '<div class="lab-note">Comparison uses synchronized angles and proportional framing. Both models share the same rendering settings.</div>');
   const viewPanel = $('viewPanel');
-  panel.insertBefore(root, viewPanel);
   const compareBtn = document.createElement('button');
   compareBtn.id = 'labCompareToggle';
   compareBtn.type = 'button';
@@ -387,6 +424,7 @@ export function createRenderLab(ctx) {
   fxScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),fxMat));
   let fxTarget=null;
   const buildPalette = () => {
+    syncAppearanceChoices();
     const core=(presets[state.palette]||presets.Original).map(hexToVec);
     const entries = [
       core[0],core[3],core[1],core[2],
@@ -456,6 +494,7 @@ export function createRenderLab(ctx) {
   $('labQuantize').onchange=e=>{cfg.quantize=e.target.value==='Off'?0:+e.target.value;syncUI();persist();};
   for (const [,key] of fxFields)$('labFx'+key).oninput=e=>{cfg[key]=+e.target.value;syncFX();persist();};
   for (let i=0;i<4;i++)$('labColour'+i).oninput=e=>{
+    if(state.palette!=='Custom')cfg.customPalette=(presets[state.palette]||presets.Original).slice();
     cfg.customPalette[i]=e.target.value;presets.Custom=cfg.customPalette.slice();
     state.palette='Custom';syncAppearance();syncFX();persist();
   };

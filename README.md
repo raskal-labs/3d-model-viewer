@@ -10,12 +10,12 @@ The header **← / →** arrows switch character models (Porygon2, Chief, and fu
 
 ### Gesture-first camera controls
 
-Drag one finger to orbit. With two fingers, drag to pan, pinch to zoom, and twist to roll; these movements can be combined. Tap **Precision** to open the last fine adjustment, or hold it to choose Orbit, Pan, Roll, Zoom, or the momentary Clutch. On first use, tap Precision to choose a control. Hold Clutch to reduce gesture sensitivity while using other fingers on the model. Roll and Zoom precision surfaces use an outward drag followed by a circular arc; a wider arc makes finer adjustments. **Undo** restores the last camera gesture and **Frame** restores the camera view. Manual movement stops turntable rotation.
+Drag one finger to orbit. With two fingers, drag to pan, pinch to zoom, and twist to roll; these movements can be combined. Hold the central reticle and drag to Orbit, Pan, Roll, Zoom, or Clutch, then release to open the selected precision control. Orbit uses a rocker-like surface; Pan uses a circular pad; Roll uses an outward drag followed by a circular arc; Zoom uses a slider. Hold Clutch while using other fingers to reduce viewport sensitivity. Tap the reticle to return to the last precision control, or tap it on first use to choose one. Undo and Frame are the glyph buttons at the lower left. Manual movement stops turntable rotation.
 
 The Render Lab is a scrollable settings sheet; its groups stack controls on narrow screens. Pocket Fonts are bundled with their license in `fonts/`.
 
 ## Coordinate editor, copy and paste
-Open **Styles → Camera coordinates & presets**. All camera XYZ, orbit-target XYZ, yaw, pitch, roll, distance, and FOV can be entered manually. Enter a value and commit the field to update the scene. A live readout shows the derived angles, distance and FOV.
+Open **Lab → Camera coordinates & presets**. All camera XYZ, orbit-target XYZ, yaw, pitch, roll, distance, and FOV can be entered manually. Enter a value and commit the field to update the scene. A live readout shows the derived angles, distance and FOV.
 
 **Copy all** exports a versioned, model-specific preset containing position and target arrays, yaw, pitch, roll, distance, and FOV. **Copy selected** exports a useful subset; choose Camera XYZ, Target XYZ, Yaw/Pitch/Roll, Distance/FOV, or individual coordinates in the dropdown.
 

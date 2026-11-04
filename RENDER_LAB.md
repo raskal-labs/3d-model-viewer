@@ -1,7 +1,7 @@
 # Porygon Viewer: Render Lab & Comparison
 
 ## Scope
-One compact Styles panel containing collapsible groups. Gesture-first camera navigation, precision controls, camera JSON, and model arrows are available separately. A header **⇔** button toggles synchronized side-by-side model comparison.
+One compact Lab panel containing collapsible groups. Gesture-first camera navigation, precision controls, camera JSON, and model arrows are available separately. A header **⇔** button toggles synchronized side-by-side model comparison.
 
 This is an additive render preview workflow; it never writes model geometry, source textures, or assets back to Git.
 
@@ -14,7 +14,7 @@ This is an additive render preview workflow; it never writes model geometry, sou
 - **Palette:** Output quantization to 2, 4, 8 or 16 generated colours, plus Bayer-pattern ordered dithering. Four editable source slots are used to derive larger palettes. This is not semantic colour-part remapping for imported full-colour textures.
 - **Post effects:** Grain, scanlines, vignette, CRT curvature, pixel grid, halftone, chromatic aberration, bloom approximation, sepia, threshold, posterize, brightness, contrast, saturation.
 - **Overlays:** Mesh wireframe, crosshair, rule-of-thirds guides, independently selectable mesh parts, uploaded translucent reference image and opacity.
-- **Compare:** Switch models with existing arrows; toggle split screen with ⇔ or Styles → Compare. Both halves use the same orbit angles, appearance and proportional model framing. Right-hand model selectable.
+- **Compare:** Switch models with existing arrows; toggle split screen with ⇔ or Lab → Compare. Both halves use the same orbit angles, appearance and proportional model framing. Right-hand model selectable.
 - **Capture/presets:** Save composite PNG (including the reference image and comparison labels); copy complete appearance JSON; import look JSON; persist appearance settings per browser; adjustable turntable rotation.
 
 ## Not in this pass
@@ -39,7 +39,7 @@ This is an additive render preview workflow; it never writes model geometry, sou
 8. Toggle wireframe, select/hide mesh parts, upload a reference image and adjust opacity; verify the frame is visible in screenshots.
 9. Apply a replacement texture to Chief, restore it; ensure attempts on non-UV Porygon2 report unsupported parts.
 10. Capture PNG and export/import a look JSON. Reload and verify locally saved appearance.
-11. On iPhone Safari, verify Styles panel scroll, no webpage pinch zoom, working viewport gestures and precision controls, no performance regression or crash.
+11. On iPhone Safari, verify Lab panel scroll, no webpage pinch zoom, working viewport gestures and precision controls, no performance regression or crash.
 12. Review shader compilation warnings and performance under split + Native resolution + bloom before merge.
 
 ## Architecture notes
