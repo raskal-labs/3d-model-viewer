@@ -25,7 +25,7 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 #panel *{min-width:0} #panel input,#panel textarea,#panel select{max-width:100%}
 @media(max-width:600px){#panel{top:auto;bottom:calc(env(safe-area-inset-bottom) + 12px);left:12px;right:12px;width:auto;max-height:calc(100dvh - env(safe-area-inset-top) - 80px);padding:14px} #panel label{flex-wrap:wrap} #panel select{max-width:100%}}
 </style><link rel="stylesheet" href="./gesture-navigation.css"></head><body>
-<header><button id="prev" aria-label="Previous model">←</button><strong id="name">Porygon2</strong><button id="next" aria-label="Next model">→</button><small id="status" role="status">Loading…</small><button id="open" aria-expanded="false">Styles</button></header>
+<header><button id="prev" aria-label="Previous model">←</button><strong id="name">Porygon2</strong><button id="next" aria-label="Next model">→</button><small id="status" role="status">Loading…</small><button id="open" aria-expanded="false">Lab</button></header>
 <section id="panel" hidden aria-label="Rendering settings">
 <h3>Render lab</h3>
 <label>Style<select id="style"><option>Flat</option><option>Cel shaded</option><option selected>Pixel</option><option>Watercolour</option><option>Ink / Sketch</option><option>Monochrome</option></select></label>
@@ -33,7 +33,7 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 <label>Thickness <span><input id="width" type="range" min="0" max="5" step="1" value="2" aria-label="Outline thickness"><output id="widthValue">2 px</output></span></label>
 <label>Palette<select id="palette"><option selected>Original</option><option>Game Boy</option><option>Graphite</option><option>Amber</option><option>Virtual Boy</option><option>Cyanotype</option></select></label>
 <div id="swatches" aria-label="Palette swatches"></div>
-<label>Resolution<select id="resolution"><option>80p</option><option>160p</option><option>240p</option><option selected>Native</option></select></label>
+<label>Resolution<select id="resolution"><option>80p</option><option>160p</option><option>240p</option><option>360p</option><option>480p</option><option>720p</option><option selected>Native</option></select></label>
 
 <details id="viewPanel">
 <summary>Camera coordinates &amp; presets</summary>
@@ -73,20 +73,21 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 <p>Coordinates are editable above. Copy all produces a complete JSON preset; Copy selected produces reusable partial JSON. Paste either to restore values. Set default view saves this model’s camera locally, not to GitHub.</p>
 </details>
 <button id="reset">Reset camera</button> <button id="defaults">Defaults</button>
-<p>Drag the model to orbit. Use two fingers to pan, pinch to zoom, and twist to roll. Hold Precision to choose a fine adjustment or clutch.</p>
+<p>Drag the model to orbit. Use two fingers to pan, pinch to zoom, and twist to roll. Hold the center reticle and drag to choose a precision control. Release to open it.</p>
 </section>
 
 
 <div id="navigationTools" aria-label="Camera tools">
- <button id="precisionButton" type="button" aria-label="Precision controls" aria-haspopup="true" aria-expanded="false">◎ <span>Precision</span></button>
- <button id="undoCamera" type="button" disabled>Undo</button>
- <button id="quickReset" type="button">Frame</button>
+ <button id="precisionButton" type="button" aria-label="Precision controls: hold and drag" aria-haspopup="true" aria-expanded="false"><span class="reticle" aria-hidden="true"></span></button>
+ <button id="undoCamera" type="button" disabled aria-label="Undo camera movement" title="Undo camera movement"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 4 10l5 5M4 10h9a6 6 0 0 1 0 12"/></svg></button>
+ <button id="quickReset" type="button" aria-label="Frame model" title="Frame model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6"/><circle cx="12" cy="12" r="3"/></svg></button>
 </div>
 <div id="precisionMenu" role="menu" aria-label="Choose precision control" hidden></div>
 <section id="precisionInstrument" aria-label="Precision control" hidden>
  <div class="precision-heading"><strong id="precisionTitle"></strong><button id="closePrecision" type="button" aria-label="Close precision control">✕</button></div>
  <p id="precisionHint"></p><output id="precisionValue"></output>
- <div id="precisionSurface" tabindex="0" role="application" aria-label="Precision adjustment surface"></div>
+ <div id="precisionSurface" tabindex="0" role="application" aria-label="Precision adjustment surface"><span class="surface-art" aria-hidden="true"></span></div>
+ <div id="precisionZoom" hidden><label for="precisionZoomSlider">Camera distance</label><input id="precisionZoomSlider" type="range" min="0" max="1000" step="1" aria-label="Zoom: left is farther, right is closer"></div>
 </section>
 <output id="clutchStatus" hidden>Precision clutch ×0.1</output>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"}}</script>
@@ -217,10 +218,10 @@ post.uniforms.background.value.copy(rgb('#171a23'));post.uniforms.outlineWidth.v
 model?.traverse(o=>{if(o.isMesh)for(const m of (Array.isArray(o.material)?o.material:[o.material])){m.uniforms.styleId.value=styles.indexOf(state.style);m.uniforms.originalPalette.value=state.palette==='Original'?1:0;}});
 resize();lab?.onSync();
 }
-for(const id of ['style','outline','palette','resolution'])$(id).onchange=()=>{state[id]=$(id).value;sync();};
-$('width').oninput=()=>{state.width=+$('width').value;sync();};
-$('open').onclick=()=>{$('panel').hidden=!$('panel').hidden;$('open').setAttribute('aria-expanded',String(!$('panel').hidden));};
-$('defaults').onclick=()=>{Object.assign(state,{style:'Pixel',outline:'Reactive',width:2,palette:'Original',resolution:'Native'});sync();};
+for(const id of ['style','outline','palette','resolution'])$(id).onchange=()=>{state[id]=$(id).value;sync();lab?.save();};
+$('width').oninput=()=>{state.width=+$('width').value;sync();lab?.save();};
+$('open').onclick=()=>{$('panel').hidden=!$('panel').hidden;document.body.classList.toggle('settings-open',!$('panel').hidden);$('open').setAttribute('aria-expanded',String(!$('panel').hidden));};
+$('defaults').onclick=()=>{Object.assign(state,{style:'Pixel',outline:'Reactive',width:2,palette:'Original',resolution:'Native'});sync();lab?.save();};
 
 const VIEW_STORAGE_PREFIX='raskal-porygon-view:v1:';
 const sessionViews=new Map();
@@ -335,7 +336,7 @@ async function copyJSON(value){
  const json=JSON.stringify(value,null,2);
  try{await navigator.clipboard.writeText(json);showNotice('Copied camera JSON.');}
  catch{
-  $('panel').hidden=false;$('open').setAttribute('aria-expanded','true');$('viewPanel').open=true;
+  $('panel').hidden=false;document.body.classList.add('settings-open');$('open').setAttribute('aria-expanded','true');$('viewPanel').open=true;
   $('pasteJSON').value=json;$('pasteJSON').focus();$('pasteJSON').select();
   showNotice('Clipboard blocked: select and copy JSON in the box.');
  }
@@ -456,6 +457,7 @@ lab=createRenderLab({
 navigation=createGestureNavigation({canvas:renderer.domElement, getView:()=>model?captureView():null,
  applyView, getAngles:orbitAngles, orbit:(dx,dy)=>{const a=orbitAngles();setOrbit(a.yaw-dx*180/innerWidth,a.pitch+dy*180/innerHeight);},
  pan:(dx,dy)=>panView(dx/innerHeight,-dy/innerHeight), zoom:factor=>setDistance(orbitAngles().radius*factor),
+ getZoomLimits:()=>({min:baseDistance()/3.5,max:baseDistance()/.35}),setDistance,
  rollBy:delta=>setRoll(roll+degrees(delta)), reset, onManual:()=>lab?.stopSpin()});
 selectModel(0);
 addEventListener('error',e=>{status.textContent='Viewer error';console.error(e);});

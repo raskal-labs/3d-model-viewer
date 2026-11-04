@@ -43,6 +43,22 @@ try{
   await view(page,'desktop');
   await page.locator('#open').click();
   assert.equal(await page.locator('#panel').isVisible(),true);
+  await page.locator('#labAppearance summary').click();
+  await page.locator('[aria-label="Surface shading"] [data-value="Flat"]').click();
+  await page.locator('[aria-label="Model colours"] [data-value="Game Boy"]').click();
+  await page.locator('[aria-label="Internal render height"] [data-value="160p"]').click();
+  assert.equal(await page.locator('#style').inputValue(),'Flat');
+  assert.equal(await page.locator('#palette').inputValue(),'Game Boy');
+  assert.equal(await page.locator('#resolution').inputValue(),'160p');
+  const appearance=await page.evaluate(()=>JSON.parse(localStorage.getItem('raskal-porygon-render-lab:v1')).appearance);
+  assert.equal(appearance.style,'Flat');assert.equal(appearance.palette,'Game Boy');assert.equal(appearance.resolution,'160p');
+  // Editing one swatch starts from the selected palette, rather than stale custom colours.
+  await page.locator('#labColour0').evaluate(el=>{el.value='#123456';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert.equal(await page.locator('#palette').inputValue(),'Custom');
+  assert.equal(await page.locator('#labColour1').inputValue(),'#306230');
+  await page.locator('#defaults').evaluate(el=>el.click());
+  await page.locator('#labAppearance summary').click();
+  report.push('desktop: appearance controls select and persist styles, palette and resolution');
   for(const id of ['labBackdrop','labLight','labFxscanlines','labWireframe','labCompare']){
     assert.equal(await page.locator('#'+id).count(),1,'Missing '+id);
   }
@@ -76,6 +92,7 @@ try{
   await view(mobilePage,'mobile Chromium');
   await mobilePage.locator('#open').click();
   assert.equal(await mobilePage.locator('#panel').isVisible(),true);
+  assert.equal(await mobilePage.locator('#panel').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,'Settings overflow horizontally');
   assert.equal(await mobilePage.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,
     'Unexpected horizontal overflow');
   await mobilePage.screenshot({path:'viewer-smoke-artifacts/mobile-panel.png'});
