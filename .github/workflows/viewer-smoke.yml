@@ -30,6 +30,8 @@ jobs:
           done
           cat /tmp/porygon-server.log
           exit 1
+      - name: Test camera gesture recognition
+        run: node tests/gesture-navigation.mjs
       - name: Exercise desktop and mobile Chromium
         run: node tests/viewer-smoke.mjs
       - uses: actions/upload-artifact@v4

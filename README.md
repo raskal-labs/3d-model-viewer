@@ -8,26 +8,16 @@ Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **N
 ## Camera and controls
 The header **← / →** arrows switch character models (Porygon2, Chief, and future additions). They never adjust the camera.
 
-### Pocket-radio wheels and a DJ fader
-The mobile viewer now uses **two matching, partially recessed 88px radial wheels**, as if mounted inside a handheld electronic device: the **Pitch wheel** pokes out of a narrow left-side opening, and the **Yaw wheel** pokes out from a matching horizontal opening near the bottom. Only the textured outer rim is visible. The virtual wheel textures rotate beneath stationary index marks while you drag; the internal disc diameters are identical, even though their visible slots have different orientations.
+### Gesture-first camera controls
 
-**Zoom** is intentionally different: a classic **DJ-mixer-style vertical linear fader** on the right, with a fixed centre groove and a brushed-metal thumb that travels a finite distance. Move its thumb upward to zoom closer and downward to zoom out. The slider shows a physical position instead of simulating infinite turning.
+Drag one finger to orbit. With two fingers, drag to pan, pinch to zoom, and twist to roll; these movements can be combined. Tap **Precision** to open the last fine adjustment, or hold it to choose Orbit, Pan, Roll, Zoom, or the momentary Clutch. On first use, tap Precision to choose a control. Hold Clutch to reduce gesture sensitivity while using other fingers on the model. Roll and Zoom precision surfaces use an outward drag followed by a circular arc; a wider arc makes finer adjustments. **Undo** restores the last camera gesture and **Frame** restores the camera view. Manual movement stops turntable rotation.
 
-The **3DS-inspired circle pad** has two touch regions:
-- Drag its **centre** to use the selected Rotate, Pan, Roll or Zoom mode; the existing two-layer buttons still show both **Rotate/Roll** and **Pan/Zoom**, with the inactive label visibly dimmed. Shift swaps the bright/dim assignments and remaps the bottom wheel from Yaw to Roll.
-- Trace a circle around its **outer rim** to twist the knob and **roll the camera continuously**, independently of the current mode. Passing 360° does not stop or reverse the roll. A rotating peripheral marking shows the current bank. For numerical readout and exported camera JSON, roll can accumulate multiple turns.
-
-**Pitch** is always available on the left wheel. **Reset** stays in the bottom row. **•••** contains Copy JSON, Values, Gestures, axis Lock and Expand. **⌄ Hide / ⌃ Show** folds the entire dock away independently of the overflow menu. Numerical values are hidden by default.
-
-### Touch and page navigation
-The scene canvas fills the page. When Gestures are enabled, dragging empty canvas space rotates the camera, pinching zooms the **3D camera**, and two-finger dragging pans. Turning Gestures Off disables canvas manipulation but leaves the roller wheels and circle pad available.
-
-The HTML body is fixed, page scrolling and rubber-band overscroll are suppressed, and native pinch/double-tap **webpage** zoom is blocked where Safari permits. The **Styles** panel itself remains scrollable for its settings. Browser chrome and iOS accessibility zoom are outside the website's control.
+The Render Lab is a scrollable settings sheet; its groups stack controls on narrow screens. Pocket Fonts are bundled with their license in `fonts/`.
 
 ## Coordinate editor, copy and paste
 Open **Styles → Camera coordinates & presets**. All camera XYZ, orbit-target XYZ, yaw, pitch, roll, distance, and FOV can be entered manually. Enter a value and commit the field to update the scene. A live readout shows the derived angles, distance and FOV.
 
-**Copy all** exports a versioned, model-specific preset containing position and target arrays, yaw, pitch, roll, distance, and FOV. **Copy selected** exports a useful subset; choose Camera XYZ, Target XYZ, Yaw/Pitch/Roll, Distance/FOV, or individual coordinates in the dropdown. The **••• → Copy camera JSON** action is an additional shortcut for all values.
+**Copy all** exports a versioned, model-specific preset containing position and target arrays, yaw, pitch, roll, distance, and FOV. **Copy selected** exports a useful subset; choose Camera XYZ, Target XYZ, Yaw/Pitch/Roll, Distance/FOV, or individual coordinates in the dropdown.
 
 **Paste clipboard** attempts a clipboard read (which may require Safari permission); alternatively paste/type JSON into the text box. **Apply JSON** restores either a complete preset or partial values. Examples:
 

@@ -1,0 +1,18 @@
+Pocket Fonts 1.0 — 2026
+
+This package contains original Pocket companion glyph designs and tooling, plus
+display/controller designs derived from the user-supplied Raskal Block v0.5.
+
+Permission is granted, free of charge, to use, copy, modify, embed, distribute,
+sublicense and sell the new font software and tooling contributed in this package,
+including commercial and private applications. Preserve this notice in copies
+of the font software or substantial portions of the source.
+
+The existing rights in user-supplied Raskal Block source material remain with
+their owner. This notice does not grant rights to unrelated third-party fonts,
+brands, controller trademarks, or artwork shown in reference images.
+
+THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES
+OR OTHER LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.

@@ -1,7 +1,7 @@
 # Porygon Viewer: Render Lab & Comparison
 
 ## Scope
-One compact Styles panel containing collapsible groups. Existing touch gestures, recessed X/Y wheels, zoom fader, camera JSON, and model arrows are retained. A header **⇔** button toggles synchronized side-by-side model comparison.
+One compact Styles panel containing collapsible groups. Gesture-first camera navigation, precision controls, camera JSON, and model arrows are available separately. A header **⇔** button toggles synchronized side-by-side model comparison.
 
 This is an additive render preview workflow; it never writes model geometry, source textures, or assets back to Git.
 
@@ -30,7 +30,7 @@ This is an additive render preview workflow; it never writes model geometry, sou
 
 ## Acceptance checks (before merge)
 1. Open in desktop Chrome or Firefox; ensure no JS errors and models actually render.
-2. Toggle ⇔. Verify two distinct models, correct left/right labels, and synced angle changes from gestures/dials.
+2. Toggle ⇔. Verify two distinct models, correct left/right labels, and synced angle changes from gestures/precision controls.
 3. Switch left model while comparing. Ensure the right model auto-selects the other character; switch compare off and verify full-size view.
 4. Change resolution among 80p/160p/240p/Native while comparing; confirm each viewport fills exactly half the canvas on standard and Retina devices.
 5. Choose every lighting and backdrop preset, including checkerboard and custom colour; check Porygon2 and Chief.
@@ -39,7 +39,7 @@ This is an additive render preview workflow; it never writes model geometry, sou
 8. Toggle wireframe, select/hide mesh parts, upload a reference image and adjust opacity; verify the frame is visible in screenshots.
 9. Apply a replacement texture to Chief, restore it; ensure attempts on non-UV Porygon2 report unsupported parts.
 10. Capture PNG and export/import a look JSON. Reload and verify locally saved appearance.
-11. On iPhone Safari, verify Styles panel scroll, no webpage pinch zoom, working camera dials/fader, no performance regression or crash.
+11. On iPhone Safari, verify Styles panel scroll, no webpage pinch zoom, working viewport gestures and precision controls, no performance regression or crash.
 12. Review shader compilation warnings and performance under split + Native resolution + bloom before merge.
 
 ## Architecture notes
