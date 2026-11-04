@@ -228,32 +228,38 @@ void main(){vUv=uv;vNormal=normalize(mat3(modelMatrix)*normal);gl_Position=proje
 <script id="surface-frag" type="x-shader/x-fragment">
 precision highp float;
 uniform vec3 diffuse;uniform sampler2D colorMap;uniform float textured,originalPalette;varying vec2 vUv;
-uniform float partId,styleId;uniform vec3 palette[4],lightDir;varying vec3 vNormal;
+uniform float partId,styleId,lightStrength,unlitMode,glossMode;uniform vec3 palette[4],lightDir;varying vec3 vNormal;
 float rand(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 void main(){
-float d=max(0.,dot(normalize(vNormal),normalize(lightDir)));
+float d=clamp(max(0.,dot(normalize(vNormal),normalize(lightDir)))*lightStrength,0.,2.);
 vec3 dark=palette[0],red=palette[1],blue=palette[2],white=palette[3];
 vec3 base=partId<.5?red:partId<1.5?blue:partId<2.5?white:dark;
 if(textured>.5){base=textured>1.5?diffuse:texture2D(colorMap,vUv).rgb;if(originalPalette<.5){float l=dot(base,vec3(.299,.587,.114));base=l<.15?dark:l<.45?red:l<.8?blue:white;}}
+if(unlitMode>.5){gl_FragColor=vec4(base,1.);return;}
 vec3 c=base;
 if(styleId<.5){c=mix(base,white,.08+.14*d);}
 else if(styleId<1.5){if(textured>.5)c=d>.78?mix(base,white,.25):d<.26?mix(base,dark,.3):base;else if(partId<.5)c=d>.78?mix(red,white,.34):d<.26?mix(red,dark,.3):red;else if(partId<1.5)c=d>.74?white:d<.26?mix(blue,dark,.3):blue;}
-else if(styleId<2.5){if(textured>.5)c=base;else if(partId<.5)c=red;else if(partId<1.5)c=d>.77?white:blue;}
+else if(styleId<2.5){if(textured>.5)c=d>.78?mix(base,white,.25):d<.26?mix(base,dark,.28):base;else if(partId<.5)c=red;else if(partId<1.5)c=d>.77?white:blue;}
 else if(styleId<3.5){float n=rand(floor(gl_FragCoord.xy/2.));c=mix(base,white,clamp(d*.25+(n-.5)*.22,0.,.4));if(d<.3)c=mix(c,dark,.1);}
 else if(styleId<4.5){float hatch=mod(floor(gl_FragCoord.x+gl_FragCoord.y),7.);c=(d<.48&&hatch<1.4)?dark:white;if(partId>2.5)c=dark;}
 else{c=d<.22?dark:d<.48?red:d<.75?blue:white;if(partId>2.5)c=dark;}
-gl_FragColor=vec4(c,1.);
+if(glossMode>.5&&glossMode<1.5)c=mix(c,base,.25);
+if(glossMode>1.5){float shine=pow(max(dot(normalize(vNormal),normalize(lightDir)),0.),18.);c=mix(c,vec3(1.),shine*.32);}
+if(glossMode>2.5){float shine=pow(max(dot(normalize(vNormal),normalize(lightDir)),0.),28.);c+=base*shine*.4;}
+gl_FragColor=vec4(clamp(c,0.,1.),1.);
 }
 </script>
 <script id="quad-vert" type="x-shader/x-vertex">varying vec2 uv0;void main(){uv0=uv;gl_Position=vec4(position.xy,0.,1.);}</script>
 <script id="post-frag" type="x-shader/x-fragment">
 precision highp float;
-uniform sampler2D tex;uniform vec2 pixelStep;uniform vec3 palette[4],background;
+uniform sampler2D tex;uniform vec2 pixelStep;uniform vec3 palette[4],background,background2;uniform float gradientMode,checkerMode;
 uniform float outlineMode,outlineWidth;varying vec2 uv0;
 void main(){
 vec4 center=texture2D(tex,uv0);
+vec3 backdrop=mix(background,background2,clamp(uv0.y,0.,1.)*gradientMode);
+if(checkerMode>.5){vec2 tile=floor(uv0*vec2(20.,20.));float chess=mod(tile.x+tile.y,2.);backdrop=mix(vec3(.22),vec3(.36),chess);}
 if(center.a>.5){gl_FragColor=vec4(center.rgb,1.);return;}
-if(outlineMode<.5||outlineWidth<.5){gl_FragColor=vec4(background,1.);return;}
+if(outlineMode<.5||outlineWidth<.5){gl_FragColor=vec4(backdrop,1.);return;}
 float best=100.;vec3 nearby=palette[0];vec2 direction=vec2(0.);
 for(int y=-5;y<=5;y++)for(int x=-5;x<=5;x++){
 float dist=length(vec2(float(x),float(y)));
@@ -272,7 +278,7 @@ if(r<b&&r<w)ink=palette[1];else if(b<r||w<r)ink=palette[2];
 }
 if(outlineMode>2.5){float grain=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.3,79.1)))*43758.5);if(grain>.8)ink=palette[1];}
 gl_FragColor=vec4(ink,1.);
-}else gl_FragColor=vec4(background,1.);
+}else gl_FragColor=vec4(backdrop,1.);
 }
 </script>
 <script type="module">
@@ -280,14 +286,16 @@ import * as THREE from 'three';
 import {MTLLoader} from 'three/addons/loaders/MTLLoader.js';
 import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {createRenderLab} from './render-lab.js';
 const $=id=>document.getElementById(id),status=$('status');
 const presets={'Original':['#000000','#C84850','#5060C0','#FFFFFF'],'Game Boy':['#0F380F','#306230','#8BAC0F','#9BBC0F'],'Graphite':['#171717','#666666','#BBBBBB','#FFFFFF'],'Amber':['#271600','#7D4200','#E6A23B','#FFE6A0'],'Virtual Boy':['#210000','#690000','#C00000','#FF3030'],'Cyanotype':['#102A43','#28618A','#72B5CF','#E6F5FF']};
 const styles=['Flat','Cel shaded','Pixel','Watercolour','Ink / Sketch','Monochrome'],outlines=['Off','Solid','Reactive','Ink'];
 const state={style:'Pixel',outline:'Reactive',width:2,palette:'Original',resolution:'Native'};
+let lab=null;
 const rgb=h=>new THREE.Vector3(parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255);
 const colors=presets.Original.map(rgb);
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(40,1,.01,100);
-const renderer=new THREE.WebGLRenderer({antialias:false,alpha:false});
+const renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,preserveDrawingBuffer:true});
 renderer.outputColorSpace=THREE.LinearSRGBColorSpace;document.body.prepend(renderer.domElement);
 renderer.domElement.setAttribute('aria-label','Rotatable 3D Porygon2');
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.enablePan=true;
@@ -312,9 +320,9 @@ document.addEventListener('wheel',event=>{
  if(event.ctrlKey||!event.target.closest('#panel'))event.preventDefault();
 },{passive:false});
 
-const surface=new THREE.ShaderMaterial({vertexShader:$('vertex').textContent,fragmentShader:$('surface-frag').textContent,uniforms:{diffuse:{value:new THREE.Color(1,1,1)},colorMap:{value:null},textured:{value:0},originalPalette:{value:1},partId:{value:0},styleId:{value:2},palette:{value:colors},lightDir:{value:new THREE.Vector3(.4,.7,.5).normalize()}},side:THREE.DoubleSide});
+const surface=new THREE.ShaderMaterial({vertexShader:$('vertex').textContent,fragmentShader:$('surface-frag').textContent,uniforms:{diffuse:{value:new THREE.Color(1,1,1)},colorMap:{value:null},textured:{value:0},originalPalette:{value:1},partId:{value:0},styleId:{value:2},palette:{value:colors},lightDir:{value:new THREE.Vector3(.4,.7,.5).normalize()},lightStrength:{value:1},unlitMode:{value:0},glossMode:{value:0}},side:THREE.DoubleSide});
 const postScene=new THREE.Scene(),postCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
-const post=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,vertexShader:$('quad-vert').textContent,fragmentShader:$('post-frag').textContent,uniforms:{tex:{value:null},pixelStep:{value:new THREE.Vector2()},palette:{value:colors},background:{value:rgb('#171a23')},outlineMode:{value:2},outlineWidth:{value:2}}});
+const post=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,vertexShader:$('quad-vert').textContent,fragmentShader:$('post-frag').textContent,uniforms:{tex:{value:null},pixelStep:{value:new THREE.Vector2()},palette:{value:colors},background:{value:rgb('#171a23')},background2:{value:rgb('#171a23')},gradientMode:{value:0},checkerMode:{value:0},outlineMode:{value:2},outlineWidth:{value:2}}});
 postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),post));
 let aspectFit=1;
 let target,model,current=0,requested=0,loading=0;
@@ -323,7 +331,7 @@ function dispose(root){root?.traverse(o=>{if(o.isMesh){o.geometry.dispose();cons
 function resize(){
 const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight),dpr=Math.min(devicePixelRatio||1,2);
 renderer.setPixelRatio(dpr);renderer.setSize(w,h);
-camera.aspect=w/h;camera.updateProjectionMatrix();
+camera.aspect=lab?.isCompare()?w/(2*h):w/h;camera.updateProjectionMatrix();
 const fit=Math.max(1,1/camera.aspect);if(model)camera.position.sub(controls.target).multiplyScalar(fit/aspectFit).add(controls.target);aspectFit=fit;
 const rh=state.resolution==='Native'?Math.round(h*dpr):parseInt(state.resolution,10),rw=Math.max(1,Math.round(rh*w/h));
 if(target?.width===rw&&target?.height===rh)return;
@@ -337,7 +345,7 @@ $('swatches').replaceChildren(...presets[state.palette].map(h=>{const el=documen
 presets[state.palette].forEach((h,i)=>colors[i].copy(rgb(h)));
 post.uniforms.background.value.copy(rgb('#171a23'));post.uniforms.outlineWidth.value=state.width;post.uniforms.outlineMode.value=outlines.indexOf(state.outline);
 model?.traverse(o=>{if(o.isMesh)for(const m of (Array.isArray(o.material)?o.material:[o.material])){m.uniforms.styleId.value=styles.indexOf(state.style);m.uniforms.originalPalette.value=state.palette==='Original'?1:0;}});
-resize();
+resize();lab?.onSync();
 }
 for(const id of ['style','outline','palette','resolution'])$(id).onchange=()=>{state[id]=$(id).value;sync();};
 $('width').oninput=()=>{state.width=+$('width').value;sync();};
@@ -744,18 +752,24 @@ try{
  source?.dispose();return mat;};
  o.material=Array.isArray(o.material)?o.material.map(make):make(o.material);
  });
- if(model){scene.remove(model);dispose(model);}
+ if(model){lab?.releaseModel(model);scene.remove(model);dispose(model);}
  model=root;current=next;scene.add(root);$('name').textContent=entry.name;
  renderer.domElement.setAttribute('aria-label','Rotatable 3D '+entry.name);
- resetBuiltIn();const saved=storedView(entry.id);if(saved)applyView(saved);showNotice(saved?'Restored saved view for '+entry.name+'.':'Using built-in view for '+entry.name+'.');status.textContent=count+' meshes · ready';
+ resetBuiltIn();const saved=storedView(entry.id);if(saved)applyView(saved);showNotice(saved?'Restored saved view for '+entry.name+'.':'Using built-in view for '+entry.name+'.');status.textContent=count+' meshes · ready';lab?.onModelChanged();
 }catch(e){if(token===loading)status.textContent='Model failed';console.error(e);}
 }
 $('prev').onclick=()=>selectModel(requested-1);$('next').onclick=()=>selectModel(requested+1);
 addEventListener('keydown',e=>{if(e.target.closest('input,select,button,textarea,#orbit-tools'))return;if(e.key==='ArrowLeft'){e.preventDefault();selectModel(requested-1);}if(e.key==='ArrowRight'){e.preventDefault();selectModel(requested+1);}});
+lab=createRenderLab({
+  THREE,OBJLoader,MTLLoader,renderer,scene,camera,controls,postScene,postCamera,post,surface,
+  colors,presets,styles,state,models,parts,
+  getModel:()=>model,getCurrent:()=>current,getTarget:()=>target,getRoll:()=>roll,
+  syncAppearance:sync,resizeView:resize,notify:showNotice
+});
 selectModel(0);
 addEventListener('error',e=>{status.textContent='Viewer error';console.error(e);});
 addEventListener('resize',resize);sync();
 let frameLast=performance.now();
-function frame(now=performance.now()){requestAnimationFrame(frame);const dt=Math.min(.05,Math.max(0,(now-frameLast)/1000));frameLast=now;controls.update();stepAnalog(dt);camera.lookAt(controls.target);camera.rotateZ(radians(THREE.MathUtils.euclideanModulo(roll,360)));renderer.setRenderTarget(target);renderer.setClearColor(0x000000,0);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}
+function frame(now=performance.now()){requestAnimationFrame(frame);const dt=Math.min(.05,Math.max(0,(now-frameLast)/1000));frameLast=now;controls.update();stepAnalog(dt);camera.lookAt(controls.target);camera.rotateZ(radians(THREE.MathUtils.euclideanModulo(roll,360)));renderer.setClearColor(0x000000,0);if(lab)lab.render(now);else{renderer.setRenderTarget(target);renderer.clear();renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(postScene,postCamera);}}
 frame();
 </script></body></html>
