@@ -1,0 +1,40 @@
+name: Porygon Viewer Browser Smoke
+
+on:
+  pull_request:
+    paths:
+      - '**'
+      - '.github/workflows/viewer-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.1
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Launch site
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/porygon-server.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:8765/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/porygon-server.log
+          exit 1
+      - name: Exercise desktop and mobile Chromium
+        run: node tests/viewer-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: porygon-viewer-smoke-screenshots
+          path: viewer-smoke-artifacts/
+          if-no-files-found: ignore

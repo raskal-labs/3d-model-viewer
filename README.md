@@ -1,6 +1,6 @@
 # Porygon2 & Chief Style Lab
 
-GitHub Pages viewer at `/porygon2/`. Serve over HTTPS; opening HTML directly from Files on iOS does not load JavaScript modules.
+GitHub Pages viewer at https://raskal-labs.github.io/3d-model-viewer/. Serve over HTTPS; opening HTML directly from Files on iOS does not load JavaScript modules.
 
 ## Default appearance
 Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **Native** (pixel ratio capped at 2). Six styles: Flat, Cel shaded, Pixel, Watercolour, Ink / Sketch, Monochrome. Six palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype. Outline modes: Off, Solid, Reactive, Ink; render resolutions: 80p, 160p, 240p, Native.

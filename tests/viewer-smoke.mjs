@@ -18,7 +18,7 @@ const bindErrors=page=>{
   });
 };
 const view = async(page,label) => {
-  await page.goto('http://127.0.0.1:8765/porygon2/',{waitUntil:'domcontentloaded'});
+  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('meshes · ready'),null,{timeout:45000});
   assert.match(await page.locator('#status').innerText(),/\d+ meshes · ready/);
   report.push(label+': model loaded');
