@@ -61,7 +61,12 @@ export function createRenderLab(ctx) {
     .lab-actions{display:flex;gap:6px;flex-wrap:wrap}
     .lab-actions button{flex:1;min-height:32px}
     .lab-note{font-size:11px;color:#b6c8dc;line-height:1.45}
+    header{gap:6px}
+    header strong{min-width:0;max-width:98px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    header small{min-width:0;max-width:75px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    header button{padding:7px 8px}
     #labCompareToggle{padding:7px 9px;white-space:nowrap;min-width:32px}
+    @media(max-width:420px){header small{max-width:42px}header strong{max-width:86px}}
     #labCompareToggle[aria-pressed=true]{background:#526b95;border-color:#bed1f0}
     #labComparisonLabels{position:fixed;top:calc(env(safe-area-inset-top) + 58px);left:0;right:0;
       display:none;z-index:1;pointer-events:none;color:white;text-shadow:0 1px 3px #000;
@@ -131,7 +136,7 @@ export function createRenderLab(ctx) {
     slider('Brightness','labBrightness',-1,1,.05) +
     slider('Contrast','labContrast',-1,1,.05) +
     slider('Saturation','labSaturation',-1,1,.05) +
-    '<div class="lab-actions"><button type="button" id="labClearEffects">Clear filters</button><button type="button" id="labToggleBefore">Hold for before / after</button></div>');
+    '<div class="lab-actions"><button type="button" id="labClearEffects">Clear filters</button><button type="button" id="labToggleBefore">Hold to bypass filters</button></div>');
   section('Overlays & Inspection','overlays',
     toggle('Mesh wireframe','labWireframe') +
     toggle('Crosshair','labCrosshair') + toggle('Rule of thirds','labThirds') +
@@ -193,6 +198,11 @@ export function createRenderLab(ctx) {
   let primaryOverlayRoot=null, secondaryWireRoots=new WeakMap();
   const allMeshes = rootModel => {
     const out=[];rootModel?.traverse(o=>{if(o.isMesh && o.userData.labWire!==true)out.push(o);});return out;
+  };
+  const releaseModel = modelRoot => {
+    const wires=secondaryWireRoots.get(modelRoot)||[];
+    for(const wire of wires){wire.removeFromParent();wire.geometry.dispose();wire.material.dispose();}
+    if(modelRoot)secondaryWireRoots.delete(modelRoot);
   };
   const ensureWires = modelRoot => {
     if (!modelRoot || secondaryWireRoots.has(modelRoot)) return;
@@ -564,6 +574,7 @@ export function createRenderLab(ctx) {
   $('labScreenshot').onclick=snapshot;
   const loadSecondary=async()=>{
     if(!cfg.compare)return;
+    const token=++secondaryLoading;
     let index=Number.isInteger(cfg.compareIndex)&&cfg.compareIndex>=0&&cfg.compareIndex<models.length?cfg.compareIndex:0;
     if(index===getCurrent()&&models.length>1)index=(index+1)%models.length;
     cfg.compareIndex=index;
@@ -571,7 +582,7 @@ export function createRenderLab(ctx) {
       secondaryModel=secondaryCache.get(index);secondaryIndex=index;
       syncUI();updateLight();return;
     }
-    const token=++secondaryLoading,entry=models[index];
+    const entry=models[index];
     if(!entry)return;
     try{
       const manager=new THREE.LoadingManager(),loader=new OBJLoader(manager);
@@ -623,6 +634,7 @@ export function createRenderLab(ctx) {
     }
     syncFX();
   };
+  const secondCamera=camera.clone();
   const render=(now)=>{
     const target=getTarget();if(!target)return;
     if(!fxTarget||fxTarget.width!==target.width||fxTarget.height!==target.height){
@@ -639,7 +651,7 @@ export function createRenderLab(ctx) {
       const b=secondaryBounds.getSize(new THREE.Vector3()).length()||1;
       const from=controls.target;
       const to=secondaryBounds.getCenter(new THREE.Vector3());
-      const secondCamera=camera.clone();
+      secondCamera.copy(camera);
       secondCamera.aspect=r/h;secondCamera.updateProjectionMatrix();
       secondCamera.position.copy(camera.position).sub(from).multiplyScalar(b/a).add(to);
       secondCamera.quaternion.copy(camera.quaternion);
@@ -675,5 +687,5 @@ export function createRenderLab(ctx) {
   });
   syncUI();
   if(cfg.compare)loadSecondary();
-  return { onModelChanged, onSync, render, isCompare:()=>Boolean(cfg.compare), save:persist };
+  return { onModelChanged, onSync, render, releaseModel, isCompare:()=>Boolean(cfg.compare), save:persist };
 }
