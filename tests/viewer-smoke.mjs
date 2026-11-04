@@ -2,7 +2,7 @@
 // Intentionally runs on an unmodified checkout; no model/texture writes.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 
 await fs.mkdir('viewer-smoke-artifacts', {recursive:true});
 const browser=await chromium.launch({
@@ -91,6 +91,25 @@ try{
   await mobile.close();
 }finally{
   await browser.close();
+}
+// Linux WebKit smoke is a useful Safari-engine regression signal, not a substitute for iOS Safari testing.
+let safariEngine;
+try {
+  safariEngine=await webkit.launch({headless:true});
+  const webkitContext=await safariEngine.newContext({
+    viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true
+  });
+  const wkPage=await webkitContext.newPage();bindErrors(wkPage);
+  await view(wkPage,'mobile WebKit');
+  await wkPage.locator('#labCompareToggle').click();
+  await wkPage.waitForFunction(()=>document.querySelector('#viewNotice')?.textContent.includes('Ready to compare with'),null,{timeout:45000});
+  await wkPage.waitForTimeout(500);
+  const stats=await canvasStats(wkPage);
+  assert(stats.counts[0]>30 && stats.counts[1]>30,'WebKit compare missing model: '+JSON.stringify(stats));
+  await wkPage.screenshot({path:'viewer-smoke-artifacts/webkit-mobile-compare.png'});
+  report.push('mobile WebKit: split compare '+JSON.stringify(stats));
+} finally {
+  await safariEngine?.close();
 }
 if(problems.length){
   console.error('Browser errors:',problems.join('\n'));
