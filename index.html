@@ -24,7 +24,7 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 #panel{max-width:calc(100vw - 24px);overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
 #panel *{min-width:0} #panel input,#panel textarea,#panel select{max-width:100%}
 @media(max-width:600px){#panel{top:auto;bottom:calc(env(safe-area-inset-bottom) + 12px);left:12px;right:12px;width:auto;max-height:calc(100dvh - env(safe-area-inset-top) - 80px);padding:14px} #panel label{flex-wrap:wrap} #panel select{max-width:100%}}
-</style><link rel="stylesheet" href="./gesture-navigation.css"></head><body>
+</style><link rel="stylesheet" href="./gesture-navigation.css?v=20261105"></head><body>
 <header><button id="prev" aria-label="Previous model">←</button><strong id="name">Porygon2</strong><button id="next" aria-label="Next model">→</button><small id="status" role="status">Loading…</small><button id="open" aria-expanded="false">Lab</button></header>
 <section id="panel" hidden aria-label="Rendering settings">
 <h3>Render lab</h3><output id="labStatus" role="status" class="lab-status"></output>
@@ -171,8 +171,8 @@ import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {STLLoader} from 'three/addons/loaders/STLLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {createRenderLab} from './render-lab.js';
-import {createGestureNavigation} from './gesture-navigation.js';
+import {createRenderLab} from './render-lab.js?v=20261105';
+import {createGestureNavigation} from './gesture-navigation.js?v=20261105';
 const $=id=>document.getElementById(id),status=$('status');
 const presets={'Original':['#000000','#C84850','#5060C0','#FFFFFF'],'Game Boy':['#0F380F','#306230','#8BAC0F','#9BBC0F'],'Graphite':['#171717','#666666','#BBBBBB','#FFFFFF'],'Amber':['#271600','#7D4200','#E6A23B','#FFE6A0'],'Virtual Boy':['#210000','#690000','#C00000','#FF3030'],'Cyanotype':['#102A43','#28618A','#72B5CF','#E6F5FF']};
 const styles=['Flat','Cel shaded','Pixel','Watercolour','Ink / Sketch','Monochrome'],outlines=['Off','Solid','Reactive','Ink'];
