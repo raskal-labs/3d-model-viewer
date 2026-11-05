@@ -504,7 +504,9 @@ export function createRenderLab(ctx) {
     $('labCompareWith').disabled=!cfg.compare;
     $('labOverlayOpacity').disabled=!overlayObjectURL;$('labRemoveOverlay').disabled=!overlayObjectURL;
     const hasTexture=allMeshes(getModel()).some(m=>m.geometry.attributes.uv&&(Array.isArray(m.material)?m.material:[m.material]).some(mat=>mat?.uniforms?.textured?.value===1));
-    $('labTexture').disabled=!hasTexture;$('labResetTexture').disabled=!currentTexture;
+    const hasComparedTexture=cfg.compare&&allMeshes(secondaryModel).some(m=>m.geometry.attributes.uv&&(Array.isArray(m.material)?m.material:[m.material]).some(mat=>mat?.uniforms?.textured?.value===1));
+    $('labTexture').disabled=!hasTexture;$('labFilter').disabled=!(hasTexture||hasComparedTexture);$('labResetTexture').disabled=!currentTexture;
+    $('labPart').disabled=$('labPart').options.length<=2;$('labResetParts').disabled=cfg.part==='All';
     const hasLooks=refreshSavedLooks().length>0;$('labRestoreLook').disabled=!hasLooks;$('labDeleteLook').disabled=!hasLooks;
     compareBtn.setAttribute('aria-pressed',String(Boolean(cfg.compare)));
     labels.classList.toggle('active',Boolean(cfg.compare));
@@ -549,8 +551,8 @@ export function createRenderLab(ctx) {
     const i=models.findIndex(m=>m.name===e.target.value);
     if(i<0)return;cfg.compareIndex=i;persist();if(cfg.compare)loadSecondary();syncUI();
   };
-  $('labPart').onchange=e=>{cfg.part=e.target.value;showParts();};
-  $('labResetParts').onclick=()=>{cfg.part='All';$('labPart').value='All';showParts();};
+  $('labPart').onchange=e=>{cfg.part=e.target.value;showParts();syncUI();};
+  $('labResetParts').onclick=()=>{cfg.part='All';$('labPart').value='All';showParts();syncUI();};
   const filterPresets={None:{},CRT:{scanlines:.7,crt:.55,vignette:.25},Film:{grain:.2,vignette:.2,contrast:.1},Print:{halftone:.55,sepia:.2}};
   $('labFilterPreset').onchange=e=>{if(e.target.value==='Custom')return;for(const [,key] of fxFields)cfg[key]=0;for(const key of ['brightness','contrast','saturation'])cfg[key]=0;Object.assign(cfg,filterPresets[e.target.value]);syncUI();};
   const overlayPresets={None:{wireframe:false,crosshair:false,thirds:false},Composition:{wireframe:false,crosshair:true,thirds:true},Wireframe:{wireframe:true,crosshair:false,thirds:false}};

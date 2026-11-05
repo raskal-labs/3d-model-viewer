@@ -113,6 +113,7 @@ try{
   await page.waitForFunction(()=>document.querySelector('#viewNotice')?.textContent.includes('Ready to compare with'),null,{timeout:45000});
   await page.waitForTimeout(450);
   assert.equal(await page.locator('#labComparisonLabels').evaluate(e=>e.classList.contains('active')),true);
+  assert.equal(await page.locator('#labFilter').isEnabled(),true,'Texture sampling is available for the textured comparison model');
   const [left,right]=await page.locator('#labComparisonLabels span').allTextContents();
   assert.notEqual(left,right,'Comparison should show two distinct models');
   const stats=await canvasStats(page);
@@ -121,6 +122,7 @@ try{
   report.push('desktop: split compare rendered both models, '+JSON.stringify(stats));
   await page.locator('#labCompareToggle').click();
   assert.equal(await page.locator('#labComparisonLabels').evaluate(e=>e.classList.contains('active')),false);
+  assert.equal(await page.locator('#labFilter').isDisabled(),true,'Texture sampling is unavailable for the untextured model');
   report.push('desktop: compare toggles off');
   await page.locator('#open').click();
   await page.locator('[data-section="models"] summary').click();
@@ -136,6 +138,7 @@ try{
   await page.locator('#labModelFile').setInputFiles({name:'colour.glb',mimeType:'model/gltf-binary',buffer:testGLB()});
   await page.waitForFunction(()=>document.querySelector('#name').textContent==='colour',null,{timeout:45000});
   assert.match(await page.locator('#status').innerText(),/1 meshes · ready/);
+  assert.equal(await page.locator('#labPart').isDisabled(),true,'A one-mesh model has no parts to isolate');
   await page.locator('#labModelSelect').selectOption({label:'triangle (2)'});
   await page.waitForFunction(()=>document.querySelector('#name').textContent==='triangle (2)',null,{timeout:45000});
   await page.locator('#labModelSelect').selectOption({label:'colour'});
