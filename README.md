@@ -3,7 +3,7 @@
 GitHub Pages viewer at https://raskal-labs.github.io/3d-model-viewer/. Serve over HTTPS; opening HTML directly from Files on iOS does not load JavaScript modules.
 
 ## Default appearance
-Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **Native** (pixel ratio capped at 2). Six styles: Flat, Cel shaded, Pixel, Watercolour, Ink / Sketch, Monochrome. Six palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype. Outline modes: Off, Solid, Reactive, Ink; the outline colour is selected separately from its style and the model palette. Reactive and Ink vary edge coverage, and output colour reduction preserves the outline colour; render resolutions: 80p, 160p, 240p, Native.
+Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **Native** (pixel ratio capped at 2). Six styles: Flat, Cel shaded, Pixel, Watercolour, Ink / Sketch, Monochrome. Six palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype. Outline modes: Off, Solid, Reactive, Ink; the outline colour is selected separately from its style and the model palette; the Surface lines slider adds subtle mesh edges. Reactive and Ink vary edge coverage, and output colour reduction preserves the outline colour; render resolutions: 80p, 160p, 240p, Native.
 
 ## Camera and controls
 The header **← / →** arrows switch character models (Porygon2, Chief, and future additions). They never adjust the camera.

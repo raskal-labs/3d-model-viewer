@@ -6,7 +6,7 @@ One compact Lab panel containing collapsible groups. Gesture-first camera naviga
 This is an additive render preview workflow; it never writes model geometry, source textures, or assets back to Git.
 
 ## Implemented on this branch
-- **Appearance:** Six styles, four outline modes with independently selected colour and width, six built-in palettes and resolution choices, plus an editable four-colour custom palette.
+- **Appearance:** Six styles, four outline modes with independently selected colour, width and subtle surface-line strength, six built-in palettes and resolution choices, plus an editable four-colour custom palette.
 - **Scene:** Solid studio/black/white/chroma/Game Boy backdrops, gradient studio/sunset, transparency-style checkerboard, custom solid colour.
 - **Lighting:** Original, unlit, studio, soft, hard, dramatic, rim, overhead, underlit, and custom angle, elevation and intensity. Shading is stylized, not physical PBR.
 - **Quick looks:** Clean, Game Boy, Virtual Boy, CRT TV, PS1-inspired, Blueprint. Presets configure independent effects rather than creating more base render styles.

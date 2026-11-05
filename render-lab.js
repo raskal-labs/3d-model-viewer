@@ -36,6 +36,7 @@ export function createRenderLab(ctx) {
       if(typeof value==='string'&&((key==='palette'&&value==='Custom')||Array.from($(key).options).some(option=>option.value===value)))state[key]=value;
     }
     if(typeof saved.appearance.outlineColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(saved.appearance.outlineColor))state.outlineColor=saved.appearance.outlineColor;
+    if(Number.isFinite(saved.appearance.edgeDetail))state.edgeDetail=Math.max(0,Math.min(.5,saved.appearance.edgeDetail));
     if(Number.isFinite(saved.appearance.width))state.width=Math.max(0,Math.min(5,saved.appearance.width));
   }
   if (!Array.isArray(cfg.customPalette) || cfg.customPalette.length !== 4 ||
@@ -122,7 +123,7 @@ export function createRenderLab(ctx) {
   const names=['style','outline','palette','resolution'];
   for(const id of names){const el=$(id);el.closest('label').hidden=true;inner.append(el.closest('label'));}
   $('swatches').hidden=true;inner.append($('swatches'));
-  const widthLabel=$('width').closest('label'),outlineColorLabel=$('outlineColor').closest('label');
+  const widthLabel=$('width').closest('label'),outlineColorLabel=$('outlineColor').closest('label'),edgeDetailLabel=$('edgeDetail').closest('label');
   const groups={};
   const descriptions={
     style:'Surface shading',palette:'Model colours',outline:'Edge treatment',resolution:'Internal render height'
@@ -143,7 +144,7 @@ export function createRenderLab(ctx) {
     }
     inner.append(group);
     if(id==='resolution'){const note=document.createElement('p');note.className='lab-note';note.textContent='Lower values make larger pixels. Native matches the screen, capped at 2× pixel density.';group.append(note);}
-    if(id==='outline'){outlineColorLabel.classList.add('outline-colour');inner.append(outlineColorLabel);widthLabel.classList.add('appearance-width');inner.append(widthLabel);}
+    if(id==='outline'){outlineColorLabel.classList.add('outline-colour');inner.append(outlineColorLabel);widthLabel.classList.add('appearance-width');inner.append(widthLabel);edgeDetailLabel.classList.add('appearance-width');inner.append(edgeDetailLabel);}
   }
   const colours=document.createElement('div');colours.className='appearance-group';
   colours.innerHTML='<div class="appearance-label">Custom palette</div><p class="lab-note">Tap a colour to edit. Changes create a custom palette.</p><div class="lab-swatches" id="labPaletteSwatches">'+Array.from({length:4},(_,i)=>`<input type="color" id="labColour${i}" aria-label="Palette colour ${i+1}">`).join('')+'</div>';
@@ -293,7 +294,9 @@ export function createRenderLab(ctx) {
     const objs=[];
     for (const m of allMeshes(modelRoot)) {
       const geom = new THREE.WireframeGeometry(m.geometry);
-      const wire = new THREE.LineSegments(geom,new THREE.LineBasicMaterial({color:0x111111,transparent:true,opacity:.8,depthTest:true}));
+      // Preserve a separate alpha marker while blending subtle lines over the model.
+      const material=new THREE.LineBasicMaterial({color:0x111111,transparent:true,opacity:.1,depthTest:true,depthWrite:false,blending:THREE.CustomBlending,blendSrc:THREE.SrcAlphaFactor,blendDst:THREE.OneMinusSrcAlphaFactor,blendSrcAlpha:THREE.ZeroFactor,blendDstAlpha:THREE.ConstantAlphaFactor,blendAlpha:.9});
+      const wire = new THREE.LineSegments(geom,material);
       wire.userData.labWire=true; wire.visible=Boolean(cfg.wireframe);
       m.add(wire);objs.push(wire);
     }
@@ -301,7 +304,8 @@ export function createRenderLab(ctx) {
   };
   const applyWires = modelRoot => {
     ensureWires(modelRoot);
-    (secondaryWireRoots.get(modelRoot)||[]).forEach(w=>w.visible=Boolean(cfg.wireframe));
+    const strength=cfg.wireframe?.8:(state.outline==='Off'?0:state.edgeDetail),colour=hexToVec(state.outlineColor);
+    (secondaryWireRoots.get(modelRoot)||[]).forEach(w=>{w.visible=strength>0;w.material.opacity=strength;w.material.color.setRGB(colour.x,colour.y,colour.z);});
   };
   const lightDir = new THREE.Vector3();
   const updateLight = () => {
@@ -480,7 +484,7 @@ export function createRenderLab(ctx) {
       fxMat.uniforms[key].value=pausedFX?0:+cfg[key];
     fxMat.uniforms.crosshair.value=pausedFX?0:Number(cfg.crosshair);
     fxMat.uniforms.thirds.value=pausedFX?0:Number(cfg.thirds);
-    buildPalette();applyBackground();updateLight();$('outlineColor').disabled=state.outline==='Off';$('width').disabled=state.outline==='Off';
+    buildPalette();applyBackground();updateLight();$('outlineColor').disabled=state.outline==='Off';$('width').disabled=state.outline==='Off';$('edgeDetail').disabled=state.outline==='Off'||cfg.wireframe;
   };
   const syncUI = () => {
     const map={labBackdrop:'backdrop',labBackground:'background',labLight:'light',
@@ -498,7 +502,7 @@ export function createRenderLab(ctx) {
       else el.value=String(cfg[key]);
     }
     $('labModelSelect').value=String(getCurrent());
-    $('outlineColor').disabled=state.outline==='Off';$('width').disabled=state.outline==='Off';
+    $('outlineColor').disabled=state.outline==='Off';$('width').disabled=state.outline==='Off';$('edgeDetail').disabled=state.outline==='Off'||cfg.wireframe;
     $('labDither').disabled=Number(cfg.quantize)===0;
     $('labMaterial').disabled=cfg.light==='Unlit';
     $('labCompareWith').disabled=!cfg.compare;
@@ -659,6 +663,7 @@ export function createRenderLab(ctx) {
           if(typeof candidate==='string'&&Array.from(selector.options).some(o=>o.value===candidate))state[key]=candidate;
         }
         if(typeof parsed.appearance.outlineColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(parsed.appearance.outlineColor))state.outlineColor=parsed.appearance.outlineColor;
+        if(Number.isFinite(parsed.appearance.edgeDetail))state.edgeDetail=Math.max(0,Math.min(.5,parsed.appearance.edgeDetail));
         if(Number.isFinite(parsed.appearance.width))state.width=Math.max(0,Math.min(5,Math.round(parsed.appearance.width)));
       }
       syncAppearance();syncUI();persist();setCompare(Boolean(cfg.compare));

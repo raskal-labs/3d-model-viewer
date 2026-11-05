@@ -69,6 +69,7 @@ try{
   // Outline colour stays independent of style, model palette and output quantization.
   await page.locator('[aria-label="Edge treatment"] [data-value="Off"]').click();
   assert.equal(await page.locator('#outlineColor').isDisabled(),true);
+  assert.equal(await page.locator('#edgeDetail').isDisabled(),true);
   await page.locator('[aria-label="Edge treatment"] [data-value="Solid"]').click();
   assert.equal(await page.locator('#outlineColor').isEnabled(),true);
   await page.locator('#outlineColor').evaluate(el=>{el.value='#00ff00';el.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -77,6 +78,11 @@ try{
   await page.locator('[aria-label="Edge treatment"] [data-value="Ink"]').click();
   assert.equal(await page.locator('#outlineColor').inputValue(),'#00ff00');
   await page.locator('[aria-label="Edge treatment"] [data-value="Solid"]').click();
+  const greenChannel=async()=>page.evaluate(()=>{const src=document.querySelector('body > canvas'),c=document.createElement('canvas');c.width=src.width;c.height=src.height;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(src,0,0);const d=ctx.getImageData(0,0,c.width,c.height).data;let sum=0;for(let i=1;i<d.length;i+=4)sum+=d[i];return sum;});
+  await page.locator('#edgeDetail').evaluate(el=>{el.value='0';el.dispatchEvent(new Event('input',{bubbles:true}));});await page.waitForTimeout(300);
+  const withoutLines=await greenChannel();
+  await page.locator('#edgeDetail').evaluate(el=>{el.value='0.3';el.dispatchEvent(new Event('input',{bubbles:true}));});await page.waitForTimeout(300);
+  assert(await greenChannel()>withoutLines+100,'Surface lines should follow the chosen green outline colour');
   await page.locator('[data-section="palette"] summary').click();
   assert.equal(await page.locator('#labDither').isDisabled(),true);
   await page.locator('#labQuantize').selectOption('4');
@@ -91,7 +97,7 @@ try{
   });
   assert(greenOutlinePixels>100,'Outline colour was changed by the palette or output quantization: '+greenOutlinePixels);
   const savedOutline=await page.evaluate(()=>JSON.parse(localStorage.getItem('raskal-porygon-render-lab:v1')).appearance);
-  assert.equal(savedOutline.outlineColor,'#00ff00');assert.equal(savedOutline.outline,'Solid');
+  assert.equal(savedOutline.outlineColor,'#00ff00');assert.equal(savedOutline.outline,'Solid');assert.equal(savedOutline.edgeDetail,0.3);
   await page.locator('#labQuantize').selectOption('Off');
   await page.locator('[data-section="palette"] summary').click();
   await page.locator('#defaults').evaluate(el=>el.click());

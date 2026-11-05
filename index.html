@@ -32,6 +32,7 @@ header{position:absolute;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-ar
 <label>Outline<select id="outline"><option>Off</option><option>Solid</option><option selected>Reactive</option><option>Ink</option></select></label>
 <label>Outline colour <input id="outlineColor" type="color" value="#000000" aria-label="Outline colour"></label>
 <label>Thickness <span><input id="width" type="range" min="0" max="5" step="1" value="2" aria-label="Outline thickness"><output id="widthValue">2 px</output></span></label>
+<label>Surface lines <span><input id="edgeDetail" type="range" min="0" max="0.5" step="0.05" value="0.1" aria-label="Surface line strength"><output id="edgeDetailValue">10%</output></span></label>
 <label>Palette<select id="palette"><option selected>Original</option><option>Game Boy</option><option>Graphite</option><option>Amber</option><option>Virtual Boy</option><option>Cyanotype</option></select></label>
 <div id="swatches" aria-label="Palette swatches"></div>
 <label>Resolution<select id="resolution"><option>80p</option><option>160p</option><option>240p</option><option>360p</option><option>480p</option><option>720p</option><option selected>Native</option></select></label>
@@ -142,14 +143,14 @@ void main(){
 vec4 center=texture2D(tex,uv0);
 vec3 backdrop=mix(background,background2,clamp(uv0.y,0.,1.)*gradientMode);
 if(checkerMode>.5){vec2 tile=floor(uv0*vec2(20.,20.));float chess=mod(tile.x+tile.y,2.);backdrop=mix(vec3(.22),vec3(.36),chess);}
-if(center.a>.5){gl_FragColor=vec4(center.rgb,1.);return;}
+if(center.a>.05){gl_FragColor=vec4(center.rgb,center.a<.98?.25:1.);return;}
 if(outlineMode<.5||outlineWidth<.5){gl_FragColor=vec4(backdrop,1.);return;}
 float best=100.;vec2 direction=vec2(0.);
 for(int y=-5;y<=5;y++)for(int x=-5;x<=5;x++){
 float dist=length(vec2(float(x),float(y)));
 if(dist>outlineWidth+.01)continue;
 vec4 s=texture2D(tex,uv0+vec2(float(x),float(y))*pixelStep);
-if(s.a>.5&&dist<best){best=dist;direction=vec2(float(x),float(y));}
+if(s.a>.05&&dist<best){best=dist;direction=vec2(float(x),float(y));}
 }
 if(best<99.){
 float strength=1.;
@@ -176,7 +177,7 @@ import {createGestureNavigation} from './gesture-navigation.js?v=20261105';
 const $=id=>document.getElementById(id),status=$('status');
 const presets={'Original':['#000000','#C84850','#5060C0','#FFFFFF'],'Game Boy':['#0F380F','#306230','#8BAC0F','#9BBC0F'],'Graphite':['#171717','#666666','#BBBBBB','#FFFFFF'],'Amber':['#271600','#7D4200','#E6A23B','#FFE6A0'],'Virtual Boy':['#210000','#690000','#C00000','#FF3030'],'Cyanotype':['#102A43','#28618A','#72B5CF','#E6F5FF']};
 const styles=['Flat','Cel shaded','Pixel','Watercolour','Ink / Sketch','Monochrome'],outlines=['Off','Solid','Reactive','Ink'];
-const state={style:'Pixel',outline:'Reactive',outlineColor:'#000000',width:2,palette:'Original',resolution:'Native'};
+const state={style:'Pixel',outline:'Reactive',outlineColor:'#000000',width:2,edgeDetail:.1,palette:'Original',resolution:'Native'};
 let lab=null;
 const rgb=h=>new THREE.Vector3(parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255);
 const colors=presets.Original.map(rgb);
@@ -226,7 +227,7 @@ post.uniforms.tex.value=target.texture;post.uniforms.pixelStep.value.set(1/rw,1/
 }
 function sync(){
 for(const id of ['style','outline','palette','resolution'])$(id).value=state[id];
-$('width').value=state.width;$('widthValue').textContent=state.width+' px';$('outlineColor').value=state.outlineColor;
+$('width').value=state.width;$('widthValue').textContent=state.width+' px';$('outlineColor').value=state.outlineColor;$('edgeDetail').value=state.edgeDetail;$('edgeDetailValue').textContent=Math.round(state.edgeDetail*100)+'%';
 $('swatches').replaceChildren(...presets[state.palette].map(h=>{const el=document.createElement('span');el.style.background=h;return el;}));
 presets[state.palette].forEach((h,i)=>colors[i].copy(rgb(h)));
 post.uniforms.background.value.copy(rgb('#171a23'));post.uniforms.outlineColor.value.copy(rgb(state.outlineColor));post.uniforms.outlineWidth.value=state.width;post.uniforms.outlineMode.value=outlines.indexOf(state.outline);
@@ -235,9 +236,10 @@ resize();lab?.onSync();
 }
 for(const id of ['style','outline','palette','resolution'])$(id).onchange=()=>{state[id]=$(id).value;sync();lab?.save();};
 $('outlineColor').oninput=()=>{state.outlineColor=$('outlineColor').value;sync();lab?.save();};
+$('edgeDetail').oninput=()=>{state.edgeDetail=+$('edgeDetail').value;sync();lab?.save();};
 $('width').oninput=()=>{state.width=+$('width').value;sync();lab?.save();};
 $('open').onclick=()=>{$('panel').hidden=!$('panel').hidden;document.body.classList.toggle('settings-open',!$('panel').hidden);$('open').setAttribute('aria-expanded',String(!$('panel').hidden));};
-$('defaults').onclick=()=>{Object.assign(state,{style:'Pixel',outline:'Reactive',outlineColor:'#000000',width:2,palette:'Original',resolution:'Native'});sync();lab?.save();};
+$('defaults').onclick=()=>{Object.assign(state,{style:'Pixel',outline:'Reactive',outlineColor:'#000000',width:2,edgeDetail:.1,palette:'Original',resolution:'Native'});sync();lab?.save();};
 
 const VIEW_STORAGE_PREFIX='raskal-porygon-view:v1:';
 const sessionViews=new Map();
