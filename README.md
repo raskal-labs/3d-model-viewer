@@ -3,16 +3,16 @@
 GitHub Pages viewer at https://raskal-labs.github.io/3d-model-viewer/. Serve over HTTPS; opening HTML directly from Files on iOS does not load JavaScript modules.
 
 ## Default appearance
-Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **Native** (pixel ratio capped at 2). Six styles: Flat, Cel shaded, Pixel, Watercolour, Ink / Sketch, Monochrome. Six palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype. Outline modes: Off, Solid, Reactive, Ink; render resolutions: 80p, 160p, 240p, Native.
+Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **Native** (pixel ratio capped at 2). Six styles: Flat, Cel shaded, Pixel, Watercolour, Ink / Sketch, Monochrome. Six palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype. Outline modes: Off, Solid, Reactive, Ink; the outline colour is selected separately from its style and the model palette; the Surface lines slider adds subtle mesh edges. Reactive and Ink vary edge coverage, and output colour reduction preserves the outline colour; render resolutions: 80p, 160p, 240p, Native.
 
 ## Camera and controls
 The header **← / →** arrows switch character models (Porygon2, Chief, and future additions). They never adjust the camera.
 
 ### Gesture-first camera controls
 
-Drag one finger to orbit. With two fingers, drag to pan, pinch to zoom, and twist to roll; these movements can be combined. Hold the central reticle and drag to Orbit, Pan, Roll, Zoom, or Clutch, then release to open the selected precision control. Orbit uses a rocker-like surface; Pan uses a circular pad; Roll uses an outward drag followed by a circular arc; Zoom uses a slider. Hold Clutch while using other fingers to reduce viewport sensitivity. Tap the reticle to return to the last precision control, or tap it on first use to choose one. Undo and Frame are the glyph buttons at the lower left. Manual movement stops turntable rotation.
+Drag one finger to orbit. With two fingers, drag to pan, pinch to zoom, and twist to roll; these movements can be combined. Hold the reticle at the bottom center and drag to Orbit, Pan, Roll, Zoom, or Clutch, then release to open the selected precision control. Orbit uses a rocker-like surface; Pan uses a circular pad; Roll uses an outward drag followed by a circular arc; Zoom uses a slider. Hold Clutch while using other fingers to reduce viewport sensitivity. Tap the reticle to return to the last precision control, or tap it on first use to choose one. Undo and Frame are the glyph buttons at the lower left. Manual movement stops turntable rotation.
 
-The Render Lab is a scrollable settings sheet; its groups stack controls on narrow screens. Pocket Fonts are bundled with their license in `fonts/`.
+The Render Lab is a scrollable settings sheet. Use Models to open a static OBJ, STL, or self-contained GLB/glTF (up to 64 MB); uploads stay in the current tab. The Lab starts filters and overlays off on reload. Use the built-in looks, filter and guide presets, or save and later apply named looks in this browser. Look JSON can be copied, downloaded or imported; uploaded model, image and texture files are not included. Pocket Fonts are bundled with their license in `fonts/`.
 
 ## Coordinate editor, copy and paste
 Open **Lab → Camera coordinates & presets**. All camera XYZ, orbit-target XYZ, yaw, pitch, roll, distance, and FOV can be entered manually. Enter a value and commit the field to update the scene. A live readout shows the derived angles, distance and FOV.

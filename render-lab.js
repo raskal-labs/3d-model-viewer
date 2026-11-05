@@ -5,9 +5,9 @@ export function createRenderLab(ctx) {
   const { THREE, OBJLoader, MTLLoader, renderer, scene, camera, controls,
     postScene, postCamera, post, surface, colors, presets, styles, state,
     models, parts, getModel, getCurrent, getTarget, getRoll, syncAppearance,
-    resizeView, notify } = ctx;
+    resizeView, notify, loadModelEntry, prepareModel, discardModel, addModel, chooseModel } = ctx;
   const $ = id => document.getElementById(id);
-  const LKEY = 'raskal-porygon-render-lab:v1';
+  const LKEY = 'raskal-porygon-render-lab:v1', SAVED_LOOK_KEY=LKEY+':saved-look';
   const defaults = {
     backdrop: 'Dark', background: '#171a23', light: 'Original',
     lightAzimuth: 40, lightElevation: 45, lightStrength: 1,
@@ -21,13 +21,22 @@ export function createRenderLab(ctx) {
     customPalette: ['#000000','#C84850','#5060C0','#FFFFFF']
   };
   let saved = {};
-  try { saved = JSON.parse(localStorage.getItem(LKEY) || '{}') || {}; } catch {}
-  const cfg = { ...defaults, ...saved };
-  delete cfg.appearance;
+  try {
+    saved = JSON.parse(localStorage.getItem(LKEY) || '{}') || {};
+    // Preserve older automatically saved effect settings as an optional look.
+    if('backdrop' in saved && !localStorage.getItem(SAVED_LOOK_KEY)){
+      localStorage.setItem(SAVED_LOOK_KEY,JSON.stringify([{name:'Previous session',preset:{version:1,appearance:saved.appearance||{},renderLab:saved}}]));
+    }
+  } catch {}
+  // Effects and overlays are session-only; only a custom palette and appearance restore automatically.
+  const cfg = { ...defaults, customPalette:saved.customPalette };
   if(saved.appearance && typeof saved.appearance==='object'){
     for(const key of ['style','outline','palette','resolution']){
-      if(typeof saved.appearance[key]==='string')state[key]=saved.appearance[key];
+      const value=saved.appearance[key];
+      if(typeof value==='string'&&((key==='palette'&&value==='Custom')||Array.from($(key).options).some(option=>option.value===value)))state[key]=value;
     }
+    if(typeof saved.appearance.outlineColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(saved.appearance.outlineColor))state.outlineColor=saved.appearance.outlineColor;
+    if(Number.isFinite(saved.appearance.edgeDetail))state.edgeDetail=Math.max(0,Math.min(.5,saved.appearance.edgeDetail));
     if(Number.isFinite(saved.appearance.width))state.width=Math.max(0,Math.min(5,saved.appearance.width));
   }
   if (!Array.isArray(cfg.customPalette) || cfg.customPalette.length !== 4 ||
@@ -53,6 +62,7 @@ export function createRenderLab(ctx) {
     .lab-row label{min-width:0;flex:1;margin:0}
     .lab-row select,.lab-row input[type=color],.lab-row input[type=range],.lab-row input[type=file]{min-width:0;max-width:62%;flex:1}
     .lab-row select{max-width:64%;padding:5px;color:#eaf2ff;background:#26354d;border:1px solid #566980;border-radius:5px}
+    .lab-row input[type=text]{min-width:0;max-width:62%;padding:8px;color:#fff;background:#26354d;border:1px solid #566980;border-radius:5px}
     .lab-row input[type=color]{height:30px;max-width:62px;border:0;background:transparent}
     .lab-row input[type=checkbox]{width:20px;height:20px;flex:none}
     .lab-row input[type=range]{accent-color:#94bbf0}
@@ -65,10 +75,11 @@ export function createRenderLab(ctx) {
     @media(max-width:600px){
       .lab-row{align-items:stretch;flex-wrap:wrap;gap:5px}
       .lab-row label{flex:1 0 100%}
-      .lab-row select,.lab-row input[type=range],.lab-row input[type=file]{width:100%;max-width:100%;flex:1 1 100%}
+      .lab-row select,.lab-row input[type=text],.lab-row input[type=range],.lab-row input[type=file]{width:100%;max-width:100%;flex:1 1 100%}
       .lab-row input[type=checkbox]{width:22px;height:22px;flex:none}
       .lab-row:has(input[type=checkbox]){flex-wrap:nowrap;align-items:center}
       .lab-row:has(input[type=checkbox]) label{flex:1}
+      #panel input[type=text],#panel input[type=number],#panel select{font-size:16px}
       #labNativeSettings > label{display:grid;gap:6px}
       #labNativeSettings select,#labNativeSettings input[type=range]{width:100%;max-width:100%}
     }
@@ -77,8 +88,10 @@ export function createRenderLab(ctx) {
     .appearance-options button{min-width:0;min-height:44px;padding:7px;text-align:left;font-size:14px;background:#1b2b41a3;border-color:#a3bed170;display:flex;align-items:center;gap:6px}
     .appearance-options button[aria-pressed=true]{background:#5274a5b8;border-color:#e6f1ff;box-shadow:inset 0 0 0 1px #dbe9ff}
     .palette-chips{display:flex;flex:none;gap:1px}.palette-chips i{width:8px;height:18px;border:1px solid #ffffff55}
+    .outline-colour{display:flex!important;align-items:center;justify-content:space-between;margin:4px 0!important}.outline-colour input{width:58px;height:40px;padding:2px;background:transparent;border:1px solid #a3bed170;border-radius:8px}
     .appearance-width{display:grid!important;gap:6px;margin:4px 0!important}.appearance-width span{display:flex;align-items:center;gap:8px}.appearance-width input{flex:1;min-width:0}
     .lab-note{font-size:11px;color:#d4e2f5;line-height:1.45;margin:0}
+    .lab-status{display:block;color:#d6e8ff;font-size:12px;min-height:1em}.lab-row :disabled,.appearance-group :disabled,.lab-actions :disabled,.outline-colour :disabled,.appearance-width :disabled{opacity:.45;cursor:not-allowed}
 
     header{gap:6px}
     header strong{min-width:0;max-width:98px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -110,7 +123,7 @@ export function createRenderLab(ctx) {
   const names=['style','outline','palette','resolution'];
   for(const id of names){const el=$(id);el.closest('label').hidden=true;inner.append(el.closest('label'));}
   $('swatches').hidden=true;inner.append($('swatches'));
-  const widthLabel=$('width').closest('label');
+  const widthLabel=$('width').closest('label'),outlineColorLabel=$('outlineColor').closest('label'),edgeDetailLabel=$('edgeDetail').closest('label');
   const groups={};
   const descriptions={
     style:'Surface shading',palette:'Model colours',outline:'Edge treatment',resolution:'Internal render height'
@@ -131,7 +144,7 @@ export function createRenderLab(ctx) {
     }
     inner.append(group);
     if(id==='resolution'){const note=document.createElement('p');note.className='lab-note';note.textContent='Lower values make larger pixels. Native matches the screen, capped at 2× pixel density.';group.append(note);}
-    if(id==='outline'){widthLabel.classList.add('appearance-width');inner.append(widthLabel);}
+    if(id==='outline'){outlineColorLabel.classList.add('outline-colour');inner.append(outlineColorLabel);widthLabel.classList.add('appearance-width');inner.append(widthLabel);edgeDetailLabel.classList.add('appearance-width');inner.append(edgeDetailLabel);}
   }
   const colours=document.createElement('div');colours.className='appearance-group';
   colours.innerHTML='<div class="appearance-label">Custom palette</div><p class="lab-note">Tap a colour to edit. Changes create a custom palette.</p><div class="lab-swatches" id="labPaletteSwatches">'+Array.from({length:4},(_,i)=>`<input type="color" id="labColour${i}" aria-label="Palette colour ${i+1}">`).join('')+'</div>';
@@ -158,36 +171,53 @@ export function createRenderLab(ctx) {
     `<div class="lab-row"><label for="${id}">${title}</label><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${def}"></div>`;
   const toggle = (title,id) =>
     `<div class="lab-row"><label for="${id}">${title}</label><input id="${id}" type="checkbox"></div>`;
-  const lighting = section('Scene & Lighting','scene',
+  const modelSection=section('Models','models',
+    '<div class="lab-note">Open an OBJ, STL or self-contained GLB/glTF. Models stay in this tab. OBJ geometry has no external materials; use GLB/glTF for embedded textures. Static meshes only.</div>' +
+    '<div class="lab-row"><label for="labModelSelect">Current model</label><select id="labModelSelect">'+models.map((m,i)=>'<option value="'+i+'">'+m.name+'</option>').join('')+'</select></div>' +
+    '<div class="lab-row"><label for="labModelFile">Add model</label><input id="labModelFile" type="file" accept=".obj,.stl,.glb,.gltf,model/gltf-binary,model/gltf+json,model/stl"></div>');
+  const lookSection=section('Looks & Presets','looks',
+    '<div class="lab-note">Lighting, effects and overlays reset on reload. Save a look to use it later; model, image and texture files are not included.</div>' +
     row('Quick look','labLook',['Custom','Clean','Game Boy','Virtual Boy','CRT TV','PS1','Blueprint']) +
+    '<div class="lab-row"><label for="labLookName">Name for saved look</label><input id="labLookName" type="text" maxlength="40" placeholder="My look"></div>' +
+    '<div class="lab-note">Saving with the same name replaces that look.</div>' +
+    '<div class="lab-actions"><button id="labSaveLook" type="button">Save look</button></div>' +
+    '<div class="lab-row"><label for="labSavedLooks">Saved looks</label><select id="labSavedLooks"></select></div>' +
+    '<div class="lab-actions"><button id="labRestoreLook" type="button">Apply saved look</button><button id="labDeleteLook" type="button">Delete look</button></div>' +
+    '<div class="lab-actions"><button type="button" id="labCopyLook">Copy look JSON</button><button type="button" id="labDownloadLook">Download JSON</button></div>' +
+    '<div class="lab-row"><label for="labLoadJSON">Import look JSON</label><input type="file" id="labLoadJSON" accept="application/json,.json"></div>');
+  root.prepend(modelSection,lookSection);
+  const lighting = section('Scene & Lighting','scene',
     row('Backdrop','labBackdrop',['Dark','Studio','White','Black','Chroma Green','Chroma Blue','Sunset','Game Boy','Checkerboard','Custom']) +
     '<div class="lab-row"><label for="labBackground">Custom colour</label><input id="labBackground" type="color"></div>' +
     row('Lighting','labLight',['Original','Unlit','Studio','Soft','Hard','Dramatic','Rim','Overhead','Underlit','Custom']) +
     slider('Light direction ↔','labAzimuth',-180,180,1,40) +
     slider('Light height','labElevation',-90,90,1,45) +
-    slider('Strength','labStrength',0,2,.05,1));
+    slider('Strength','labStrength',0,2,.05,1) + '<div class="lab-note">Moving a light slider switches to Custom lighting.</div>');
   const pal = section('Palette & Materials','palette',
-    '<div class="lab-note">Choose or edit model colours in Appearance. Output colour reduction affects the complete image.</div>' +
+    '<div class="lab-note">Choose or edit model colours in Appearance. Output colour reduction affects the image while preserving the selected outline colour.</div>' +
     row('Output colours','labQuantize',['Off','2','4','8','16']) +
     slider('Dither','labDither',0,1,.05) +
     row('Texture sampling','labFilter',['Nearest','Linear']) +
     row('Surface','labMaterial',['Original','Matte','Glossy','Metal-like']) +
-    '<div class="lab-row"><label for="labTexture">Replace texture</label><input id="labTexture" type="file" accept="image/png,image/jpeg,image/webp"></div>' +
-    '<div class="lab-actions"><button id="labResetTexture" type="button">Restore texture</button><button id="labSaveLook" type="button">Save look</button></div>');
+    '<div class="lab-row"><label for="labTexture">Replace texture</label><input id="labTexture" type="file" accept="image/png,image/jpeg,image/webp"></div>' + '<div class="lab-note">Texture replacement is available for textured UV-mapped parts.</div>' +
+    '<div class="lab-actions"><button id="labResetTexture" type="button">Restore texture</button></div>');
   const fxFields = [
     ['Grain','grain'],['Scanlines','scanlines'],['Vignette','vignette'],
     ['CRT curvature','crt'],['Pixel grid','pixelGrid'],['Halftone','halftone'],
     ['Chromatic shift','chromatic'],['Bloom','bloom'],['Sepia','sepia'],
     ['Threshold','threshold'],['Posterize','posterize']
   ];
-  section('Filters','filters',
-    '<div class="lab-note">Stack effects; each slider ranges from off (left) to full intensity (right).</div>' +
+  section('Filters & Effects','filters',
+    row('Filter preset','labFilterPreset',['Custom','None','CRT','Film','Print']) +
+    '<div class="lab-note">Presets replace the filter sliders below. Adjust them to make your own mix.</div>' +
     fxFields.map(([label,id])=>slider(label,'labFx'+id,0,1,.05)).join('') +
     slider('Brightness','labBrightness',-1,1,.05) +
     slider('Contrast','labContrast',-1,1,.05) +
     slider('Saturation','labSaturation',-1,1,.05) +
     '<div class="lab-actions"><button type="button" id="labClearEffects">Clear filters</button><button type="button" id="labToggleBefore">Hold to bypass filters</button></div>');
   section('Overlays & Inspection','overlays',
+    row('Guides preset','labOverlayPreset',['Custom','None','Composition','Wireframe']) +
+    '<div class="lab-note">Guide presets affect wireframe, crosshair and thirds; the reference image is separate.</div>' +
     toggle('Mesh wireframe','labWireframe') +
     toggle('Crosshair','labCrosshair') + toggle('Rule of thirds','labThirds') +
     row('Show mesh part','labPart',['All']) +
@@ -198,10 +228,14 @@ export function createRenderLab(ctx) {
     row('Right-hand model','labCompareWith',models.map(m=>m.name)) +
     toggle('Split-screen compare','labCompare') +
     toggle('Turntable rotation','labSpin') +
-    '<div class="lab-actions"><button type="button" id="labScreenshot">Save PNG</button><button type="button" id="labCopyLook">Copy look JSON</button></div>' +
-    '<div class="lab-row"><label for="labLoadJSON">Import look JSON</label><input type="file" id="labLoadJSON" accept="application/json,.json"></div>' +
+    '<div class="lab-actions"><button type="button" id="labScreenshot">Save PNG</button></div>' +
     '<div class="lab-note">Comparison uses synchronized angles and proportional framing. Both models share the same rendering settings.</div>');
-  const viewPanel = $('viewPanel');
+  $('labFilterPreset').value='None';$('labOverlayPreset').value='None';
+  const viewPanel = $('viewPanel');root.append(viewPanel);viewPanel.append($('reset'));inner.append($('defaults'));
+  root.addEventListener('input',e=>{if(e.target.id!=='labLook')$('labLook').value='Custom';});
+  root.addEventListener('change',e=>{if(e.target.id!=='labLook')$('labLook').value='Custom';});
+  $('labModelSelect').onchange=e=>chooseModel(Number(e.target.value));
+  const upload=$('labModelFile');upload.onchange=async()=>{const file=upload.files?.[0];if(!file)return;upload.disabled=true;$('labModelSelect').disabled=true;try{await addModel(file);}finally{upload.value='';upload.disabled=false;$('labModelSelect').disabled=false;}};
   const compareBtn = document.createElement('button');
   compareBtn.id = 'labCompareToggle';
   compareBtn.type = 'button';
@@ -217,7 +251,9 @@ export function createRenderLab(ctx) {
   imageOverlay.id = 'labImageOverlay'; imageOverlay.alt = '';
   document.body.append(imageOverlay);
   let overlayObjectURL = null;
-  const persist = () => { try { localStorage.setItem(LKEY, JSON.stringify({...cfg,appearance:{...state}})); } catch {} };
+  const persist = () => { try { localStorage.setItem(LKEY, JSON.stringify({customPalette:cfg.customPalette,appearance:{...state}})); } catch {} };
+  const savedLooks=()=>{try{const data=JSON.parse(localStorage.getItem(SAVED_LOOK_KEY)||'[]');return Array.isArray(data)?data.filter(x=>x&&typeof x.name==='string'&&x.preset):data?.version?[{name:'Saved look',preset:data}]:[];}catch{return [];}};
+  const refreshSavedLooks=preferred=>{const select=$('labSavedLooks'),looks=savedLooks(),current=preferred||select.value;select.replaceChildren(...looks.map(x=>new Option(x.name,x.name)));if(looks.some(x=>x.name===current))select.value=current;select.disabled=!looks.length;return looks;};
   const hexToVec = hex => new THREE.Vector3(
     parseInt(hex.slice(1,3),16)/255,
     parseInt(hex.slice(3,5),16)/255,
@@ -231,7 +267,7 @@ export function createRenderLab(ctx) {
     Clean: {backdrop:'Studio',light:'Studio',quantize:0,grain:0,scanlines:0,crt:0,vignette:0,pixelGrid:0,halftone:0,dither:0},
     'Game Boy': {backdrop:'Game Boy',light:'Soft',quantize:4,grain:0,scanlines:0,crt:0,vignette:.15,pixelGrid:.2,dither:.25},
     'Virtual Boy': {backdrop:'Black',light:'Dramatic',quantize:4,grain:0,scanlines:.2,crt:.15,vignette:.3,pixelGrid:0,dither:0},
-    'CRT TV': {backdrop:'Black',light:'Studio',quantize:0,grain:.08,scanlines:.75,crt:.75,vignette:.4,pixelGrid:0,dither:0},
+    'CRT TV': {backdrop:'Black',light:'Studio',quantize:0,grain:.1,scanlines:.75,crt:.75,vignette:.4,pixelGrid:0,dither:0},
     PS1: {backdrop:'Dark',light:'Hard',quantize:16,grain:.2,scanlines:0,crt:0,vignette:.15,pixelGrid:0,dither:.3},
     Blueprint: {backdrop:'Chroma Blue',light:'Unlit',quantize:2,grain:0,scanlines:0,crt:0,vignette:0,pixelGrid:0,dither:0}
   };
@@ -258,7 +294,9 @@ export function createRenderLab(ctx) {
     const objs=[];
     for (const m of allMeshes(modelRoot)) {
       const geom = new THREE.WireframeGeometry(m.geometry);
-      const wire = new THREE.LineSegments(geom,new THREE.LineBasicMaterial({color:0x111111,transparent:true,opacity:.8,depthTest:true}));
+      // Preserve a separate alpha marker while blending subtle lines over the model.
+      const material=new THREE.LineBasicMaterial({color:0x111111,transparent:true,opacity:.1,depthTest:true,depthWrite:false,blending:THREE.CustomBlending,blendSrc:THREE.SrcAlphaFactor,blendDst:THREE.OneMinusSrcAlphaFactor,blendSrcAlpha:THREE.ZeroFactor,blendDstAlpha:THREE.ConstantAlphaFactor,blendAlpha:.9});
+      const wire = new THREE.LineSegments(geom,material);
       wire.userData.labWire=true; wire.visible=Boolean(cfg.wireframe);
       m.add(wire);objs.push(wire);
     }
@@ -266,7 +304,8 @@ export function createRenderLab(ctx) {
   };
   const applyWires = modelRoot => {
     ensureWires(modelRoot);
-    (secondaryWireRoots.get(modelRoot)||[]).forEach(w=>w.visible=Boolean(cfg.wireframe));
+    const strength=cfg.wireframe?.8:(state.outline==='Off'?0:state.edgeDetail),colour=hexToVec(state.outlineColor);
+    (secondaryWireRoots.get(modelRoot)||[]).forEach(w=>{w.visible=strength>0;w.material.opacity=strength;w.material.color.setRGB(colour.x,colour.y,colour.z);});
   };
   const lightDir = new THREE.Vector3();
   const updateLight = () => {
@@ -309,7 +348,8 @@ export function createRenderLab(ctx) {
   };
   $('labLook').onchange=e=>{
     const preset=looks[e.target.value];if(!preset)return;
-    Object.assign(cfg,preset);
+    for(const [,key] of fxFields)cfg[key]=0;for(const key of ['brightness','contrast','saturation'])cfg[key]=0;
+    cfg.wireframe=false;cfg.crosshair=false;cfg.thirds=false;Object.assign(cfg,preset);$('labFilterPreset').value='Custom';$('labOverlayPreset').value='Custom';
     if(e.target.value==='Game Boy')state.palette='Game Boy';
     else if(e.target.value==='Virtual Boy')state.palette='Virtual Boy';
     else if(e.target.value==='Blueprint'){state.palette='Cyanotype';cfg.wireframe=true;}
@@ -393,7 +433,7 @@ export function createRenderLab(ctx) {
         float v=clamp(length((vUv-.5)*1.5),0.,1.);
         col*=1.-v*v*(vignette*.8+crt*.25);
       }
-      if(quantize>=2.){
+      if(quantize>=2. && texture2D(source,clamp(uv,0.,1.)).a>.75){
         col=nearestColor(clamp(col+vec3(bayer(gl_FragCoord.xy)*dither*.24),0.,1.));
       }
       if(crosshair>.5){
@@ -444,7 +484,7 @@ export function createRenderLab(ctx) {
       fxMat.uniforms[key].value=pausedFX?0:+cfg[key];
     fxMat.uniforms.crosshair.value=pausedFX?0:Number(cfg.crosshair);
     fxMat.uniforms.thirds.value=pausedFX?0:Number(cfg.thirds);
-    buildPalette();applyBackground();updateLight();
+    buildPalette();applyBackground();updateLight();$('outlineColor').disabled=state.outline==='Off';$('width').disabled=state.outline==='Off';$('edgeDetail').disabled=state.outline==='Off'||cfg.wireframe;
   };
   const syncUI = () => {
     const map={labBackdrop:'backdrop',labBackground:'background',labLight:'light',
@@ -461,6 +501,17 @@ export function createRenderLab(ctx) {
       else if(id==='labQuantize')el.value=cfg[key]===0?'Off':String(cfg[key]);
       else el.value=String(cfg[key]);
     }
+    $('labModelSelect').value=String(getCurrent());
+    $('outlineColor').disabled=state.outline==='Off';$('width').disabled=state.outline==='Off';$('edgeDetail').disabled=state.outline==='Off'||cfg.wireframe;
+    $('labDither').disabled=Number(cfg.quantize)===0;
+    $('labMaterial').disabled=cfg.light==='Unlit';
+    $('labCompareWith').disabled=!cfg.compare;
+    $('labOverlayOpacity').disabled=!overlayObjectURL;$('labRemoveOverlay').disabled=!overlayObjectURL;
+    const hasTexture=allMeshes(getModel()).some(m=>m.geometry.attributes.uv&&(Array.isArray(m.material)?m.material:[m.material]).some(mat=>mat?.uniforms?.textured?.value===1));
+    const hasComparedTexture=cfg.compare&&allMeshes(secondaryModel).some(m=>m.geometry.attributes.uv&&(Array.isArray(m.material)?m.material:[m.material]).some(mat=>mat?.uniforms?.textured?.value===1));
+    $('labTexture').disabled=!hasTexture;$('labFilter').disabled=!(hasTexture||hasComparedTexture);$('labResetTexture').disabled=!currentTexture;
+    $('labPart').disabled=$('labPart').options.length<=2;$('labResetParts').disabled=cfg.part==='All';
+    const hasLooks=refreshSavedLooks().length>0;$('labRestoreLook').disabled=!hasLooks;$('labDeleteLook').disabled=!hasLooks;
     compareBtn.setAttribute('aria-pressed',String(Boolean(cfg.compare)));
     labels.classList.toggle('active',Boolean(cfg.compare));
     labels.children[0].textContent=models[getCurrent()].name;
@@ -479,7 +530,9 @@ export function createRenderLab(ctx) {
   })) {
     const el=$(id);
     el.addEventListener(el.type==='range'||el.type==='color'?'input':'change',()=>{
-      cfg[key]=el.type==='checkbox'?el.checked:el.value;
+      cfg[key]=el.type==='checkbox'?el.checked:el.type==='range'?Number(el.value):el.value;
+      if(['wireframe','crosshair','thirds'].includes(key))$('labOverlayPreset').value='Custom';
+      if(['brightness','contrast','saturation'].includes(key))$('labFilterPreset').value='Custom';
       if(['lightAzimuth','lightElevation','lightStrength'].includes(key))cfg.light='Custom';
       if(key==='light'&&lightModes[cfg.light]){
         const v=new THREE.Vector3(...lightModes[cfg.light].slice(0,3)).normalize();
@@ -492,7 +545,7 @@ export function createRenderLab(ctx) {
     });
   }
   $('labQuantize').onchange=e=>{cfg.quantize=e.target.value==='Off'?0:+e.target.value;syncUI();persist();};
-  for (const [,key] of fxFields)$('labFx'+key).oninput=e=>{cfg[key]=+e.target.value;syncFX();persist();};
+  for (const [,key] of fxFields)$('labFx'+key).oninput=e=>{cfg[key]=+e.target.value;$('labFilterPreset').value='Custom';syncFX();};
   for (let i=0;i<4;i++)$('labColour'+i).oninput=e=>{
     if(state.palette!=='Custom')cfg.customPalette=(presets[state.palette]||presets.Original).slice();
     cfg.customPalette[i]=e.target.value;presets.Custom=cfg.customPalette.slice();
@@ -502,12 +555,16 @@ export function createRenderLab(ctx) {
     const i=models.findIndex(m=>m.name===e.target.value);
     if(i<0)return;cfg.compareIndex=i;persist();if(cfg.compare)loadSecondary();syncUI();
   };
-  $('labPart').onchange=e=>{cfg.part=e.target.value;showParts();};
-  $('labResetParts').onclick=()=>{cfg.part='All';$('labPart').value='All';showParts();};
+  $('labPart').onchange=e=>{cfg.part=e.target.value;showParts();syncUI();};
+  $('labResetParts').onclick=()=>{cfg.part='All';$('labPart').value='All';showParts();syncUI();};
+  const filterPresets={None:{},CRT:{scanlines:.7,crt:.55,vignette:.25},Film:{grain:.2,vignette:.2,contrast:.1},Print:{halftone:.55,sepia:.2}};
+  $('labFilterPreset').onchange=e=>{if(e.target.value==='Custom')return;for(const [,key] of fxFields)cfg[key]=0;for(const key of ['brightness','contrast','saturation'])cfg[key]=0;Object.assign(cfg,filterPresets[e.target.value]);syncUI();};
+  const overlayPresets={None:{wireframe:false,crosshair:false,thirds:false},Composition:{wireframe:false,crosshair:true,thirds:true},Wireframe:{wireframe:true,crosshair:false,thirds:false}};
+  $('labOverlayPreset').onchange=e=>{if(e.target.value==='Custom')return;Object.assign(cfg,overlayPresets[e.target.value]);syncUI();};
   $('labClearEffects').onclick=()=>{
     for(const [,key] of fxFields)cfg[key]=0;
     for(const key of ['brightness','contrast','saturation'])cfg[key]=0;
-    syncUI();persist();
+    $('labFilterPreset').value='None';syncUI();
   };
   const before=$('labToggleBefore');
   const beforeDown=e=>{e.preventDefault();pausedFX=true;syncFX();};
@@ -520,12 +577,12 @@ export function createRenderLab(ctx) {
     if(overlayObjectURL)URL.revokeObjectURL(overlayObjectURL);
     overlayObjectURL=URL.createObjectURL(file);
     imageOverlay.src=overlayObjectURL;imageOverlay.style.display='block';
-    imageOverlay.style.opacity=String(cfg.overlayOpacity);
+    imageOverlay.style.opacity=String(cfg.overlayOpacity);syncUI();
   };
   $('labRemoveOverlay').onclick=()=>{
     if(overlayObjectURL)URL.revokeObjectURL(overlayObjectURL);
     overlayObjectURL=null;imageOverlay.removeAttribute('src');
-    imageOverlay.style.display='none';overlayInput.value='';
+    imageOverlay.style.display='none';overlayInput.value='';syncUI();
   };
   const originalTexture = new WeakMap();
   const applyTexture = texture => {
@@ -560,6 +617,7 @@ export function createRenderLab(ctx) {
       currentTexture=applied?texture:null;
       if(!applied){texture.dispose();notify('No textured UV-mapped parts available on this model.');}
       else notify('Applied custom texture to '+applied+' material(s).');
+      syncUI();
     },undefined,()=>{URL.revokeObjectURL(url);notify('Could not read image texture.');});
   };
   $('labResetTexture').onclick=()=>{
@@ -568,24 +626,33 @@ export function createRenderLab(ctx) {
       mat.uniforms.colorMap.value=source.map;mat.uniforms.textured.value=source.textured;
     }
     currentTexture?.dispose();currentTexture=null;$('labTexture').value='';
-    notify('Restored original texture.');
+    syncUI();notify('Restored original texture.');
   };
-  $('labSaveLook').onclick=()=>{persist();notify('Saved appearance in this browser.');};
-  const makePreset=()=>({version:1,model:models[getCurrent()].id,appearance:state,renderLab:cfg});
+  const makePreset=()=>({version:1,model:models[getCurrent()].id,appearance:{...state},renderLab:{...cfg,part:'All'}});
+  $('labSaveLook').onclick=()=>{try{
+    const name=$('labLookName').value.trim().slice(0,40)||'My look',looks=savedLooks(),existing=looks.findIndex(x=>x.name===name);
+    const item={name,preset:makePreset()};if(existing<0)looks.push(item);else looks[existing]=item;
+    localStorage.setItem(SAVED_LOOK_KEY,JSON.stringify(looks));refreshSavedLooks(name);syncUI();notify('Saved '+name+' in this browser.');
+  }catch{notify('Could not save look in this browser.');}};
+  $('labDeleteLook').onclick=()=>{try{const name=$('labSavedLooks').value,looks=savedLooks().filter(x=>x.name!==name);localStorage.setItem(SAVED_LOOK_KEY,JSON.stringify(looks));syncUI();notify('Deleted '+name+'.');}catch{notify('Could not delete look.');}};
+  $('labDownloadLook').onclick=()=>{
+    const blob=new Blob([JSON.stringify(makePreset(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='viewer-look.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+  };
   $('labCopyLook').onclick=async()=>{
     const text=JSON.stringify(makePreset(),null,2);
     try{await navigator.clipboard.writeText(text);notify('Copied complete look JSON.');}
-    catch{notify('Clipboard unavailable. Use Safari share/copy.');}
+    catch{notify('Clipboard unavailable. Download the JSON instead.');}
   };
-  $('labLoadJSON').onchange=async()=>{
-    try{
-      const file=$('labLoadJSON').files?.[0];if(!file)return;
-      const parsed=JSON.parse(await file.text());
+  const applyLook=parsed=>{
       if(parsed.version!==1||!parsed.renderLab||typeof parsed.renderLab!=='object')throw Error('Invalid preset');
       const incoming=parsed.renderLab;
       for(const key of Object.keys(defaults)){
-        if(key in incoming && ['number','boolean','string'].includes(typeof defaults[key]) &&
-           typeof incoming[key]===typeof defaults[key])cfg[key]=incoming[key];
+        if(!(key in incoming))continue;
+        const value=incoming[key],expected=typeof defaults[key];
+        // Older look files stored some range inputs as numeric strings.
+        if(expected==='number'&&(typeof value==='number'||(typeof value==='string'&&value.trim()!==''))&&Number.isFinite(Number(value)))cfg[key]=Number(value);
+        else if((expected==='boolean'||expected==='string')&&typeof value===expected)cfg[key]=value;
       }
       if(Array.isArray(incoming.customPalette)&&incoming.customPalette.length===4&&incoming.customPalette.every(v=>/^#[0-9a-fA-F]{6}$/.test(v)))cfg.customPalette=incoming.customPalette;
       presets.Custom=cfg.customPalette.slice();
@@ -595,13 +662,15 @@ export function createRenderLab(ctx) {
           const candidate=parsed.appearance[key];
           if(typeof candidate==='string'&&Array.from(selector.options).some(o=>o.value===candidate))state[key]=candidate;
         }
+        if(typeof parsed.appearance.outlineColor==='string'&&/^#[0-9a-fA-F]{6}$/.test(parsed.appearance.outlineColor))state.outlineColor=parsed.appearance.outlineColor;
+        if(Number.isFinite(parsed.appearance.edgeDetail))state.edgeDetail=Math.max(0,Math.min(.5,parsed.appearance.edgeDetail));
         if(Number.isFinite(parsed.appearance.width))state.width=Math.max(0,Math.min(5,Math.round(parsed.appearance.width)));
       }
       syncAppearance();syncUI();persist();setCompare(Boolean(cfg.compare));
-      notify('Imported look preset.');
-    }catch{notify('Invalid look preset.');}
-    $('labLoadJSON').value='';
+      $('labFilterPreset').value='Custom';$('labOverlayPreset').value='Custom';
   };
+  $('labRestoreLook').onclick=()=>{try{const look=savedLooks().find(x=>x.name===$('labSavedLooks').value);if(!look)throw Error('Missing look');applyLook(look.preset);notify('Applied '+look.name+'.');}catch{notify('Could not apply saved look.');}};
+  $('labLoadJSON').onchange=async()=>{try{const file=$('labLoadJSON').files?.[0];if(!file)return;applyLook(JSON.parse(await file.text()));notify('Imported look preset.');}catch{notify('Invalid look preset.');}finally{$('labLoadJSON').value='';}};
   const snapshot=()=>{
     // Compose DOM reference image and comparison labels with the WebGL output.
     const canvas=document.createElement('canvas');
@@ -643,26 +712,9 @@ export function createRenderLab(ctx) {
     const entry=models[index];
     if(!entry)return;
     try{
-      const manager=new THREE.LoadingManager(),loader=new OBJLoader(manager);
-      if(entry.mtl){
-        const mtl=await new MTLLoader(manager).setResourcePath('./chief/').loadAsync(entry.mtl);
-        mtl.preload();loader.setMaterials(mtl);
-      }
-      const result=await loader.loadAsync(entry.file);
-      if(token!==secondaryLoading){return;}
-      result.traverse(o=>{
-        if(!o.isMesh)return;o.geometry.computeVertexNormals();
-        const make=source=>{
-          const m=surface.clone();m.uniforms.palette.value=colors;
-          m.uniforms.partId.value=entry.mtl?0:(parts[o.name]??0);
-          m.uniforms.styleId.value=styles.indexOf(state.style);
-          m.uniforms.originalPalette.value=state.palette==='Original'?1:0;
-          if(entry.mtl){m.uniforms.textured.value=2;m.uniforms.diffuse.value.copy(source.color).convertLinearToSRGB();}
-          if(source?.map){source.map.minFilter=THREE.NearestFilter;source.map.magFilter=THREE.NearestFilter;m.uniforms.colorMap.value=source.map;m.uniforms.textured.value=1;}
-          source?.dispose();return m;
-        };
-        o.material=Array.isArray(o.material)?o.material.map(make):make(o.material);
-      });
+      const result=await loadModelEntry(entry);
+      if(token!==secondaryLoading){discardModel(result);return;}
+      try{prepareModel(result,entry);}catch(error){discardModel(result);throw error;}
       result.visible=false;scene.add(result);
       secondaryCache.set(index,result);secondaryModel=result;secondaryIndex=index;
       updateLight();syncUI();notify('Ready to compare with '+entry.name+'.');
@@ -674,6 +726,7 @@ export function createRenderLab(ctx) {
     resizeView();syncUI();persist();
   };
   compareBtn.onclick=()=>setCompare(!cfg.compare);
+  const refreshModels=()=>{const selector=$('labCompareWith');selector.replaceChildren(...models.map(m=>new Option(m.name,m.name)));$('labModelSelect').replaceChildren(...models.map((m,i)=>new Option(m.name,String(i))));syncUI();};
   const onModelChanged=()=>{
     currentTexture=null;
     if(secondaryModel)secondaryModel.visible=false;
@@ -744,5 +797,5 @@ export function createRenderLab(ctx) {
   });
   syncUI();
   if(cfg.compare)loadSecondary();
-  return { onModelChanged, onSync, render, releaseModel, isCompare:()=>Boolean(cfg.compare), save:persist, stopSpin:()=>{ if(cfg.spin){cfg.spin=false;syncUI();persist();notify('Turntable stopped for camera navigation.');} } };
+  return { onModelChanged, onSync, render, releaseModel, refreshModels, isCompare:()=>Boolean(cfg.compare), save:persist, stopSpin:()=>{ if(cfg.spin){cfg.spin=false;syncUI();persist();notify('Turntable stopped for camera navigation.');} } };
 }
