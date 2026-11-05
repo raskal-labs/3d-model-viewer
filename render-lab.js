@@ -644,8 +644,11 @@ export function createRenderLab(ctx) {
       if(parsed.version!==1||!parsed.renderLab||typeof parsed.renderLab!=='object')throw Error('Invalid preset');
       const incoming=parsed.renderLab;
       for(const key of Object.keys(defaults)){
-        if(key in incoming && ['number','boolean','string'].includes(typeof defaults[key]) &&
-           typeof incoming[key]===typeof defaults[key])cfg[key]=incoming[key];
+        if(!(key in incoming))continue;
+        const value=incoming[key],expected=typeof defaults[key];
+        // Older look files stored some range inputs as numeric strings.
+        if(expected==='number'&&(typeof value==='number'||(typeof value==='string'&&value.trim()!==''))&&Number.isFinite(Number(value)))cfg[key]=Number(value);
+        else if((expected==='boolean'||expected==='string')&&typeof value===expected)cfg[key]=value;
       }
       if(Array.isArray(incoming.customPalette)&&incoming.customPalette.length===4&&incoming.customPalette.every(v=>/^#[0-9a-fA-F]{6}$/.test(v)))cfg.customPalette=incoming.customPalette;
       presets.Custom=cfg.customPalette.slice();

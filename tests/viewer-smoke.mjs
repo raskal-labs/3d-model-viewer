@@ -169,6 +169,11 @@ try{
   assert.equal(await page.locator('#labCrosshair').isChecked(),true);
   await page.locator('#labSavedLooks').selectOption('Film');await page.locator('#labRestoreLook').click();
   assert.equal(await page.locator('#labFxgrain').inputValue(),'0.2');
+  const oldLook={version:1,appearance:{},renderLab:{brightness:'0.35',lightStrength:'1.5',light:'Custom'}};
+  await page.locator('#labLoadJSON').setInputFiles({name:'old-look.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(oldLook))});
+  await page.waitForFunction(()=>document.querySelector('#labStatus').textContent==='Imported look preset.');
+  assert.equal(await page.locator('#labBrightness').inputValue(),'0.35');
+  assert.equal(await page.locator('#labStrength').inputValue(),'1.5');
   report.push('desktop: OBJ, STL, glTF and GLB upload, comparison, safe failure, session reset and saved looks');
   await context.close();
   const mobile=await browser.newContext({
