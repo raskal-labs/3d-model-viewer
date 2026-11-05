@@ -4,6 +4,16 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { chromium, webkit } from 'playwright';
 
+// A small static GLB with vertex colours exercises the real upload path.
+function testGLB(){
+  const bin=Buffer.alloc(72);
+  [0,0,0,1,0,0,0,1,0, 1,0,0,0,1,0,0,0,1].forEach((v,i)=>bin.writeFloatLE(v,i*4));
+  const gltf={asset:{version:'2.0'},scene:0,scenes:[{nodes:[0]}],nodes:[{mesh:0}],meshes:[{primitives:[{attributes:{POSITION:0,COLOR_0:1}}]}],buffers:[{byteLength:72}],bufferViews:[{buffer:0,byteOffset:0,byteLength:36},{buffer:0,byteOffset:36,byteLength:36}],accessors:[{bufferView:0,componentType:5126,count:3,type:'VEC3',min:[0,0,0],max:[1,1,0]},{bufferView:1,componentType:5126,count:3,type:'VEC3'}]};
+  let json=Buffer.from(JSON.stringify(gltf));json=Buffer.concat([json,Buffer.alloc((4-json.length%4)%4,0x20)]);
+  const header=Buffer.alloc(20),binHeader=Buffer.alloc(8);header.write('glTF');header.writeUInt32LE(2,4);header.writeUInt32LE(28+json.length+bin.length,8);header.writeUInt32LE(json.length,12);header.writeUInt32LE(0x4e4f534a,16);binHeader.writeUInt32LE(bin.length,0);binHeader.writeUInt32LE(0x004e4942,4);
+  return Buffer.concat([header,json,binHeader,bin]);
+}
+
 await fs.mkdir('viewer-smoke-artifacts', {recursive:true});
 const browser=await chromium.launch({
   headless:true,
@@ -56,6 +66,34 @@ try{
   await page.locator('#labColour0').evaluate(el=>{el.value='#123456';el.dispatchEvent(new Event('input',{bubbles:true}));});
   assert.equal(await page.locator('#palette').inputValue(),'Custom');
   assert.equal(await page.locator('#labColour1').inputValue(),'#306230');
+  // Outline colour stays independent of style, model palette and output quantization.
+  await page.locator('[aria-label="Edge treatment"] [data-value="Off"]').click();
+  assert.equal(await page.locator('#outlineColor').isDisabled(),true);
+  await page.locator('[aria-label="Edge treatment"] [data-value="Solid"]').click();
+  assert.equal(await page.locator('#outlineColor').isEnabled(),true);
+  await page.locator('#outlineColor').evaluate(el=>{el.value='#00ff00';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.locator('#width').evaluate(el=>{el.value='5';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.locator('[aria-label="Model colours"] [data-value="Original"]').click();
+  await page.locator('[aria-label="Edge treatment"] [data-value="Ink"]').click();
+  assert.equal(await page.locator('#outlineColor').inputValue(),'#00ff00');
+  await page.locator('[aria-label="Edge treatment"] [data-value="Solid"]').click();
+  await page.locator('[data-section="palette"] summary').click();
+  assert.equal(await page.locator('#labDither').isDisabled(),true);
+  await page.locator('#labQuantize').selectOption('4');
+  assert.equal(await page.locator('#labDither').isEnabled(),true);
+  await page.waitForTimeout(400);
+  const greenOutlinePixels=await page.evaluate(()=>{
+    const src=document.querySelector('body > canvas'),c=document.createElement('canvas');c.width=src.width;c.height=src.height;
+    const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(src,0,0);
+    const d=ctx.getImageData(0,0,c.width,c.height).data;let count=0;
+    for(let i=0;i<d.length;i+=4)if(d[i]<20&&d[i+1]>220&&d[i+2]<20)count++;
+    return count;
+  });
+  assert(greenOutlinePixels>100,'Outline colour was changed by the palette or output quantization: '+greenOutlinePixels);
+  const savedOutline=await page.evaluate(()=>JSON.parse(localStorage.getItem('raskal-porygon-render-lab:v1')).appearance);
+  assert.equal(savedOutline.outlineColor,'#00ff00');assert.equal(savedOutline.outline,'Solid');
+  await page.locator('#labQuantize').selectOption('Off');
+  await page.locator('[data-section="palette"] summary').click();
   await page.locator('#defaults').evaluate(el=>el.click());
   await page.locator('#labAppearance summary').click();
   report.push('desktop: appearance controls select and persist styles, palette and resolution');
@@ -84,12 +122,65 @@ try{
   await page.locator('#labCompareToggle').click();
   assert.equal(await page.locator('#labComparisonLabels').evaluate(e=>e.classList.contains('active')),false);
   report.push('desktop: compare toggles off');
+  await page.locator('#open').click();
+  await page.locator('[data-section="models"] summary').click();
+  await page.locator('#labModelFile').setInputFiles({name:'triangle.obj',mimeType:'text/plain',buffer:Buffer.from('o Triangle\nv 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n')});
+  await page.waitForFunction(()=>document.querySelector('#name').textContent==='triangle',null,{timeout:45000});
+  const stl='solid sample\n facet normal 0 0 1\n outer loop\n vertex 0 0 0\n vertex 1 0 0\n vertex 0 1 0\n endloop\n endfacet\nendsolid sample\n';
+  await page.locator('#labModelFile').setInputFiles({name:'triangle.stl',mimeType:'model/stl',buffer:Buffer.from(stl)});
+  await page.waitForFunction(()=>document.querySelector('#name').textContent==='triangle (2)',null,{timeout:45000});
+  const positions=Buffer.alloc(36);[0,0,0,1,0,0,0,1,0].forEach((v,i)=>positions.writeFloatLE(v,i*4));
+  const embedded={asset:{version:'2.0'},scene:0,scenes:[{nodes:[0]}],nodes:[{mesh:0}],meshes:[{primitives:[{attributes:{POSITION:0}}]}],buffers:[{byteLength:36,uri:'data:application/octet-stream;base64,'+positions.toString('base64')}],bufferViews:[{buffer:0,byteOffset:0,byteLength:36}],accessors:[{bufferView:0,componentType:5126,count:3,type:'VEC3',min:[0,0,0],max:[1,1,0]}]};
+  await page.locator('#labModelFile').setInputFiles({name:'embedded.gltf',mimeType:'model/gltf+json',buffer:Buffer.from(JSON.stringify(embedded))});
+  await page.waitForFunction(()=>document.querySelector('#name').textContent==='embedded',null,{timeout:45000});
+  await page.locator('#labModelFile').setInputFiles({name:'colour.glb',mimeType:'model/gltf-binary',buffer:testGLB()});
+  await page.waitForFunction(()=>document.querySelector('#name').textContent==='colour',null,{timeout:45000});
+  assert.match(await page.locator('#status').innerText(),/1 meshes · ready/);
+  await page.locator('#labModelSelect').selectOption({label:'triangle (2)'});
+  await page.waitForFunction(()=>document.querySelector('#name').textContent==='triangle (2)',null,{timeout:45000});
+  await page.locator('#labModelSelect').selectOption({label:'colour'});
+  await page.waitForFunction(()=>document.querySelector('#name').textContent==='colour',null,{timeout:45000});
+  await page.locator('[data-section="compare"] summary').click();
+  await page.locator('#labCompare').check();
+  await page.locator('#labCompareWith').selectOption('Porygon2');
+  await page.waitForFunction(()=>document.querySelector('#viewNotice')?.textContent.includes('Ready to compare with Porygon2'),null,{timeout:45000});
+  await page.locator('#labCompare').uncheck();
+  await page.locator('#labModelFile').setInputFiles({name:'broken.glb',mimeType:'model/gltf-binary',buffer:Buffer.from('invalid')});
+  await page.waitForFunction(()=>document.querySelector('#labStatus').textContent.includes('Could not load model'),null,{timeout:45000});
+  assert.equal(await page.locator('#name').innerText(),'colour');
+  await page.locator('#labFilterPreset').selectOption('CRT');
+  await page.locator('[data-section="overlays"] summary').click();
+  assert.equal(await page.locator('#labOverlayOpacity').isDisabled(),true);
+  await page.locator('#labOverlayPreset').selectOption('Composition');
+  await page.locator('[data-section="looks"] summary').click();
+  await page.locator('#labLookName').fill('CRT guides');await page.locator('#labSaveLook').click();
+  await page.locator('#labFilterPreset').selectOption('Film');
+  await page.locator('#labLookName').fill('Film');await page.locator('#labSaveLook').click();
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('meshes · ready'),null,{timeout:45000});
+  assert.equal(await page.locator('#name').innerText(),'Porygon2');
+  assert.equal(await page.locator('#labFxscanlines').inputValue(),'0');
+  assert.equal(await page.locator('#labCrosshair').isChecked(),false);
+  await page.locator('#open').click();await page.locator('[data-section="looks"] summary').click();
+  await page.locator('#labSavedLooks').selectOption('CRT guides');await page.locator('#labRestoreLook').click();
+  assert.equal(await page.locator('#labFxscanlines').inputValue(),'0.7');
+  assert.equal(await page.locator('#labCrosshair').isChecked(),true);
+  await page.locator('#labSavedLooks').selectOption('Film');await page.locator('#labRestoreLook').click();
+  assert.equal(await page.locator('#labFxgrain').inputValue(),'0.2');
+  report.push('desktop: OBJ, STL, glTF and GLB upload, comparison, safe failure, session reset and saved looks');
   await context.close();
   const mobile=await browser.newContext({
     viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true
   });
   const mobilePage=await mobile.newPage();bindErrors(mobilePage);
   await view(mobilePage,'mobile Chromium');
+  const reticle=await mobilePage.locator('#precisionButton').boundingBox();
+  assert(Math.abs(reticle.x+reticle.width/2-195)<2 && reticle.y>740,'Reticle should be bottom center');
+  await mobilePage.mouse.move(reticle.x+reticle.width/2,reticle.y+reticle.height/2);await mobilePage.mouse.down();
+  await mobilePage.waitForTimeout(300);
+  const panItem=await mobilePage.locator('#precisionMenu [data-mode="pan"]').boundingBox();
+  await mobilePage.mouse.move(panItem.x+panItem.width/2,panItem.y+panItem.height/2);await mobilePage.mouse.up();
+  assert.equal(await mobilePage.locator('#precisionInstrument').getAttribute('data-mode'),'pan');
+  await mobilePage.locator('#closePrecision').click();
   await mobilePage.locator('#open').click();
   assert.equal(await mobilePage.locator('#panel').isVisible(),true);
   assert.equal(await mobilePage.locator('#panel').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,'Settings overflow horizontally');

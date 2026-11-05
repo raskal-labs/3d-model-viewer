@@ -6,7 +6,7 @@ One compact Lab panel containing collapsible groups. Gesture-first camera naviga
 This is an additive render preview workflow; it never writes model geometry, source textures, or assets back to Git.
 
 ## Implemented on this branch
-- **Appearance:** Existing six styles, four outline modes, width, six built-in palettes and resolution choices, plus editable four-colour custom palette.
+- **Appearance:** Six styles, four outline modes with independently selected colour and width, six built-in palettes and resolution choices, plus an editable four-colour custom palette.
 - **Scene:** Solid studio/black/white/chroma/Game Boy backdrops, gradient studio/sunset, transparency-style checkerboard, custom solid colour.
 - **Lighting:** Original, unlit, studio, soft, hard, dramatic, rim, overhead, underlit, and custom angle, elevation and intensity. Shading is stylized, not physical PBR.
 - **Quick looks:** Clean, Game Boy, Virtual Boy, CRT TV, PS1-inspired, Blueprint. Presets configure independent effects rather than creating more base render styles.
@@ -15,13 +15,14 @@ This is an additive render preview workflow; it never writes model geometry, sou
 - **Post effects:** Grain, scanlines, vignette, CRT curvature, pixel grid, halftone, chromatic aberration, bloom approximation, sepia, threshold, posterize, brightness, contrast, saturation.
 - **Overlays:** Mesh wireframe, crosshair, rule-of-thirds guides, independently selectable mesh parts, uploaded translucent reference image and opacity.
 - **Compare:** Switch models with existing arrows; toggle split screen with ⇔ or Lab → Compare. Both halves use the same orbit angles, appearance and proportional model framing. Right-hand model selectable.
-- **Capture/presets:** Save composite PNG (including the reference image and comparison labels); copy complete appearance JSON; import look JSON; persist appearance settings per browser; adjustable turntable rotation.
+- **Capture/presets:** Save composite PNG, apply built-in looks, filter and guide presets, and save named looks in the browser or export/import JSON. Appearance settings persist; lighting, filters and overlays reset until a saved look is explicitly applied. Uploaded images and models are not part of look JSON.
+- **Models:** Upload static OBJ or STL geometry, or a self-contained GLB/glTF up to 64 MB. Uploaded models remain in the current tab, can be switched or compared, and are not saved to GitHub.
 
 ## Not in this pass
 - True PBR materials and physically correct cast shadows.
 - UV unwrapping or arbitrary texture mapping on Porygon2 (the supplied OBJ has no `vt` coordinates).
 - Texture painting, bone/animation editing or motion playback.
-- Arbitrary 3D model upload; the model list currently includes the known Porygon2 and Chief assets.
+- Separate OBJ material and texture files, external glTF resources, and skinned/animated model playback.
 - Multiple independent per-side styles/cameras: compare currently intentionally shares camera orientation, effects and look.
 - Alpha-transparent PNG or full background-image compositing.
 - Automatic sprite difference/onion-skin registration and blend-mode editor.
