@@ -1,0 +1,27 @@
+# Atlas v2 source binding; detailed truth belongs to this repository.
+version: 2
+project:
+  id: 3d-model-viewer
+authority:
+  rules: AGENTS.md
+  state:
+    path: PROJECT.yaml
+    profile: atlas-project/v1
+  plan:
+    path: WORK.yaml
+    profile: atlas-work/v1
+  tasks:
+    path: WORK.yaml
+    profile: atlas-work/v1
+  threads:
+    path: WORK.yaml
+    profile: atlas-work/v1
+  worklist:
+    path: WORK.yaml
+    profile: atlas-work/v1
+  decisions: DECISIONS.md
+  architecture: ARCHITECTURE.md
+  contract: CONTRACT.md
+  progress: PROGRESS.md
+git:
+  authoritative_branch: main
