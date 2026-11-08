@@ -4,7 +4,7 @@
 
 Status: **Proposed implementation plan** (planning only; no V2 code has been implemented).
 Last reviewed: 2026-11-07.
-Source: `/` on `main`; leave the V1 viewer working until V2 acceptance.
+Source: `raskal-labs/3d-model-viewer` on `main`; leave the V1 viewer working until V2 acceptance.
 Companion: [V2_RESOURCES.md](./V2_RESOURCES.md). Scoped Codex rules: [AGENTS.md](./AGENTS.md).
 
 > **Current-source correction (2026-11-07):** The actual development authority is this standalone repository. Unlike the older hosting copy, V1 here already supports static OBJ/STL/GLB/glTF uploads and has gesture-first navigation (`gesture-navigation.js/.css`). M1 must **extend** existing uploads for Draco, sidecar resources, faithful PBR and skinned/animated models; M3 must **evaluate/reuse** current touch controls. Source authority: [PROJECT.yaml](./PROJECT.yaml), [WORK.yaml](./WORK.yaml), [CONTRACT.md](./CONTRACT.md). The older site repo's Issue #7 is superseded by this repo's [Issue #4](https://github.com/raskal-labs/3d-model-viewer/issues/4).
@@ -53,7 +53,7 @@ Use Three.js modules and a small, static-deployable build pipeline (evaluate Vit
 ### M0 — Baseline and safety
 - Capture deterministic V1 screenshots at fixed camera/style/resolution for Porygon2 and Chief, plus smoke results.
 - Record source commit, asset hashes, colours and expected meshes. Verify live rendering (not just module parsing) and narrow iPhone viewport.
-- Establish V2 preview route (e.g. `/v2/`) and CI build path **without changing the root Pages site or V1 routing**. Check actual Pages deployment configuration first. V1 regression is required in every deploy.
+- Establish V2 preview route (e.g. `/3d-model-viewer/v2/`) and CI build path **without replacing the existing standalone viewer at `/3d-model-viewer/` or breaking its V1 route**. Check actual Pages deployment configuration first. V1 regression is required in every deploy.
 - Pin direct dependencies and committed lockfile; use consistent versions across Three and addons. No floating CDN imports in production.
 
 ### M1 — Format-agnostic loading and correct originals (first vertical slice)
