@@ -24,8 +24,8 @@ Output: `v2/tests/fixtures/khronos/` (ignored by Git). It intentionally does **n
 | `Porygon2.obj`, `Porygon2-upright.obj`, `Porygon2.mtl`, `edit_model.py` | Preserve assets and parametric source; V1 visual-regression fixtures. |
 | `chief/` | Textured OBJ/MTL and PNG dependency fixture. |
 | `index.html` | Extract/adapt camera JSON, geometry framing, outline/pixel shader ideas, NOT hardcoded colour/part classification or V1 UI. |
-| `render-lab.js` | Port effects, looks, presets, before/after and compare concepts as isolated modules. |
-| `tests/viewer-smoke.mjs` | Extend smoke + screenshot coverage; currently exercises Chromium and Linux WebKit. |
+| `render-lab.js` | Port effects, looks, model-upload picker, presets, before/after and comparison concepts as isolated modules. |
+| `tests/viewer-smoke.mjs`, `tests/gesture-navigation.mjs` | Extend browser, import and navigation smoke + screenshots; still requires physical iPhone testing. |
 | `.github/workflows/viewer-smoke.yml` | CI starting point; installs Chromium and WebKit, and the current script tests both. Preserve and extend their screenshot coverage. |
 | `README.md`, `RENDER_LAB.md` | Legacy behaviour/quality reference, not new architecture. |
 
@@ -52,7 +52,7 @@ Output: `v2/tests/fixtures/khronos/` (ignored by Git). It intentionally does **n
 - Browser/device emulation caveats (WebKit emulation does **not** replace real iPhone Safari): https://playwright.dev/docs/browsers
 - MDN WebGL best practices (context loss, memory, texture sizes, DPR): https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
 
-**GitHub Pages caveat:** This standalone repository deploys via GitHub Pages (historical success run 41986978503). A Vite build needs an explicit deployment strategy. Build V2 for its actual nested URL (e.g. `/v2/`) and make sure V1, original models and public root files survive deployment. Inspect existing Pages settings/workflows before changing publication.
+**GitHub Pages caveat:** This standalone repository deploys via GitHub Pages (historical success run 41986978503). A Vite build needs an explicit deployment strategy. Build V2 for its actual nested URL (e.g. `/3d-model-viewer/v2/`) and make sure V1, original models and public root files survive deployment. Inspect existing Pages settings/workflows before changing publication.
 
 ## Public test models (links to sources; not yet vendored)
 
