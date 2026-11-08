@@ -1,0 +1,55 @@
+# Canonical project continuity, per Atlas atlas-project/v1 profile.
+version: 1
+projects:
+  3d-model-viewer:
+    title: 3D Model Viewer / Mobile Model Studio
+    parent: atlas.porygon
+    purpose: >-
+      Build a general-purpose iPhone-first 3D model viewer, appearance studio
+      and model comparison tool, with small reversible edits, retaining the
+      distinctive simplified Porygon2 and Chief rendering as an optional look.
+    status: In Progress
+    lifecycle: active
+    current: >-
+      V1 is implemented and published from this repository at
+      /3d-model-viewer/. It already has gesture-first navigation, optional
+      precision instruments, static OBJ/STL/self-contained GLB/glTF uploads,
+      custom palettes/effects, comparison and Playwright smoke tests.
+      The V2 hybrid rebuild is planned; no separate V2 runtime, original-PBR
+      pipeline, Draco decoder, external model-sidecar loader, rig/animation
+      playback, or redesigned GUI is verified. Prior formal Atlas documents
+      were mistakenly committed to another hosting repository; this repository
+      is now the intended source for future viewer governance.
+    next_checkpoint: >-
+      Capture fixed-pose baseline screenshots from this repository and verify
+      its existing Pages/CI configuration (M0); prototype the A/B/C mobile
+      interfaces in parallel; then implement a small V2 importer/material
+      fidelity + Draco spike without changing the V1 deployment.
+    issues:
+      - id: atlas-projection
+        kind: question
+        text: >-
+          Local Atlas source binding and child identity are recorded here,
+          but registration in the central private Atlas source index and
+          dashboard synchronization have not been verified.
+        source: PROGRESS.md
+      - id: iphone-qa
+        kind: question
+        text: >-
+          Current Chromium/Linux-WebKit screenshots and smoke tests do
+          not establish real iPhone Safari interaction or performance.
+        source: PROGRESS.md
+      - id: private-fixture
+        kind: question
+        text: >-
+          User-supplied 233.glb is a private Draco reference; do not commit
+          it or derivatives to this public repository. Its compatibility with
+          the V2 importer is not yet tested.
+        source: V2_RESOURCES.md
+    evidence:
+      - README.md
+      - RENDER_LAB.md
+      - gesture-navigation.js
+      - tests/viewer-smoke.mjs
+      - https://github.com/raskal-labs/3d-model-viewer/actions/runs/41986502252
+      - https://github.com/raskal-labs/3d-model-viewer/issues/4
