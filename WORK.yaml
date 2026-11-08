@@ -1,0 +1,233 @@
+# Canonical milestones, tasks, and threads; Atlas atlas-work/v1 profile.
+version: 1
+project: 3d-model-viewer
+items:
+  - id: m0
+    kind: milestone
+    title: M0 — V1 baseline and safe isolated V2 preview
+    status: Proposed
+    acceptance: >-
+      Capture deterministic screenshots of the current repo's Porygon2/Chief
+      rendering, model upload, comparison, and gesture controls; record source
+      and asset revisions; confirm existing GitHub Pages and CI; configure a
+      safe /3d-model-viewer/v2/ preview with V1 unaffected.
+  - id: m1
+    kind: milestone
+    title: M1 — Source-faithful importer and material renderer
+    status: Proposed
+    acceptance: >-
+      Extend existing static model upload functionality to an independent V2
+      import pipeline with Draco GLB decoding, external OBJ/MTL/texture and
+      glTF sidecar support, original PBR/material fidelity, rig/morph/animation
+      preservation when supported, and clear errors on unsupported assets.
+  - id: m2
+    kind: milestone
+    title: M2 — Model-agnostic looks and colour pipeline
+    status: Proposed
+    acceptance: >-
+      Original source materials are never overwritten by look changes;
+      V1 Pixel/Cel/Flat and valuable effects are restored as optional reusable
+      looks; output palette and outline algorithms do not depend on Porygon
+      part IDs or fixed four-colour material interpretation.
+  - id: m3
+    kind: milestone
+    title: M3 — Reviewed iPhone-first GUI
+    status: Proposed
+    acceptance: >-
+      Canvas-first navigation and adaptive selection/Look/Inspect/Compare
+      controls are tested on phone sizes; best elements of A/B/C prototypes
+      accepted with evidence; existing gesture navigation and precision
+      instruments remain available without dominating the canvas.
+  - id: m4
+    kind: milestone
+    title: M4 — Precise inspection and reference comparison
+    status: Proposed
+    acceptance: >-
+      Small-part precision selection, hierarchy, mesh/material/bone inspection,
+      shared-loader side-by-side and translucent comparisons, explicit actual
+      versus normalized scale and adjustable reference image alignment.
+  - id: m5
+    kind: milestone
+    title: M5 — Reversible object editing and project persistence
+    status: Proposed
+    acceptance: >-
+      Non-destructive object moves/rotation/scaling and material overrides,
+      undo/redo and versioned portable projects with verified round trips,
+      separate project/image/model exports and clear export limitations.
+
+  - id: source-governance
+    kind: task
+    title: Establish local Atlas binding and canonical documents
+    parent: m0
+    priority: P0
+    status: Verified
+    acceptance: >-
+      Repository contains tracked Atlas binding, project/work source records,
+      contract, architecture, decisions, roadmap/tasks and progress record,
+      with no second authoritative task status list. Only repository presence
+      is verified, not central dashboard enrollment.
+    evidence:
+      - .atlas/project.yaml
+      - PROJECT.yaml
+      - WORK.yaml
+      - CONTRACT.md
+
+  - id: v1-browser-tests
+    kind: task
+    title: Preserve existing gesture and upload browser tests
+    parent: m0
+    priority: P0
+    status: Verified
+    acceptance: >-
+      Existing source includes gesture-navigation.mjs and viewer-smoke.mjs
+      with Chromium/WebKit checks, and the November 5 smoke run completed
+      successfully; this is historical CI evidence, not a current local
+      or physical-iPhone test result.
+    evidence:
+      - tests/gesture-navigation.mjs
+      - tests/viewer-smoke.mjs
+      - https://github.com/raskal-labs/3d-model-viewer/actions/runs/41986502252
+
+  - id: m0-screenshot-baseline
+    kind: task
+    title: Generate repeatable V1 fixed-camera screenshot baselines
+    parent: m0
+    priority: P0
+    status: Proposed
+    acceptance: >-
+      Porygon2 and Chief front/side/three-quarter at identical settings and
+      phone/desktop sizes, current gesture UI states, compare views, source
+      hashes and reproducible capture script; distinguish historic screenshots.
+
+  - id: m0-pages
+    kind: task
+    title: Inspect actual standalone repo Pages deployment and isolate V2
+    parent: m0
+    priority: P0
+    status: Proposed
+    acceptance: >-
+      Document actual Pages publication configuration and maintain a separate
+      V2 preview without modifying /3d-model-viewer/ before user approval.
+
+  - id: m0-fixtures
+    kind: task
+    title: Fetch and validate licensed public glTF fixtures
+    parent: m0
+    priority: P1
+    status: Proposed
+    acceptance: >-
+      Execute pinned fixture-fetch script, inspect per-asset licenses and
+      hashes, add local test-only Draco variant, and document manual 233.glb
+      path without publishing private reference assets.
+
+  - id: m1-importer
+    kind: task
+    title: Build model-independent GLB/Draco and external-sidecar import spike
+    parent: m1
+    priority: P0
+    status: Proposed
+    acceptance: >-
+      Independent V2 test PR with faithful GLB materials, Draco decoder
+      packaged locally, OBJ+MTL and glTF sidecars, animation/rig handling
+      where supported, iOS file picker, errors, and Chromium/WebKit evidence.
+      Keep existing V1 static upload path working.
+
+  - id: m2-looks
+    kind: task
+    title: Extract and test reusable V1 shader, palette and effect algorithms
+    parent: m2
+    priority: P0
+    status: Proposed
+    acceptance: >-
+      Separate original surface materials from final look/quantization;
+      preserve source colours and a faithful original simplified Porygon2
+      preset under deterministic visual regressions.
+
+  - id: ux-a
+    kind: task
+    title: UI prototype A — canvas-first minimal viewer
+    parent: m3
+    priority: P0
+    status: Proposed
+    acceptance: >-
+      Fixed-screen screenshots and interaction walkthroughs for view, select,
+      render look, compare and basic edit; measure canvas occlusion.
+  - id: ux-b
+    kind: task
+    title: UI prototype B — adaptive selection workspace
+    parent: m3
+    priority: P0
+    status: Proposed
+    acceptance: >-
+      Same tasks/viewport as A; test selection-aware actions, small-mesh
+      selection and compact iPhone inspectors.
+  - id: ux-c
+    kind: task
+    title: UI prototype C — modular/precision-control workspace
+    parent: m3
+    priority: P1
+    status: Proposed
+    acceptance: >-
+      Same tasks/viewport as A/B; preserve best gesture and precision-control
+      behaviours from this repo in optional compact configurations.
+  - id: ux-review
+    kind: task
+    title: Evaluate A/B/C and accept one combined interaction contract
+    parent: m3
+    priority: P0
+    status: Proposed
+    acceptance: >-
+      Compare navigation, occlusion, discoverability, errors and tiny-part
+      selection on real iPhone; record explicit decision before full GUI rebuild.
+
+  - id: m4-comparison
+    kind: task
+    title: Implement shared-loader inspection and reference alignment
+    parent: m4
+    priority: P1
+    status: Proposed
+    acceptance: >-
+      Click/touch inspection of meshes/bones, highlight without isolation,
+      synchronized compare, opacity overlay and explicit scale alignment,
+      separate from imported material definitions.
+  - id: m5-projects
+    kind: task
+    title: Add reversible object edits and durable project export/import
+    parent: m5
+    priority: P1
+    status: Proposed
+    acceptance: >-
+      History/undo, transform overrides, explicit saved asset references,
+      portable versioned project round-trip and independent image/model export.
+
+  - id: atlas-enrollment
+    kind: thread
+    title: Reconcile central Atlas child identity and source binding
+    parent: m0
+    priority: P1
+    status: Proposed
+    details: >-
+      Map 3d-model-viewer under existing atlas.porygon without duplicate
+      state authority. Source repo registration and any dashboard refresh
+      must be evidenced separately; no speculative local checkout path.
+
+  - id: anatomical-model
+    kind: thread
+    title: Preserve and lightly refine simplified Porygon2 anatomy separately
+    parent: m4
+    priority: P2
+    status: Proposed
+    details: >-
+      If approved, refine bill, head, eye position, belly, feet and tail
+      using comparative angles without replacing the original low-detail
+      aesthetic or conflating modelling with viewer architecture.
+
+  - id: mobile-precision
+    kind: thread
+    title: Evaluate offset-crosshair selection and alternative precision input
+    parent: m3
+    priority: P1
+    status: Proposed
+    details: >-
+      Compare Onshape-style non-occluding touch selection against ordinary
+      raycast tap; preserve present gesture navigation and test accessibility.
