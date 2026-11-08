@@ -1,5 +1,31 @@
 # Porygon2 & Chief Style Lab
 
+## Project governance and V2 work
+
+The active development authority is **this standalone repository**, not the older `raskal-labs.github.io/porygon2/` hosting copy. V1 already has gesture-first controls, static OBJ/STL/GLB uploads and Render Lab. **V2 is planned but not implemented.** The current implementation guide follows below.
+
+Atlas project source:
+- [PROJECT.yaml](./PROJECT.yaml) — current state, issues, next checkpoint.
+- [WORK.yaml](./WORK.yaml) — milestone/task/thread acceptance and status.
+- [CONTRACT.md](./CONTRACT.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [DECISIONS.md](./DECISIONS.md), [PROGRESS.md](./PROGRESS.md) — technical invariants, as-is/to-be boundaries, decisions, dated evidence.
+- [ROADMAP.md](./ROADMAP.md), [TASKS.md](./TASKS.md) — human reading guides (not separate writable statuses).
+- [V2_PLAN.md](./V2_PLAN.md), [V2_RESOURCES.md](./V2_RESOURCES.md), [V2_UX_REFERENCES.md](./V2_UX_REFERENCES.md) — detailed design, resources, UX research.
+- [AGENTS.md](./AGENTS.md), [Issue #4](https://github.com/raskal-labs/3d-model-viewer/issues/4) — Codex instructions and tracking entry.
+- [`.atlas/project.yaml`](./.atlas/project.yaml) — v2 source binding under `atlas.porygon` (central Atlas enrollment not yet verified).
+
+Read-only local checks:
+
+```bash
+python3 -m pip install PyYAML jsonschema
+python3 tools/validate-atlas-docs.py
+# With Atlas checkout, additionally validate against official Atlas schemas:
+python3 tools/validate-atlas-docs.py --atlas-root /lab/atlas/repo
+```
+
+The initial structural check confirms authority links but is **not** a substitute for official schema validation, semantic review or real iPhone testing.
+
+---
+
 GitHub Pages viewer at https://raskal-labs.github.io/3d-model-viewer/. Serve over HTTPS; opening HTML directly from Files on iOS does not load JavaScript modules.
 
 ## Default appearance
