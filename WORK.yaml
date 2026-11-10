@@ -37,7 +37,8 @@ items:
       Canvas-first navigation and adaptive selection/Look/Inspect/Compare
       controls are tested on phone sizes; best elements of A/B/C prototypes
       accepted with evidence; existing gesture navigation and precision
-      instruments remain available without dominating the canvas.
+      instruments remain available without dominating the canvas; projection
+      toggle, six axial snap views, and optional orientation cube are usable.
   - id: m4
     kind: milestone
     title: M4 — Precise inspection and reference comparison
@@ -45,7 +46,8 @@ items:
     acceptance: >-
       Small-part precision selection, hierarchy, mesh/material/bone inspection,
       shared-loader side-by-side and translucent comparisons, explicit actual
-      versus normalized scale and adjustable reference image alignment.
+      versus normalized scale and adjustable reference image alignment;
+      matched orthographic views remain consistent across comparison panes.
   - id: m5
     kind: milestone
     title: M5 — Reversible object editing and project persistence
@@ -179,6 +181,23 @@ items:
     acceptance: >-
       Compare navigation, occlusion, discoverability, errors and tiny-part
       selection on real iPhone; record explicit decision before full GUI rebuild.
+
+  - id: camera-orthographic
+    kind: task
+    title: Add orthographic projection and standard camera orientation views
+    parent: m3
+    priority: P0
+    status: Proposed
+    acceptance: >-
+      Perspective/orthographic toggle retains viewing direction, target and
+      apparent framing; Front, Back, Left, Right, Top and Bottom snap to an
+      explicitly defined model-space orientation convention. Pan, zoom, free
+      orbit and frame-to-fit work in both projections. Optional accessible
+      orientation cube offers face, edge and corner snaps without obstructing
+      the mobile canvas. Handle uncertain imported-model axes with manual
+      orientation adjustment rather than assuming all assets face the same way.
+      Verify numerical camera transforms, six visual views, phone gestures,
+      resize/framing and switching projections in Chromium, WebKit and iPhone.
 
   - id: m4-comparison
     kind: task
