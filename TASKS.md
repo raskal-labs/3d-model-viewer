@@ -19,6 +19,7 @@ Deliver reviewable PRs with exact test output and screenshots; don't migrate/cut
 - `ux-b`: adaptive selection workspace.
 - `ux-c`: configurable precision/control surface.
 - `ux-review`: same iPhone tasks/viewports; explicit decision with evidence. Preserve working gesture-navigation code as a candidate for reuse.
+- `camera-orthographic`: perspective/orthographic toggle; six model-aligned axial snaps; pan/zoom/free orbit; optional accessible view cube and orientation correction. Validate in shared UX tasks, camera tests and comparison alignment.
 
 ## Later work
 
