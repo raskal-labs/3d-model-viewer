@@ -3,7 +3,7 @@
 > **Design/implementation reference, not canonical progress.** Atlas project state is in [PROJECT.yaml](./PROJECT.yaml); milestone/task statuses and acceptance are in [WORK.yaml](./WORK.yaml); binding invariants are in [CONTRACT.md](./CONTRACT.md). Sections below retain the original approved implementation strategy; progress must be reconciled in canonical files.
 
 Status: **Proposed implementation plan** (planning only; no V2 code has been implemented).
-Last reviewed: 2026-11-07.
+Last reviewed: 2026-11-09.
 Source: `raskal-labs/3d-model-viewer` on `main`; leave the V1 viewer working until V2 acceptance.
 Companion: [V2_RESOURCES.md](./V2_RESOURCES.md). Scoped Codex rules: [AGENTS.md](./AGENTS.md).
 
@@ -60,7 +60,7 @@ Use Three.js modules and a small, static-deployable build pipeline (evaluate Vit
 - Extend existing static OBJ/STL/self-contained GLB/glTF upload to preserve original materials, support GLB/glTF via GLTFLoader + DRACOLoader (add Meshopt/KTX2 only when fixture requires) and external OBJ+MTL/texture and glTF sidecars. Add STL only if it remains cheap.
 - Local iOS Files picker and drag/drop on desktop. Multi-file glTF sidecars and OBJ/MTL/textures need relative-path resolution, missing-dependency diagnostics and URL cleanup. Don't presume directory picker works on iOS.
 - Preserve hierarchy, original materials, texture colour spaces, skinning, morphs and animation clips; do not replace materials merely to view the asset.
-- Fit arbitrary size/orientation; sensible near/far planes and orthographic named views. Robust loading/error/cancel and WebGL context-loss recovery.
+- Fit arbitrary size/orientation; sensible near/far planes and camera infrastructure supporting both perspective and orthographic projection. Treat imported model axes/front as an explicit adjustable convention, not a guaranteed standard. Robust loading/error/cancel and WebGL context-loss recovery.
 - Pass tests using current Porygon2 and Chief, a public coloured textured GLB, and a public skinned/morph target example. Exercise `233.glb` manually when provided.
 
 ### M2 — Independent render pipeline + meaningful reuse
@@ -71,6 +71,9 @@ Use Three.js modules and a small, static-deployable build pipeline (evaluate Vit
 - Do not run a hot render loop while idle; resume for interactions/animation/turntable. Bound DPR and render-target memory on iPhone.
 
 ### M3 — Mobile-first GUI replacement (ship-ready viewer)
+- Provide a Perspective / Orthographic projection toggle and six model-space camera snaps: Front, Back, Left, Right, Top, Bottom. Switching projection should preserve viewing direction, orbit target and approximate on-screen scale rather than reset the camera.
+- Keep free orbit, pan, zoom and frame-to-fit usable in orthographic mode. Offer an optional orientation cube: tap faces for six axial snaps, edges/corners for diagonal views; make it hideable and keyboard/screen-reader accessible where possible. It must not permanently obstruct the phone canvas.
+- Distinguish model-local front/up from world axes; allow users to correct imported model orientation, and keep orthographic names consistent across saved views and compare panes. Do not silently change model geometry.
 - Canvas is primary. Compact model/library picker in header; narrow contextual toolbar; bottom sheets for **View, Look, Inspect, Compare**; reveal controls only for the active task.
 - Direct gestures: drag orbit, pinch zoom, two-finger pan, tap selection, double tap frame/focus. Avoid hijacking gestures over scrollable menus. Preserve accessibility zoom and keyboard navigation as far as platform permits.
 - Thumbnail-style Look choices; contextual settings only. Put wheel/circle-pad/zoom-fader functionality into optional **Precision/Retro Controller** module, not the default permanent dock.
@@ -79,7 +82,7 @@ Use Three.js modules and a small, static-deployable build pipeline (evaluate Vit
 ### M4 — Inspection and comparison (high-value for Porygon anatomy)
 - Tap/raycast selection; hierarchy for meshes/materials/bones; highlight, hide, isolate, inspect bounds and transforms. Selected != isolated.
 - Comparison modes: synchronized side-by-side **first**, then onion-skin/opacity and slider if performance supports them. Explicit scale normalisation vs real scale; manual alignment/reset.
-- Reference images align in model/screen space, with adjustable translation, scale, rotation and opacity; front/side orthographic presets.
+- Reference images align in model/screen space, with adjustable translation, scale, rotation and opacity; use all six standardized orthographic views and consistent snap alignment across compare panes.
 - One shared importer and document system for both viewports. Avoid V1's independent compare loader/cache implementation. Clean GPU resources after switching.
 
 ### M5 — Small, non-destructive editing + persistence (later)
@@ -96,7 +99,7 @@ Automated:
 4. OBJ+MTL+texture and plain OBJ work. Multi-file glTF with relative URI spaces works.
 5. Static Porygon2 retains expected colours, head/eyes/bill geometry and original look snapshot.
 6. Skinned and morph-animated model displays intact, with clips listed where available.
-7. Two model sizes: fit/reframe, near/far, front/side orthographic; no clipping.
+7. Two model sizes: fit/reframe, near/far, all six orthographic directions, perspective toggle preserving orientation/apparent scale, pan/zoom/orbit and orientation correction; no clipping.
 8. Compare synchronisation, alignment and shared loader; no duplicated model-cache ownership.
 9. Import error/cancel/corrupt files, rapid model switching, cleanup, WebGL context loss.
 10. iPhone layout safe-area, touch target sizes, panel scroll, selection/pinch/twist conflicts, GPU memory.
