@@ -15,7 +15,8 @@ M1   Source-faithful GLB/Draco, sidecar resources, materials, rigs
 M2   Reusable source-independent looks, pixels and palette pipeline
  │
  ▼
-M3   Accepted adaptive/canvas-first mobile interface
+M3   Accepted adaptive/canvas-first mobile interface;
+     perspective/orthographic toggle, six snap views, optional view cube
  │
  ▼
 M4   Selection, component inspection and registered comparisons
@@ -29,6 +30,8 @@ Existing V1 capabilities **already include** standalone OBJ/STL/GLB uploads, ges
 **Safe preview gate:** V1 fixed-camera baselines, tested build/deployment strategy, isolated V2 path, existing V1 unaffected.
 
 **Useful V2 gate:** Importer fidelity/Draco + core looks + practical on-phone canvas GUI.
+
+**Camera gate:** Six model-aligned front/back/left/right/top/bottom orthographic snaps; free orbit/pan/zoom, fit, preserved orientation when toggling projection; accessible orientation cube is optional. Camera behaviour must be verified on mobile before release.
 
 **Comparison gate:** Anatomy can be compared at matching angles and explicit scale with 2D/3D references.
 
