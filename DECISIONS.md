@@ -30,6 +30,10 @@ V1 stays in place until V2 acceptance; neither `233.glb` nor private historical 
 
 Use `.atlas/project.yaml` pointing to one PROJECT.yaml for shared state and one WORK.yaml for milestones/tasks/threads; CONTRACT/DECISIONS/ARCHITECTURE/PROGRESS own their distinct meaning. This local binding doesn't automatically update Atlas's central index. Preserve `atlas.porygon` parent relationship without creating an unreviewed duplicate parent entity.
 
+## Accepted — 2026-11-09: standard orthographic model views
+
+V2 includes a perspective/orthographic projection toggle with Front, Back, Left, Right, Top and Bottom snap views. Preserve target, view direction and approximate apparent scale when changing projection; retain free orbit, pan, zoom and frame-to-fit. An optional orientation cube can expose face/edge/corner snaps without becoming a permanent mobile control. Imported assets may have different forward/up conventions, so model orientation must be explicit and correctable. Coordinate and UI implementation belongs to M1/M3 and comparison alignment to M4; this is not a new milestone. Implementation remains **Proposed** in WORK.yaml.
+
 ## Proposed / open
 
 - GUI pattern selection after real task comparison (`ux-review`).
