@@ -30,6 +30,8 @@ jobs:
           done
           cat /tmp/porygon-server.log
           exit 1
+      - name: Validate Porygon2/Chief refined geometry
+        run: python3 tests/model-refinements.py
       - name: Test camera gesture recognition
         run: node tests/gesture-navigation.mjs
       - name: Exercise desktop and mobile Chromium

@@ -64,11 +64,21 @@ If both XYZ and angles are present, angles/distance take precedence in setting t
 **Set default view** saves the current camera+target+FOV+roll to that model's versioned browser localStorage key; it is restored when returning to that character or reloading the page. **Clear saved default** removes that model's stored view. Saved browser presets do **not** change shared GitHub Pages defaults; send exported JSON to incorporate it into source control. When localStorage is unavailable, the preset lasts only until the tab closes.
 
 ## Models
-`Porygon2-upright.obj` is the prior upright mesh with flattened blue oval bill; `Porygon2.obj` is the original, and `edit_model.py` regenerates the upright OBJ. Eye placement, blue belly, and proportions are **unchanged by this camera-control PR**.
+`Porygon2-upright.obj` is the prior upright mesh with flattened blue oval bill; `Porygon2.obj` is the original, and `edit_model.py` regenerates the upright OBJ. The original mesh retains its original eyes and missing belly; a separate refined variant is available below.
 
-Chief loads from `chief/chief-snap-lettered.obj` and its Snap texture assets. Original palette preserves Chief's helmet and textured colours. Helmet lettering/fit is likewise not changed by this PR.
+Chief loads from `chief/chief-snap-lettered.obj` and its Snap texture assets. Original palette preserves Chief's helmet and textured colours. The original Chief helmet/lettering is likewise preserved; a separate refined variant is available below.
 
 Viewer Three.js r168 is imported from jsDelivr. The pixel shader and procedural watercolour/sketch approximations live in `index.html`.
 
 ## Verification status
 Prior Chromium smoke checks validated models (Porygon2 13 meshes, Chief 10 meshes), six rendering styles, palettes, outline modes and resolutions. This PR adds new control code and needs its own iPhone Safari testing; JS syntax and DOM IDs have been statically verified. Do not treat an unperformed interactive test as passed.
+
+## Simplified anatomy A/B variants (November 12, 2026)
+
+The built-in model picker now offers four distinct choices: **Porygon2**, **Chief**, **Porygon2 · refined**, **Chief · refined**. The first two are the unchanged source meshes and preserve the former default comparison pair. The two new files are derived revisions; neither original was overwritten.
+
+- `Porygon2-refined.obj`: preserves the spherical head, neck, pink body, feet and tail; brings the two white eye assemblies, black pupils and white glints onto the forward-facing head; lengthens/flattens the existing blue bill; adds a low-profile blue belly overlay following the existing body mesh. This is the **same economical, low-detail style**, not a new model.
+- `chief/chief-refined.obj`: preserves Pokémon Snap Porygon's original mesh and textures (Chief is **Porygon**, not Porygon2), lifts/tucks the yellow helmet slightly and centres/scales `CHIEF` onto its front facet. The original Chief remains as a baseline.
+- `tools/refine_models.py` reproducibly regenerates both variants using only Python standard library; run `python3 tests/model-refinements.py` for geometry invariants. The original source assets and `edit_model.py` are deliberately unchanged.
+
+**Status:** the OBJ assets load and render in headless Chromium; shape, text scale and placement remain open to artistic A/B review, particularly on a real iPhone Safari browser. The source models continue to be available for side-by-side comparisons. Neither the private `233.glb` nor PhaseOne reconstruction is included here.

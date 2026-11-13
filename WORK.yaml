@@ -235,11 +235,32 @@ items:
     title: Preserve and lightly refine simplified Porygon2 anatomy separately
     parent: m4
     priority: P2
-    status: Proposed
+    status: In Progress
     details: >-
-      If approved, refine bill, head, eye position, belly, feet and tail
-      using comparative angles without replacing the original low-detail
-      aesthetic or conflating modelling with viewer architecture.
+      Generated A/B variant adds forward-facing eyes/pupils/glints,
+      flatter blue bill, and a curved blue belly while keeping original
+      head, body, feet and tail unchanged. Geometry and Chromium loading
+      were checked 2026-11-12. Artistic signoff and iPhone Safari remain.
+    evidence:
+      - Porygon2-refined.obj
+      - tools/refine_models.py
+      - tests/model-refinements.py
+
+  - id: chief-helmet-refinement
+    kind: thread
+    title: Reposition Chief Porygon hard hat lettering and fit
+    parent: m4
+    priority: P2
+    status: In Progress
+    details: >-
+      Generated a Chief variant with a slightly raised/tucked helmet and
+      lettering constrained to the front polygonal facet. Preserve the
+      original Pokémon Snap Porygon mesh/UVs and original Chief variant.
+      Geometry and Chromium render checked; visual/iPhone approval pending.
+    evidence:
+      - chief/chief-refined.obj
+      - tools/refine_models.py
+      - tests/model-refinements.py
 
   - id: mobile-precision
     kind: thread

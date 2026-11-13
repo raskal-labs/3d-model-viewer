@@ -45,3 +45,7 @@ V2 includes a perspective/orthographic projection toggle with Front, Back, Left,
 - Central Atlas child entity identity and dashboard source-registration mechanism (`atlas-enrollment`).
 
 Changes to accepted decisions must include a new dated entry and clearly identify superseded constraints.
+
+## Accepted — 2026-11-12: isolate source-preserving Porygon2 / Chief fixes
+
+Provide separate refined models alongside the originals in the V1 picker, **not replacements for or automatic migrations of the originals**. Porygon2's old low-detail visual language remains the baseline; restrict geometry work to eye/pupil/glint seating, oval blue bill and curved blue underbelly. Chief remains based on the original angular Porygon/Snap body; adjust only helmet seating and front-face CHIEF lettering. Generated variants are subject to visual A/B and real-mobile approval before becoming any default. Viewer architecture and V2 milestone scope are unchanged.
