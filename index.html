@@ -213,7 +213,7 @@ const post=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,vertexShad
 postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),post));
 let aspectFit=1;
 let target,model,current=0,requested=0,loading=0,uploading=false;
-const models=[{id:'porygon2',name:'Porygon2',file:'./Porygon2-upright.obj'},{id:'chief',name:'Chief',file:'./chief/chief-snap-lettered.obj',mtl:'./chief/chief.mtl'}];
+const models=[{id:'porygon2',name:'Porygon2',file:'./Porygon2-upright.obj'},{id:'chief',name:'Chief',file:'./chief/chief-snap-lettered.obj',mtl:'./chief/chief.mtl'},{id:'porygon2-refined',name:'Porygon2 · refined',file:'./Porygon2-refined.obj'},{id:'chief-refined',name:'Chief · refined',file:'./chief/chief-refined.obj',mtl:'./chief/chief.mtl'}];
 function dispose(root){root?.traverse(o=>{if(o.isMesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){m.uniforms?.colorMap?.value?.dispose();m.map?.dispose();m.dispose();}}});}
 function resize(){
 const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight),dpr=Math.min(devicePixelRatio||1,2);
@@ -304,7 +304,7 @@ function resetBuiltIn(){
  if(!model)return;
  const bounds=new THREE.Box3().setFromObject(model),center=bounds.getCenter(new THREE.Vector3()),r=bounds.getSize(new THREE.Vector3()).length();
  controls.target.copy(center);
- camera.position.copy(center).add(new THREE.Vector3(current===0?0:r*.75,r*.25,current===0?-r*1.4:r*1.1).multiplyScalar(aspectFit));
+ camera.position.copy(center).add(new THREE.Vector3(models[current].id.startsWith('porygon2')?0:r*.75,r*.25,models[current].id.startsWith('porygon2')?-r*1.4:r*1.1).multiplyScalar(aspectFit));
  camera.near=Math.max(.001,r/1000);camera.far=r*100;camera.updateProjectionMatrix();
  roll=0;controls.update();updateViewUI();
 }
@@ -438,7 +438,7 @@ function panView(dx,dy){
  camera.lookAt(controls.target);controls.update();updateViewUI();
 }
 controls.addEventListener('change',updateViewUI);
-const parts={'bill_1':1,'body_2':0,'eye_1_3':2,'eye_1_4':2,'foot_far_5':1,'foot_near_6':1,'eye_1_7':2,'eye_1_8':2,'head_9':0,'neck_10':0,'eye_1_11':3,'eye_1_12':3,'tail_13':1};
+const parts={'bill_1':1,'body_2':0,'eye_1_3':2,'eye_1_4':2,'foot_far_5':1,'foot_near_6':1,'eye_1_7':2,'eye_1_8':2,'head_9':0,'neck_10':0,'eye_1_11':3,'eye_1_12':3,'tail_13':1,'belly_blue':1};
 // Uploaded GLB and OBJ files stay in this tab and are re-read when switched or compared.
 async function loadModelEntry(entry){
  const manager=new THREE.LoadingManager();

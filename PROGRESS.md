@@ -49,3 +49,9 @@ The previous Atlas docs were mistakenly committed to the hosting repo. Corrected
 ## Evidence rules
 
 A future PR should report associated WORK IDs, source revision, operations performed, exact test commands/results, manual Safari limitations, private fixture availability, follow-up steps and any changed decision. After meaningful work, update canonical PROJECT/WORK and append only material facts here. `Verified` requires evidence appropriate to the **claim**, not merely a successful write to Git or a screenshot of an unrelated state.
+
+## 2026-11-12 — non-destructive anatomy A/B implementation (local, awaiting aesthetic signoff)
+
+- **Implemented:** `tools/refine_models.py` generates `Porygon2-refined.obj` and `chief/chief-refined.obj` from tracked source assets. Original OBJ/MTL/PNG files untouched; `index.html` registers two additional model choices, retains the original Porygon2/Chief first comparison pair, and maps `belly_blue` to the blue shader part.
+- **Verified:** numerical geometry assertions (`tests/model-refinements.py`) pass, including Chief's unmodified Snap mesh; both revisions load and render through actual Three.js OBJLoader in desktop and mobile Chromium, including side/three-quarter view captures. The prior desktop+mobile Chromium smoke sequence passed through its last Chromium assertions; complete `viewer-smoke.mjs` exits at WebKit launch because GameCube lacks Playwright's `webkit-2370` executable. Therefore **no WebKit/Safari passing claim**.
+- **Review needed:** compare the face/eye silhouette, bill depth, blue belly edge, Chief letter readability and hat contact from several angles on iPhone; decide whether revisions become defaults. No auto-deploy, no modification to V2, PhaseOne or the P2 asset archive.
