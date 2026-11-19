@@ -1,8 +1,21 @@
-# Porygon2 & Chief Style Lab
+# 3D Model Viewer
+
+## Model Studio (V2)
+
+Serve the checkout with `python3 -m http.server 8765` and open `/v2/`. Open or drop a GLB, glTF, OBJ or STL. Select the buffers, textures or MTL alongside the model when they are separate files. The default view uses the model’s original materials and neutral studio lighting.
+
+| Group | Controls |
+| --- | --- |
+| Studio | Original materials, Clay, Unlit, Geometry normals, and three lighting rigs |
+| Resonance | Mineral sheen, chamber lighting, and independent bloom, light ribbons and sparks |
+| Banana Palm | Daylight, Initial cel shading with geometry contours, and PS1 vertex snap with ordered dithering |
+| Legacy looks | Pixel, Watercolour, Ink / Sketch and Monochrome for arbitrary models |
+
+The Resonance effects animate locally. Use **Animate effects** to pause them. Model animation uses the first available clip. The browser loads Three.js and the Draco decoder from the pinned jsDelivr release; local model and sidecar contents stay in the browser.
+
+The original lab at `/` contains the exact Porygon2 and Chief looks, full palette/filter tools and V1 comparison. The public Pages deployment serves `main:/`. V2 is reviewed on a separate branch.
 
 ## Project governance and V2 work
-
-The active development authority is **this standalone repository**, not the older `raskal-labs.github.io/porygon2/` hosting copy. V1 already has gesture-first controls, static OBJ/STL/GLB uploads and Render Lab. **V2 is planned but not implemented.** The current implementation guide follows below.
 
 Atlas project source:
 - [PROJECT.yaml](./PROJECT.yaml) — current state, issues, next checkpoint.
@@ -28,7 +41,7 @@ The initial structural check confirms authority links but is **not** a substitut
 
 GitHub Pages viewer at https://raskal-labs.github.io/3d-model-viewer/. Serve over HTTPS; opening HTML directly from Files on iOS does not load JavaScript modules.
 
-## Default appearance
+## V1 default appearance
 Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **Native** (pixel ratio capped at 2). Six styles: Flat, Cel shaded, Pixel, Watercolour, Ink / Sketch, Monochrome. Six palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype. Outline modes: Off, Solid, Reactive, Ink; the outline colour is selected separately from its style and the model palette; the Surface lines slider adds subtle mesh edges. Reactive and Ink vary edge coverage, and output colour reduction preserves the outline colour; render resolutions: 80p, 160p, 240p, Native.
 
 ## Camera and controls

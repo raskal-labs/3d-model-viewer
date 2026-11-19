@@ -1,0 +1,253 @@
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createEffects } from './effects.js';
+import { createLookMaterial } from './looks.js';
+import { createCamera } from './camera.js';
+import { importModel, disposeModel } from './import-model.js';
+
+const $ = id => document.getElementById(id);
+const canvas = $('model-canvas');
+const viewport = $('viewport');
+const scene = new THREE.Scene();
+let dirty = true;
+const invalidate = () => { dirty = true; };
+const pivot = new THREE.Group();
+scene.add(pivot);
+
+function setStatus(message, error = false) {
+  $('status').textContent = message;
+  $('status').hidden = !message;
+  $('status').toggleAttribute('data-error', error);
+}
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+} catch (error) {
+  setStatus('WebGL 2 is unavailable in this browser.', true);
+  throw error;
+}
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+
+const environment = new RoomEnvironment();
+const pmrem = new THREE.PMREMGenerator(renderer);
+const studioMap = pmrem.fromScene(environment, .04);
+pmrem.dispose();
+environment.dispose();
+
+const effects = createEffects(renderer, scene);
+
+const lighting = {
+  neutral: { bg: '#29313d', sky: '#e9f2ff', ground: '#3f4755', ambient: .65, key: '#ffffff', keyPower: 2.4, rim: '#cbdcff', rimPower: 1.4, env: .72 },
+  softbox: { bg: '#45423e', sky: '#fff6e8', ground: '#7d7468', ambient: 1.3, key: '#fff4e5', keyPower: 1.1, rim: '#f4e5df', rimPower: .6, env: .92 },
+  rim: { bg: '#161c25', sky: '#dbefff', ground: '#313a4d', ambient: .28, key: '#f6f4ef', keyPower: 1.35, rim: '#cbdcff', rimPower: 3, env: .28 },
+  resonance: { bg: '#0b101b', sky: '#777ca2', ground: '#152831', ambient: .22, key: '#62b5ed', keyPower: 1.04, rim: '#a48fff', rimPower: 2.5, env: .22 },
+  banana: { bg: '#3b4744', sky: '#e6f2ff', ground: '#9c8c70', ambient: .57, key: '#fff0d1', keyPower: 2.05, rim: '#a6c2d4', rimPower: .7, env: .44 },
+};
+const sky = new THREE.HemisphereLight();
+const key = new THREE.DirectionalLight();
+const rim = new THREE.DirectionalLight();
+key.position.set(-3, 5, 4);
+rim.position.set(3, 2, -5);
+scene.add(sky, key, rim);
+
+function applyLighting() {
+  const rig = lighting[$('lighting').value];
+  scene.background = new THREE.Color(rig.bg);
+  sky.color.set(rig.sky);
+  sky.groundColor.set(rig.ground);
+  sky.intensity = rig.ambient;
+  key.color.set(rig.key);
+  key.intensity = rig.keyPower;
+  rim.color.set(rig.rim);
+  rim.intensity = rig.rimPower;
+  scene.environment = rig.env > 0 ? studioMap.texture : null;
+  scene.environmentIntensity = rig.env;
+  invalidate();
+}
+$('lighting').addEventListener('change', applyLighting);
+applyLighting();
+
+const grid = new THREE.GridHelper(20, 40, 0x698497, 0x3c4d5c);
+grid.visible = false;
+scene.add(grid);
+$('grid').addEventListener('change', () => {
+  grid.visible = $('grid').checked;
+  invalidate();
+});
+const camera = createCamera(canvas, () => { $('spin').checked = false; }, invalidate);
+$('projection').addEventListener('change', () => camera.projection($('projection').value));
+for (const button of document.querySelectorAll('[data-view]')) {
+  button.addEventListener('click', () => {
+    $('spin').checked = false;
+    camera.snap(button.dataset.view);
+  });
+}
+
+let current, mixer, animation, pending = 0;
+const initialMaterials = new Map();
+const alternateMaterials = new Map();
+
+function clearLook() {
+  for (const [object, original] of initialMaterials) object.material = original;
+  for (const material of alternateMaterials.values()) material.dispose();
+  initialMaterials.clear();
+  alternateMaterials.clear();
+}
+
+function materialFor(original, look) {
+  if (!alternateMaterials.has(original)) {
+    alternateMaterials.set(original, createLookMaterial(original, look, effects.retroResolution));
+  }
+  return alternateMaterials.get(original);
+}
+
+function applyLook() {
+  clearLook();
+  const look = $('look').value;
+  if (['clay', 'unlit', 'normals', 'banana-cel', 'banana-ps1', 'legacy-pixel', 'resonance-mineral'].includes(look)) current?.root.traverse(object => {
+    if (!object.isMesh || !object.material) return;
+    initialMaterials.set(object, object.material);
+    object.material = Array.isArray(object.material) ?
+      object.material.map(material => materialFor(material, look)) : materialFor(object.material, look);
+  });
+  canvas.dataset.look = look;
+  invalidate();
+}
+$('look').addEventListener('change', applyLook);
+
+function selectAsset(asset) {
+  const bounds = new THREE.Box3().setFromObject(asset.root, true);
+  if (bounds.isEmpty() || !Number.isFinite(bounds.min.lengthSq() + bounds.max.lengthSq())) {
+    disposeModel(asset.root);
+    throw new Error('No finite, visible geometry was found.');
+  }
+  if (current) {
+    clearLook();
+    mixer?.stopAllAction();
+    mixer?.uncacheRoot(current.root);
+    pivot.remove(current.root);
+    disposeModel(current.root);
+  }
+  current = asset;
+  const size = bounds.getSize(new THREE.Vector3());
+  const scale = 2.8 / Math.max(size.x, size.y, size.z, 1e-9);
+  pivot.scale.setScalar(scale);
+  pivot.position.copy(bounds.getCenter(new THREE.Vector3())).multiplyScalar(-scale);
+  pivot.add(asset.root);
+  const framed = new THREE.Box3().setFromObject(pivot, true);
+  grid.position.y = framed.min.y - .003;
+  mixer = asset.animations.length ? new THREE.AnimationMixer(asset.root) : null;
+  animation = mixer?.clipAction(asset.animations[0]).play();
+  $('animation-control').hidden = !animation;
+  $('play-animation').checked = Boolean(animation) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let meshes = 0;
+  asset.root.traverse(object => { if (object.isMesh) meshes++; });
+  $('model-name').textContent = asset.name;
+  $('model-info').textContent = `${meshes} ${meshes === 1 ? 'mesh' : 'meshes'}${animation ? ' · Animated' : ''}`;
+  canvas.dataset.ready = 'true';
+  camera.setBounds(framed);
+  applyLook();
+}
+
+function studioSample() {
+  const root = new THREE.Group();
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(.98, 0), new THREE.MeshPhysicalMaterial({
+    color: 0x60a596, roughness: .26, metalness: .17, clearcoat: .35, flatShading: true,
+  }));
+  core.rotation.set(.05, .24, .28);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.16, .083, 16, 80), new THREE.MeshStandardMaterial({
+    color: 0xc9bd9f, roughness: .25, metalness: .86,
+  }));
+  ring.rotation.set(1.16, .21, .46);
+  root.add(core, ring);
+  return { root, name: 'Studio sample', animations: [] };
+}
+
+async function openFiles(files) {
+  if (!files.length) return;
+  const request = ++pending;
+  setStatus('Opening model…');
+  try {
+    const asset = await importModel(files);
+    if (request !== pending) { disposeModel(asset.root); return; }
+    selectAsset(asset);
+    setStatus('');
+  } catch (error) {
+    if (request === pending) setStatus(error.message || 'Could not open this model.', true);
+  }
+}
+
+$('sample').addEventListener('click', () => {
+  ++pending;
+  selectAsset(studioSample());
+  setStatus('');
+});
+$('open-model').addEventListener('click', () => $('files').click());
+$('files').addEventListener('change', event => {
+  openFiles(Array.from(event.target.files));
+  event.target.value = '';
+});
+viewport.addEventListener('dragover', event => {
+  if (!Array.from(event.dataTransfer.types).includes('Files')) return;
+  event.preventDefault();
+  viewport.toggleAttribute('data-dragging', true);
+});
+viewport.addEventListener('dragleave', event => {
+  if (!viewport.contains(event.relatedTarget)) viewport.removeAttribute('data-dragging');
+});
+viewport.addEventListener('drop', event => {
+  event.preventDefault();
+  viewport.removeAttribute('data-dragging');
+  openFiles(Array.from(event.dataTransfer.files));
+});
+const inspector = $('inspector');
+function showPanel(open) {
+  inspector.toggleAttribute('data-open', open);
+  $('panel-toggle').setAttribute('aria-expanded', String(open));
+}
+$('panel-toggle').addEventListener('click', () => showPanel(!inspector.hasAttribute('data-open')));
+$('close-panel').addEventListener('click', () => { showPanel(false); $('panel-toggle').focus(); });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && inspector.hasAttribute('data-open')) {
+    showPanel(false);
+    $('panel-toggle').focus();
+  }
+});
+
+new ResizeObserver(([entry]) => {
+  const { width, height } = entry.contentRect;
+  if (width < 1 || height < 1) return;
+  renderer.setSize(width, height, false);
+  effects.resize(width, height);
+  camera.resize(width, height);
+}).observe(viewport);
+renderer.setSize(viewport.clientWidth, viewport.clientHeight, false);
+effects.resize(viewport.clientWidth, viewport.clientHeight);
+camera.resize(viewport.clientWidth, viewport.clientHeight);
+selectAsset(studioSample());
+const frameOptions = { look: 'original', bloom: false, ribbons: false, sparks: false, animate: false };
+$('animate').checked = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+function updateEffects() {
+  frameOptions.look = $('look').value;
+  for (const key of ['bloom', 'ribbons', 'sparks', 'animate']) frameOptions[key] = $(key).checked;
+  invalidate();
+}
+for (const id of ['look', 'bloom', 'ribbons', 'sparks', 'animate']) $(id).addEventListener('change', updateEffects);
+updateEffects();
+let previous = performance.now();
+renderer.setAnimationLoop(now => {
+  const delta = Math.min((now - previous) / 1000, .06);
+  previous = now;
+  const spinning = $('spin').checked;
+  const playing = mixer && $('play-animation').checked;
+  const movingEffects = frameOptions.animate && (frameOptions.ribbons || frameOptions.sparks);
+  if (spinning) camera.spin(delta);
+  if (playing) mixer.update(delta);
+  if (dirty || playing || movingEffects) {
+    effects.render(camera.active, frameOptions, delta, grid);
+    dirty = false;
+  }
+});

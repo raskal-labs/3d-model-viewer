@@ -1,4 +1,4 @@
-name: Porygon Viewer Browser Smoke
+name: Model Viewer Browser Smoke
 
 on:
   pull_request:
@@ -32,11 +32,15 @@ jobs:
           exit 1
       - name: Test camera gesture recognition
         run: node tests/gesture-navigation.mjs
-      - name: Exercise desktop and mobile Chromium
+      - name: Exercise V2 studio and public glTF fixtures
+        run: |
+          bash tools/fetch-v2-fixtures.sh
+          node tests/model-studio.mjs
+      - name: Exercise desktop and mobile V1
         run: node tests/viewer-smoke.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: porygon-viewer-smoke-screenshots
+          name: model-viewer-smoke-screenshots
           path: viewer-smoke-artifacts/
           if-no-files-found: ignore

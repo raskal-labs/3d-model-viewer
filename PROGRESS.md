@@ -3,16 +3,17 @@
 **Role:** dated evidence and retrospective interpretation, not another active status ledger.
 **Current state and next checkpoint:** [PROJECT.yaml](./PROJECT.yaml).
 **Task status/acceptance:** [WORK.yaml](./WORK.yaml).
-**Last reviewed:** 2026-11-07; GitHub source/Action records inspected, real device/browser deployment not checked in this pass.
+**Last reviewed:** 2026-11-18. See the dated entry for the V2 review branch.
 
 ## Project Continuity Snapshot
 
 ### Recent Work
 
+- **Verified (Chromium):** the isolated V2 studio opens model files using original materials and neutral lighting, restores the same textured frame after a material override, exposes the authored looks, and opens a public Draco-compressed GLB. Pages configuration still uses `main:/` for the V1 deployment.
 - **Verified (source inspection):** `index.html`, `render-lab.js`, `gesture-navigation.js/.css` implement the standalone V1 source. Static OBJ/STL/self-contained GLB/glTF upload code exists; source rejects skinned meshes; materials are remapped into custom stylized shader instead of faithful source PBR. The scoped original code includes Porygon2/Chief assets and Pocket Fonts.
 - **Verified (historical GitHub CI):** `41986502252` reported successful browser smoke on 2026-11-05 and `41986978503` reported successful Pages build/deployment. These are source-specific historical observations, **not** newly run integration tests or real iPhone acceptance.
-- **Verified (repository documents):** this repo has a dedicated Atlas v2 binding, PROJECT/WORK authorities, local contract, architecture, decisions, timeline and Codex issue #4. **No V2 runtime code was implemented by these document changes.**
-- **Not verified:** actual Draco `233.glb` import, GLB fidelity after conversion, V2 preview route, official Atlas schema validator run, central Atlas enrollment, fresh iPhone Safari gesture/performance test, and current live Pages availability.
+- **Verified (repository documents):** this repo has a dedicated Atlas v2 binding, PROJECT/WORK authorities, local contract, architecture, decisions, timeline and Codex issue #4. That historical document-only change preceded the V2 runtime.
+- **Unknown:** private Draco `233.glb` compatibility, current iPhone Safari acceptance, central Atlas enrollment and comparison parity.
 
 ### Recent Thinking
 
@@ -22,9 +23,16 @@
 
 ### Next Steps
 
-Read `PROJECT.yaml` for the single authoritative checkpoint, and `WORK.yaml` for IDs `m0-screenshot-baseline`, `m0-pages`, `m0-fixtures`, `m1-importer`, `ux-a`, `ux-b`, `ux-c` and `ux-review`. These are future work, not work already performed.
+Read `PROJECT.yaml` for the single authoritative checkpoint, and `WORK.yaml` for IDs `m0-screenshot-baseline`, `m0-pages`, `m0-fixtures`, `m1-importer`, `ux-a`, `ux-b`, `ux-c` and `ux-review`. The work records describe what remains for acceptance.
 
 ## Timeline
+
+### 2026-11-18 — General model studio review branch
+
+- Added a static `/v2/` entry point with the shared gesture recognizer, perspective and orthographic snap views, source materials, Draco and sidecar import, and playback of the first animation clip. The default studio does not run a postprocessing pass.
+- Added general inspection looks plus new implementations of Resonance mineral rim lighting, bloom, ribbons and sparks, Banana Palm Initial cel contours and PS1 snapping/dithering, and V1-inspired pixel, ink, watercolour and monochrome looks. The complete exact legacy lab remains at the root URL.
+- Fixture provenance: `tools/fetch-v2-fixtures.sh` pins the public Khronos assets. The local Draco sample was generated from AnimatedMorphCube with glTF Transform CLI 4.2.1. Fixture binaries and Chromium screenshots are outside Git.
+- Work IDs: `m0-pages`, `m0-fixtures`, `m1-importer`, `m2-looks`, and `camera-orthographic`. Review iPhone behavior, comparison parity, and exact matching of legacy camera presets before a cutover.
 
 ### 2026-11-02 — Historical camera UI screenshots
 
