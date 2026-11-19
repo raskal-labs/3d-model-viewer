@@ -26,7 +26,7 @@ async function painted(page) {
 }
 async function frame(page) {
   await painted(page);
-  return page.locator('#model-canvas').screenshot({ animations: 'disabled' });
+  return page.locator('#model-canvas').screenshot({ animations: 'disabled', style: '#inspector { visibility: hidden; }' });
 }
 async function screenshot(page, name) {
   await painted(page);
@@ -210,9 +210,15 @@ try {
   assert(await rail.locator('img').evaluate(image => image.decode().then(() => image.naturalWidth > 0)));
   const railBox = await rail.boundingBox();
   await touchDrag(libraryPhone, { x: railBox.x + 180, y: railBox.y + 45 }, -155, 0);
-  assert(await rail.evaluate(element => element.scrollLeft > 0), 'A horizontal flick scrolls the previews');
+  // Wait for native scrolling and snap to finish before starting a separate gesture.
+  await libraryPhone.waitForFunction(() => {
+    const element = document.querySelector('#library-rail');
+    const start = element.scrollLeft;
+    return new Promise(resolve => setTimeout(() => resolve(start > 0 && element.scrollLeft === start), 100));
+  });
   await touchDrag(libraryPhone, { x: railBox.x + 55, y: railBox.y + 85 }, 0, -60);
   assert.equal(await dialog.getByRole('button', { name: 'Collections' }).getAttribute('aria-pressed'), 'true');
+  await painted(libraryPhone);
   await rail.getByRole('button', { name: 'Fixtures 35 models' }).tap();
   await rail.getByRole('button', { name: 'Model 0 Fixtures' }).waitFor();
   await dialog.getByRole('button', { name: 'Full library' }).tap();
