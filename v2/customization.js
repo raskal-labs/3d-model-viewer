@@ -4,6 +4,7 @@ import { iconRunes, runeSvg } from './icon-runes.js';
 const $ = id => document.getElementById(id);
 const hex = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
 const swatch = colour => '#' + colour.getHexString();
+const isInlay = object => /rune[\s_-]+inlay/i.test(object.name);
 const prefix = 'model-studio-appearance-v1:';
 
 export function readAppearance(key) {
@@ -24,18 +25,19 @@ export function writeAppearance(key, value) {
   }
 }
 
-function appearanceParts(root) {
+function appearanceParts({ root, libraryPath }) {
   const body = new Set(), accents = new Set(), helmet = new Set();
   const surfaces = [], originalGlyphs = [];
   let info;
   root.traverse(object => {
     const data = object.userData;
-    if (data.category && data.runeColour || data.role === 'stone-body') info = data;
-    if (data.role === 'emissive-glyph' || /^(?:Glyph|Emissive.rune)/i.test(object.name)) {
+    if ((data.category && data.runeColour) || data.role === 'stone-body') info = data;
+    if (data.role === 'emissive-glyph' || (/^(?:Glyph|Emissive.rune)/i.test(object.name) || isInlay(object))) {
       originalGlyphs.push(object);
     }
   });
-  const stone = Boolean(info || originalGlyphs.length);
+  const fromStoneCollection = /^(?:Resonance Stones\/|silvratik\/resonance-stones\/models\/)/i.test(libraryPath ?? '');
+  const stone = Boolean(info || originalGlyphs.length || fromStoneCollection);
   function visit(object) {
     if (originalGlyphs.includes(object)) return;
     if (object.isMesh) {
@@ -121,8 +123,21 @@ function makeRune(root, surfaces, originalGlyphs, rerender) {
   root.add(overlay);
   for (const previous of originalGlyphs) previous.visible = false;
   const ray = new THREE.Raycaster();
-  const direction = new THREE.Vector3(0, 0, -1);
+  const direction = new THREE.Vector3();
   const cursor = new THREE.Vector3();
+  const localFromBase = root.matrixWorld.clone().invert();
+  const worldFromBase = new THREE.Matrix4();
+  const baseFromWorld = new THREE.Matrix4();
+  const nativeMaterials = new Map();
+  for (const glyph of originalGlyphs) glyph.traverse(object => {
+    if (!object.isMesh) return;
+    object.userData.modelRune = true;
+    for (const item of [object.material].flat()) if (item?.color) nativeMaterials.set(item, {
+      colour: item.color.clone(), emissive: item.emissive?.clone(), intensity: item.emissiveIntensity,
+    });
+  });
+  const glyphColour = new THREE.Color();
+  let customNativeColour;
   const loader = new THREE.TextureLoader();
   let selected, currentSize, enabled, ready;
 
@@ -132,16 +147,20 @@ function makeRune(root, surfaces, originalGlyphs, rerender) {
     const divs = 28, stride = divs + 1;
     const positions = [], uv = [], indices = [], hits = [];
     root.updateWorldMatrix(true, true);
+    worldFromBase.multiplyMatrices(root.matrixWorld, localFromBase);
+    baseFromWorld.copy(worldFromBase).invert();
+    direction.set(0, 0, -1).transformDirection(worldFromBase);
     for (let y = 0; y <= divs; y++) {
       for (let x = 0; x <= divs; x++) {
         const u = x / divs, v = y / divs;
         cursor.set(center.x + (u - .5) * length, center.y + (v - .5) * length, bounds.max.z + 1);
-        ray.set(cursor, direction);
+        ray.set(cursor.applyMatrix4(worldFromBase), direction);
         const hit = ray.intersectObjects(surfaces, false)[0];
+        if (hit) hit.point.applyMatrix4(baseFromWorld);
         hits.push(hit?.point.z);
         if (hit) {
           hit.point.z += .009;
-          positions.push(...root.worldToLocal(hit.point).toArray());
+          positions.push(...hit.point.applyMatrix4(localFromBase).toArray());
         } else positions.push(0, 0, 0);
         uv.push(u, v);
       }
@@ -166,10 +185,39 @@ function makeRune(root, surfaces, originalGlyphs, rerender) {
     overlay.geometry.setIndex(indices);
   }
 
-  return { apply(rune, colour, scale) {
-    enabled = rune !== 'none';
-    overlay.visible = enabled && ready;
-    if (!enabled) return;
+  function pulse(strength, tint) {
+    material.color.copy(glyphColour);
+    if (strength > 0) material.color.lerp(tint, Math.min(.42, strength * .24)).multiplyScalar(1 + strength * 1.9);
+    for (const [original, base] of nativeMaterials) {
+      original.color.copy(base.colour);
+      if (base.emissive) original.emissive.copy(base.emissive);
+      if (base.intensity !== undefined) original.emissiveIntensity = base.intensity;
+      if (selected !== 'native') continue;
+      if (customNativeColour) {
+        original.color.set(customNativeColour);
+        if (base.emissive) original.emissive.set(customNativeColour);
+      }
+      if (strength > 0) {
+        original.color.lerp(tint, Math.min(.48, strength * .3)).multiplyScalar(1 + strength * .8);
+        if (base.emissive) {
+          original.emissive.lerp(tint, Math.min(.65, strength * .34));
+          original.emissiveIntensity = base.intensity + strength * 1.7;
+        }
+      }
+    }
+  }
+
+  return { pulse, apply(rune, colour, scale, customColour) {
+    enabled = rune !== 'none' && rune !== 'native';
+    overlay.visible = enabled && ready && selected === rune;
+    glyphColour.set(colour);
+    customNativeColour = customColour;
+    for (const previous of originalGlyphs) previous.visible = rune === 'native';
+    if (!enabled) {
+      selected = rune;
+      pulse(0);
+      return;
+    }
     if (currentSize !== scale) {
       project(scale);
       currentSize = scale;
@@ -188,7 +236,7 @@ function makeRune(root, surfaces, originalGlyphs, rerender) {
       material.needsUpdate = true;
       selected = rune;
     }
-    material.color.set(colour);
+    pulse(0);
   } };
 }
 
@@ -196,6 +244,8 @@ export function createModelCustomization(update, rerender) {
   const panel = $('model-customization');
   const select = $('model-rune');
   select.add(new Option('None', 'none'));
+  const originalRune = new Option('Original inlay', 'native');
+  select.add(originalRune);
   for (const [key, value] of Object.entries(iconRunes)) select.add(new Option(value.label, key));
   const fields = {
     body: $('model-body-colour'), accents: $('model-accent-colour'), helmet: $('model-helmet-colour'),
@@ -207,7 +257,8 @@ export function createModelCustomization(update, rerender) {
     active.accents?.apply(active.values.accents);
     active.helmet?.apply(active.values.helmet);
     active.glyph?.apply(active.values.rune || active.native.rune, active.values.runeColour || active.native.runeColour,
-      active.values.size || active.native.size);
+      active.values.size || active.native.size, active.values.runeColour);
+    fields.size.disabled = ['native', 'none'].includes(fields.rune.value);
     update();
   }
   for (const [name, field] of Object.entries(fields)) {
@@ -232,7 +283,7 @@ export function createModelCustomization(update, rerender) {
   });
   return asset => {
     active = null;
-    const parts = appearanceParts(asset.root);
+    const parts = appearanceParts(asset);
     panel.hidden = parts.body.size === 0;
     if (panel.hidden) return;
     const body = materialControl(parts.body, parts.info.body);
@@ -240,7 +291,8 @@ export function createModelCustomization(update, rerender) {
     const helmet = materialControl(parts.helmet);
     const native = {
       body: body.native, accents: accents?.native, helmet: helmet?.native,
-      rune: savedRune(parts.info, parts.originalGlyphs),
+      rune: parts.originalGlyphs.some(isInlay) ?
+        'native' : savedRune(parts.info, parts.originalGlyphs) ?? (parts.originalGlyphs.length ? 'native' : 'none'),
       runeColour: hex(parts.info.runeColour) ? parts.info.runeColour : '#e6fbff', size: 100,
     };
     const key = asset.libraryId || 'file:' + asset.name;
@@ -249,7 +301,10 @@ export function createModelCustomization(update, rerender) {
     for (const name of ['body', 'accents', 'helmet', 'runeColour']) {
       if (hex(stored[name])) values[name] = stored[name];
     }
-    if (stored.rune === 'none' || guideRune(stored.rune)) values.rune = stored.rune;
+    originalRune.hidden = originalRune.disabled = !parts.originalGlyphs.length;
+    panel.querySelector('summary').textContent = parts.stone ? 'Stone colours and rune' : 'Model colours and rune';
+    if (stored.rune === 'none' || guideRune(stored.rune) ||
+        (stored.rune === 'native' && parts.originalGlyphs.length)) values.rune = stored.rune;
     if (stored.size >= 70 && stored.size <= 130) values.size = Number(stored.size);
     const glyph = parts.stone && native.rune ? makeRune(asset.root, parts.surfaces, parts.originalGlyphs, rerender) : null;
     active = { key, values, native, body, accents, helmet, glyph };
@@ -258,7 +313,7 @@ export function createModelCustomization(update, rerender) {
     $('model-rune-fields').hidden = !glyph;
     refreshFields();
     apply();
-    return true;
+    return { stone: parts.stone, surfaces: new Set(parts.surfaces), glyph, key: 'stone:' + key };
   };
 }
 

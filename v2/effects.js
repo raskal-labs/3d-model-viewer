@@ -229,11 +229,14 @@ export function createEffects(renderer, scene) {
       // Use the geometry buffer for outlines and to keep paper effects off the background.
       const background = scene.background;
       const oldGrid = grid.visible;
+      const stoneEdges = options.stoneEdges;
+      const oldStoneEdges = stoneEdges?.visible;
       const oldAlpha = renderer.getClearAlpha();
       renderer.getClearColor(clear);
       try {
         grid.visible = false;
         accents.group.visible = false;
+        if (stoneEdges) stoneEdges.visible = false;
         scene.background = null;
         scene.overrideMaterial = normalMaterial;
         renderer.setRenderTarget(normalTarget);
@@ -246,6 +249,7 @@ export function createEffects(renderer, scene) {
         scene.background = background;
         scene.overrideMaterial = null;
         accents.group.visible = true;
+        if (stoneEdges) stoneEdges.visible = oldStoneEdges;
         grid.visible = oldGrid;
       }
     }

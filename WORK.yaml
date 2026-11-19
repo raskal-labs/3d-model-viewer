@@ -145,6 +145,20 @@ items:
       preserve source colours and a faithful original simplified Porygon2
       preset under deterministic visual regressions.
 
+  - id: stone-studio-controls
+    kind: task
+    title: Add stone motion, colours and effects in Model Studio
+    parent: m2
+    priority: P1
+    status: In Progress
+    acceptance: >-
+      Stone models expose controllable levitation, colour and effects in the
+      private viewer. Check authored and projected runes, pausing, resetting,
+      independent model state, and compatibility with camera input.
+    evidence:
+      - tests/model-studio-stones.mjs
+      - PROGRESS.md
+
   - id: ux-a
     kind: task
     title: UI prototype A — canvas-first minimal viewer

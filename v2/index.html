@@ -77,6 +77,21 @@
             </div>
             <button id="model-customization-reset" type="button">Reset model</button>
           </details>
+          <details class="advanced-panel" id="stone-studio" hidden>
+            <summary>Stone motion and effects</summary>
+            <div class="advanced-fields">
+              <label>Levitation <select id="stone-motion"><option value="off">Off</option><option value="hover">Hover</option><option value="sway">Hover and sway</option><option value="turn">Hover and turn</option></select></label>
+              <label>Lift <input id="stone-lift" type="range" min=".2" max="2" step=".05" value="1"></label>
+              <label>Speed <input id="stone-speed" type="range" min=".25" max="2.5" step=".05" value="1"></label>
+              <label>Colour motion <select id="stone-colour-motion"><option value="off">Off</option><option value="pulse">Pulse to colour</option><option value="spectrum">Hue cycle</option></select></label>
+              <label>Pulse colour <input id="stone-motion-colour" type="color" value="#72c7ff"></label>
+              <label>Stone effect <select id="stone-effect"><option value="off">Off</option><option value="ember">Inner Ember</option><option value="rune">Rune Current</option><option value="edges">Facet Edge Glow</option></select></label>
+              <label>Effect colour <input id="stone-effect-colour" type="color" value="#8de4ff"></label>
+              <label>Effect strength <input id="stone-effect-strength" type="range" min="0" max="1" step=".02" value=".7"></label>
+              <label class="toggle"><input id="stone-playing" type="checkbox"> Animate stone</label>
+              <div class="advanced-actions"><button id="stone-reset" type="button">Reset motion and effects</button></div>
+            </div>
+          </details>
           <label for="look">Surface</label>
           <select id="look">
             <optgroup label="Studio"><option value="original">Original materials</option><option value="clay">Clay</option><option value="unlit">Unlit</option><option value="normals">Geometry normals</option><option value="wireframe">Wireframe</option><option value="material-id">Material IDs</option></optgroup>

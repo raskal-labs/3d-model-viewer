@@ -8,6 +8,7 @@ import { installModelPicker } from './model-library.js';
 import { configureEffectColours, createModelCustomization } from './customization.js';
 import { downloadFile, installModelTools } from './model-tools.js';
 import { installPaletteGuide } from './palette-guide.js';
+import { createStoneStudio } from './stone-studio.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('model-canvas');
@@ -16,7 +17,9 @@ const scene = new THREE.Scene();
 let dirty = true;
 const invalidate = () => { dirty = true; };
 const pivot = new THREE.Group();
-scene.add(pivot);
+const motionRoot = new THREE.Group();
+motionRoot.add(pivot);
+scene.add(motionRoot);
 
 function setStatus(message, error = false) {
   $('status').textContent = message;
@@ -111,6 +114,7 @@ let current, pending;
 const initialMaterials = new Map();
 const alternateMaterials = new Map();
 const customizeModel = createModelCustomization(applyLook, invalidate);
+const stoneStudio = createStoneStudio(motionRoot, applyLook, invalidate);
 const modelTools = installModelTools({
   invalidate, refreshLook: applyLook, setStatus,
   frameModel: () => {
@@ -121,17 +125,19 @@ const modelTools = installModelTools({
 installPaletteGuide({ applyLight: applyLighting, applyTint: modelTools.applyTint });
 
 function clearLook() {
+  stoneStudio.resetMaterials();
   for (const [object, original] of initialMaterials) object.material = original;
   for (const material of alternateMaterials.values()) material.dispose();
   initialMaterials.clear();
   alternateMaterials.clear();
 }
 
-function materialFor(original, look, tint, index) {
-  const key = original.uuid + (tint ?? '');
+function materialFor(original, look, tint, index, stoneMaterial) {
+  const key = original.uuid + (tint ?? '') + (stoneMaterial ? ':stone' : '');
   if (!alternateMaterials.has(key)) {
     const material = createLookMaterial(original, look, effects.retroResolution, index);
     if (tint && !['wireframe', 'material-id'].includes(look)) material.color?.set(tint);
+    if (stoneMaterial) stoneStudio.prepareMaterial(material);
     alternateMaterials.set(key, material);
   }
   return alternateMaterials.get(key);
@@ -145,15 +151,17 @@ function applyLook() {
   current?.root.traverse(object => {
     if (!object.isMesh || !object.material || object.userData.modelRune) return;
     const tint = modelTools.tintFor(object);
-    if (!changesSurface && !tint) return;
+    const stoneMaterial = stoneStudio.usesMaterial(object, look);
+    if (!changesSurface && !tint && !stoneMaterial) return;
     initialMaterials.set(object, object.material);
     function styled(material) {
       if (!ids.has(material)) ids.set(material, ids.size);
-      return materialFor(material, look, tint, ids.get(material));
+      return materialFor(material, look, tint, ids.get(material), stoneMaterial);
     }
     object.material = Array.isArray(object.material) ? object.material.map(styled) : styled(object.material);
   });
   canvas.dataset.look = look;
+  stoneStudio.refresh();
   invalidate();
 }
 $('look').addEventListener('change', applyLook);
@@ -165,6 +173,7 @@ function selectAsset(asset) {
     throw new Error('No finite, visible geometry was found.');
   }
   const previous = current;
+  stoneStudio.setAsset(null);
   if (previous) {
     clearLook();
     pivot.remove(previous.root);
@@ -186,7 +195,9 @@ function selectAsset(asset) {
   $('model-info').textContent = `${meshes} ${meshes === 1 ? 'mesh' : 'meshes'}${asset.animations.length ? ' · Animated' : ''}`;
   canvas.dataset.ready = 'true';
   camera.setBounds(framed);
-  if (!customizeModel(asset)) applyLook();
+  const appearance = customizeModel(asset);
+  if (appearance?.stone) stoneStudio.setAsset(appearance, framed);
+  if (!appearance || appearance.stone) applyLook();
 }
 
 function studioSample() {
@@ -333,7 +344,7 @@ renderer.setSize(viewport.clientWidth, viewport.clientHeight, false);
 effects.resize(viewport.clientWidth, viewport.clientHeight);
 camera.resize(viewport.clientWidth, viewport.clientHeight);
 selectAsset(studioSample());
-const frameOptions = {};
+const frameOptions = { stoneEdges: stoneStudio.edgeGroup };
 frameOptions.colours = configureEffectColours(invalidate);
 $('animate').checked = !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function updateEffects() {
@@ -349,6 +360,7 @@ for (const id of ['look', 'resonance-effect', 'bloom', 'ribbons', 'sparks', 'ani
 $('bloom-strength').addEventListener('input', updateEffects);
 $('capture-png').addEventListener('click', () => {
   try {
+    stoneStudio.refresh();
     effects.render(camera.active, frameOptions, 0, grid);
     const name = current.name.replace(/\.[^.]+$/, '') + '.png';
     canvas.toBlob(blob => {
@@ -368,7 +380,9 @@ renderer.setAnimationLoop(now => {
   const playing = modelTools.update(delta);
   const movingEffects = frameOptions.animate && (frameOptions.ribbons || frameOptions.sparks || frameOptions.resonance);
   if (spinning) camera.spin(delta);
-  if (dirty || playing || movingEffects) {
+  const movingStone = stoneStudio.tick(delta);
+  if (dirty || playing || movingEffects || movingStone) {
+    if (!movingStone) stoneStudio.refresh();
     effects.render(camera.active, frameOptions, delta, grid);
     dirty = false;
   }

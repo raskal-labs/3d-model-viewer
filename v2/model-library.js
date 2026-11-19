@@ -46,6 +46,7 @@ export function installModelPicker(fileInput, openAsset, importModel) {
       }
       const model = await importModel(files, paths);
       model.libraryId = asset.id;
+      model.libraryPath = asset.path;
       currentAsset = asset.id;
       return model;
     });

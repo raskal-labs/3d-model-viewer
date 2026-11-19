@@ -27,6 +27,13 @@ Read `PROJECT.yaml` for the single authoritative checkpoint, and `WORK.yaml` for
 
 ## Timeline
 
+### 2026-11-19 — Stone motion and local effects
+
+- Added per-stone lift, sway and turn, colour pulse and hue cycle, and Inner Ember, Rune Current and Facet Edge Glow. Settings persist by model. The authored inlay is selectable, and projected runes follow the moving model.
+- Local headless Chromium verified visible frame changes and reset for each effect, levitation and pause, rune resizing during rotation, native rune glow, per-model settings, and the camera pads at a phone viewport.
+- The release branch includes the advanced playback, pose and render tools from the active private preview. Installation and verification on the private preview are pending GameCube access.
+- Work IDs `m2-looks` and `stone-studio-controls`.
+
 ### 2026-11-18 — Model colours and icon-maker runes
 
 - Studio installations can set the same-origin `icon-runes` meta setting to load the icon maker’s rune catalogue. The private deployment uses 18 source glyphs. The editor projects them onto the stone surface and saves rune, size and colours per library model in browser storage.
