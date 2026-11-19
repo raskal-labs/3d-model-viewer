@@ -34,7 +34,7 @@
       <div id="navigationTools">
         <button id="undoCamera" type="button" aria-label="Undo camera movement" title="Undo view" disabled>↶</button>
         <button id="quickReset" type="button" aria-label="Frame model" title="Frame model">⌗</button>
-        <button id="precisionButton" type="button" aria-label="Precision navigation" aria-expanded="false"><span class="reticle"></span></button>
+        <button id="precisionButton" type="button" aria-label="Precision navigation" aria-haspopup="menu" aria-controls="precisionMenu" aria-expanded="false"><span class="reticle"></span></button>
         <div id="precisionMenu" role="menu" aria-label="Precision mode" hidden></div>
         <section id="precisionInstrument" aria-label="Precision instrument" hidden>
           <div class="precision-heading" title="Drag to move"><strong id="precisionTitle"></strong><button id="closePrecision" type="button" aria-label="Close precision instrument">×</button></div>
@@ -42,6 +42,10 @@
             <p id="precisionHint"></p>
             <output id="precisionValue"></output>
             <div id="precisionSurface" tabindex="0"><div class="surface-art"></div></div>
+            <div id="precisionDual" hidden aria-label="Yaw and pitch pads">
+              <button type="button" class="circle-pad" data-pad-axis="yaw" aria-label="Yaw pad, use left and right arrow keys"><span>Yaw</span></button>
+              <button type="button" class="circle-pad" data-pad-axis="pitch" aria-label="Pitch pad, use up and down arrow keys"><span>Pitch</span></button>
+            </div>
             <div id="precisionZoom" hidden><label for="precisionZoomSlider">Camera distance</label><input id="precisionZoomSlider" type="range" min="0" max="1000"></div>
           </div>
           <div class="panel-grip" title="Drag to resize" aria-hidden="true"></div>
@@ -75,15 +79,42 @@
           </details>
           <label for="look">Surface</label>
           <select id="look">
-            <optgroup label="Studio"><option value="original">Original materials</option><option value="clay">Clay</option><option value="unlit">Unlit</option><option value="normals">Geometry normals</option></optgroup>
+            <optgroup label="Studio"><option value="original">Original materials</option><option value="clay">Clay</option><option value="unlit">Unlit</option><option value="normals">Geometry normals</option><option value="wireframe">Wireframe</option><option value="material-id">Material IDs</option></optgroup>
             <optgroup label="Resonance"><option value="resonance-mineral">Mineral sheen</option></optgroup>
             <optgroup label="Banana Palm"><option value="banana-cel">Initial cel shading</option><option value="banana-ps1">PS1</option></optgroup>
             <optgroup label="Legacy looks"><option value="legacy-pixel">Pixel</option><option value="legacy-watercolour">Watercolour</option><option value="legacy-ink">Ink / Sketch</option><option value="legacy-mono">Monochrome</option></optgroup>
           </select>
           <label for="lighting">Lighting</label>
           <select id="lighting">
-            <option value="neutral">Neutral studio</option><option value="softbox">Softbox</option><option value="rim">Rim light</option><option value="resonance">Resonance chamber</option><option value="banana">Banana Palm daylight</option>
+            <option value="neutral">Neutral studio</option><option value="softbox">Softbox</option><option value="rim">Rim light</option><option value="resonance">Resonance chamber</option><option value="banana">Banana Palm daylight</option><option value="daylight">High key</option><option value="duotone">Warm key, cool rim</option><option value="silhouette">Silhouette</option>
           </select>
+          <details class="advanced-panel" id="light-details">
+            <summary>Light and render tools</summary>
+            <div class="advanced-fields">
+              <label>Backdrop <input id="backdrop-colour" type="color" ></label>
+              <label>Key light colour <input id="key-colour" type="color" ></label>
+              <label>Rim light colour <input id="rim-colour" type="color" ></label>
+              <label>Key angle <input id="key-angle" type="range" min="-180" max="180" value="-37"></label>
+              <label>Key elevation <input id="key-elevation" type="range" min="-20" max="88" value="45"></label>
+              <label>Key strength <input id="key-strength" type="range" min="0" max="6" step=".05"></label>
+              <label>Environment <input id="env-strength" type="range" min="0" max="2" step=".02"></label>
+              <label>Exposure <input id="exposure" type="range" min=".2" max="3" step=".05" value="1"></label>
+              <label>Bloom strength <input id="bloom-strength" type="range" min="0" max="2" step=".02" value=".62"></label>
+              <label class="toggle"><input id="outline" type="checkbox"> Geometry outlines</label>
+              <label class="toggle"><input id="vignette" type="checkbox"> Vignette</label>
+              <div class="advanced-actions"><button id="reset-light" type="button">Reset lighting</button><button id="capture-png" type="button">Save PNG</button></div>
+            </div>
+          </details>
+          <details class="advanced-panel" id="colour-guide">
+            <summary>Colour suggestions</summary>
+            <div class="advanced-fields">
+              <label>Base colour <input id="palette-base" type="color" value="#547dad"></label>
+              <label>Harmony <select id="palette-mode"><option value="complementary">Complementary</option><option value="analogous">Analogous</option><option value="monochrome">Monochrome</option><option value="triadic">Triadic</option></select></label>
+              <label>Apply swatch to <select id="palette-target"><option value="backdrop-colour">Backdrop</option><option value="key-colour">Key light</option><option value="rim-colour">Rim light</option><option value="part">Selected mesh</option></select></label>
+              <output id="palette-message" aria-live="polite"></output>
+              <div id="palette-swatches" role="group" aria-label="Suggested colours"></div>
+            </div>
+          </details>
           <div id="effect-controls">
             <h4>Effects</h4>
             <label class="toggle"><input id="bloom" type="checkbox"> Bloom</label>
@@ -119,7 +150,34 @@
           </div>
           <label class="toggle"><input id="grid" type="checkbox"> Ground grid</label>
           <label class="toggle"><input id="spin" type="checkbox"> Turntable</label>
+        </section>
+        <section class="settings-section" aria-labelledby="motion-heading">
+          <h3 id="motion-heading">Model tools</h3>
           <label id="animation-control" class="toggle" hidden><input id="play-animation" type="checkbox"> Play model animation</label>
+          <details class="advanced-panel" id="animation-editor" hidden>
+            <summary>Animation playback</summary>
+            <div class="advanced-fields">
+              <label>Clip <select id="animation-clip"></select></label>
+              <label>Loop <select id="clip-loop"><option value="repeat">Repeat</option><option value="once">Once</option><option value="pingpong">Ping-pong</option></select></label>
+              <label>Speed <select id="clip-speed"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+              <label>Time <input id="clip-time" type="range" min="0" max="1000" value="0" step="1"></label>
+              <output id="clip-readout"></output>
+            </div>
+          </details>
+          <details class="advanced-panel">
+            <summary>Pose and edit parts</summary>
+            <div class="advanced-fields">
+              <label>Model part <select id="model-part"></select></label>
+              <fieldset><legend>Move (% of model size)</legend><div class="axis-fields"><label>X<input type="number" data-transform="move" data-axis="0" min="-200" max="200" step="1" value="0"></label><label>Y<input type="number" data-transform="move" data-axis="1" min="-200" max="200" step="1" value="0"></label><label>Z<input type="number" data-transform="move" data-axis="2" min="-200" max="200" step="1" value="0"></label></div></fieldset>
+              <fieldset><legend>Rotate (degrees)</legend><div class="axis-fields"><label>X<input type="number" data-transform="rotate" data-axis="0" min="-360" max="360" step="1" value="0"></label><label>Y<input type="number" data-transform="rotate" data-axis="1" min="-360" max="360" step="1" value="0"></label><label>Z<input type="number" data-transform="rotate" data-axis="2" min="-360" max="360" step="1" value="0"></label></div></fieldset>
+              <label>Scale <input type="number" data-transform="scale" min=".05" max="5" step=".05" value="1"></label>
+              <label class="toggle"><input id="part-hidden" type="checkbox"> Hide part</label>
+              <div class="part-colour"><label class="toggle"><input id="part-tint-enabled" type="checkbox"> Tint mesh</label><input id="part-tint" aria-label="Mesh tint" type="color"></div>
+              <div class="advanced-actions"><button id="undo-model-edit" type="button">Undo</button><button id="redo-model-edit" type="button">Redo</button><button id="reset-part" type="button">Reset part</button><button id="reset-pose" type="button">Reset pose</button><button id="frame-edits" type="button">Frame model</button></div>
+              <div class="advanced-actions"><button id="save-pose" type="button">Save pose JSON</button><button id="open-pose" type="button">Load pose JSON</button></div>
+              <input id="pose-file" type="file" accept=".json,application/json" hidden>
+            </div>
+          </details>
         </section>
         <div class="inspector-footer">
           <button id="sample" type="button">Studio sample</button>

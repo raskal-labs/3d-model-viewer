@@ -6,6 +6,8 @@ import { createCamera } from './camera.js';
 import { importModel, disposeModel } from './import-model.js';
 import { installModelPicker } from './model-library.js';
 import { configureEffectColours, createModelCustomization } from './customization.js';
+import { downloadFile, installModelTools } from './model-tools.js';
+import { installPaletteGuide } from './palette-guide.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('model-canvas');
@@ -47,6 +49,9 @@ const lighting = {
   rim: { bg: '#161c25', sky: '#dbefff', ground: '#313a4d', ambient: .28, key: '#f6f4ef', keyPower: 1.35, rim: '#cbdcff', rimPower: 3, env: .28 },
   resonance: { bg: '#0b101b', sky: '#777ca2', ground: '#152831', ambient: .22, key: '#62b5ed', keyPower: 1.04, rim: '#a48fff', rimPower: 2.5, env: .22 },
   banana: { bg: '#3b4744', sky: '#e6f2ff', ground: '#9c8c70', ambient: .57, key: '#fff0d1', keyPower: 2.05, rim: '#a6c2d4', rimPower: .7, env: .44 },
+  daylight: { bg: '#cbd6df', sky: '#ffffff', ground: '#e6e9ef', ambient: 1.32, key: '#fffcf5', keyPower: 1.7, rim: '#e6f4ff', rimPower: 1.2, env: .8 },
+  duotone: { bg: '#20202c', sky: '#eee4f8', ground: '#4c4255', ambient: .4, key: '#ffcd9c', keyPower: 2.3, rim: '#85c1ff', rimPower: 2.2, env: .32 },
+  silhouette: { bg: '#b2c7da', sky: '#a8bdde', ground: '#313944', ambient: .03, key: '#ffffff', keyPower: 0, rim: '#bddcff', rimPower: 1.3, env: 0 },
 };
 const sky = new THREE.HemisphereLight();
 const key = new THREE.DirectionalLight();
@@ -55,22 +60,36 @@ key.position.set(-3, 5, 4);
 rim.position.set(3, 2, -5);
 scene.add(sky, key, rim);
 
+const lightInputs = ['backdrop-colour', 'key-colour', 'rim-colour', 'key-angle', 'key-elevation', 'key-strength', 'env-strength', 'exposure'];
 function applyLighting() {
   const rig = lighting[$('lighting').value];
-  scene.background = new THREE.Color(rig.bg);
+  scene.background = new THREE.Color($('backdrop-colour').value);
   sky.color.set(rig.sky);
   sky.groundColor.set(rig.ground);
   sky.intensity = rig.ambient;
-  key.color.set(rig.key);
-  key.intensity = rig.keyPower;
-  rim.color.set(rig.rim);
+  key.color.set($('key-colour').value);
+  key.intensity = Number($('key-strength').value);
+  const azimuth = THREE.MathUtils.degToRad(Number($('key-angle').value));
+  const elevation = THREE.MathUtils.degToRad(Number($('key-elevation').value));
+  key.position.setFromSphericalCoords(7, Math.PI / 2 - elevation, azimuth);
+  rim.color.set($('rim-colour').value);
   rim.intensity = rig.rimPower;
-  scene.environment = rig.env > 0 ? studioMap.texture : null;
-  scene.environmentIntensity = rig.env;
+  const environmentStrength = Number($('env-strength').value);
+  scene.environment = environmentStrength > 0 ? studioMap.texture : null;
+  scene.environmentIntensity = environmentStrength;
+  renderer.toneMappingExposure = Number($('exposure').value);
   invalidate();
 }
-$('lighting').addEventListener('change', applyLighting);
-applyLighting();
+function resetLighting() {
+  const rig = lighting[$('lighting').value];
+  const values = [rig.bg, rig.key, rig.rim, -37, 45, rig.keyPower, rig.env, 1];
+  lightInputs.forEach((id, index) => { $(id).value = values[index]; });
+  applyLighting();
+}
+$('lighting').addEventListener('change', resetLighting);
+$('reset-light').addEventListener('click', resetLighting);
+for (const id of lightInputs) $(id).addEventListener('input', applyLighting);
+resetLighting();
 
 const grid = new THREE.GridHelper(20, 40, 0x698497, 0x3c4d5c);
 grid.visible = false;
@@ -88,10 +107,18 @@ for (const button of document.querySelectorAll('[data-view]')) {
   });
 }
 
-let current, mixer, animation, pending;
+let current, pending;
 const initialMaterials = new Map();
 const alternateMaterials = new Map();
 const customizeModel = createModelCustomization(applyLook, invalidate);
+const modelTools = installModelTools({
+  invalidate, refreshLook: applyLook, setStatus,
+  frameModel: () => {
+    const bounds = new THREE.Box3().setFromObject(pivot, true);
+    if (!bounds.isEmpty()) camera.setBounds(bounds);
+  },
+});
+installPaletteGuide({ applyLight: applyLighting, applyTint: modelTools.applyTint });
 
 function clearLook() {
   for (const [object, original] of initialMaterials) object.material = original;
@@ -100,21 +127,31 @@ function clearLook() {
   alternateMaterials.clear();
 }
 
-function materialFor(original, look) {
-  if (!alternateMaterials.has(original)) {
-    alternateMaterials.set(original, createLookMaterial(original, look, effects.retroResolution));
+function materialFor(original, look, tint, index) {
+  const key = original.uuid + (tint ?? '');
+  if (!alternateMaterials.has(key)) {
+    const material = createLookMaterial(original, look, effects.retroResolution, index);
+    if (tint && !['wireframe', 'material-id'].includes(look)) material.color?.set(tint);
+    alternateMaterials.set(key, material);
   }
-  return alternateMaterials.get(original);
+  return alternateMaterials.get(key);
 }
 
 function applyLook() {
   clearLook();
   const look = $('look').value;
-  if (['clay', 'unlit', 'normals', 'banana-cel', 'banana-ps1', 'legacy-pixel', 'resonance-mineral'].includes(look)) current?.root.traverse(object => {
+  const changesSurface = ['clay', 'unlit', 'normals', 'wireframe', 'material-id', 'banana-cel', 'banana-ps1', 'legacy-pixel', 'resonance-mineral'].includes(look);
+  const ids = new Map();
+  current?.root.traverse(object => {
     if (!object.isMesh || !object.material || object.userData.modelRune) return;
+    const tint = modelTools.tintFor(object);
+    if (!changesSurface && !tint) return;
     initialMaterials.set(object, object.material);
-    object.material = Array.isArray(object.material) ?
-      object.material.map(material => materialFor(material, look)) : materialFor(object.material, look);
+    function styled(material) {
+      if (!ids.has(material)) ids.set(material, ids.size);
+      return materialFor(material, look, tint, ids.get(material));
+    }
+    object.material = Array.isArray(object.material) ? object.material.map(styled) : styled(object.material);
   });
   canvas.dataset.look = look;
   invalidate();
@@ -127,29 +164,26 @@ function selectAsset(asset) {
     disposeModel(asset.root);
     throw new Error('No finite, visible geometry was found.');
   }
-  if (current) {
+  const previous = current;
+  if (previous) {
     clearLook();
-    mixer?.stopAllAction();
-    mixer?.uncacheRoot(current.root);
-    pivot.remove(current.root);
-    disposeModel(current.root);
+    pivot.remove(previous.root);
   }
   current = asset;
   const size = bounds.getSize(new THREE.Vector3());
-  const scale = 2.8 / Math.max(size.x, size.y, size.z, 1e-9);
+  const maxDimension = Math.max(size.x, size.y, size.z, 1e-9);
+  const scale = 2.8 / maxDimension;
   pivot.scale.setScalar(scale);
   pivot.position.copy(bounds.getCenter(new THREE.Vector3())).multiplyScalar(-scale);
   pivot.add(asset.root);
   const framed = new THREE.Box3().setFromObject(pivot, true);
   grid.position.y = framed.min.y - .003;
-  mixer = asset.animations.length ? new THREE.AnimationMixer(asset.root) : null;
-  animation = mixer?.clipAction(asset.animations[0]).play();
-  $('animation-control').hidden = !animation;
-  $('play-animation').checked = Boolean(animation) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  modelTools.setAsset(asset, maxDimension);
+  if (previous) disposeModel(previous.root);
   let meshes = 0;
   asset.root.traverse(object => { if (object.isMesh) meshes++; });
   $('model-name').textContent = asset.name;
-  $('model-info').textContent = `${meshes} ${meshes === 1 ? 'mesh' : 'meshes'}${animation ? ' · Animated' : ''}`;
+  $('model-info').textContent = `${meshes} ${meshes === 1 ? 'mesh' : 'meshes'}${asset.animations.length ? ' · Animated' : ''}`;
   canvas.dataset.ready = 'true';
   camera.setBounds(framed);
   if (!customizeModel(asset)) applyLook();
@@ -305,22 +339,35 @@ $('animate').checked = !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function updateEffects() {
   frameOptions.look = $('look').value;
   frameOptions.resonance = $('resonance-effect').value;
-  for (const key of ['bloom', 'ribbons', 'sparks', 'animate']) frameOptions[key] = $(key).checked;
+  for (const key of ['bloom', 'ribbons', 'sparks', 'animate', 'outline', 'vignette']) frameOptions[key] = $(key).checked;
+  frameOptions.bloomStrength = Number($('bloom-strength').value);
   invalidate();
 }
-for (const id of ['look', 'resonance-effect', 'bloom', 'ribbons', 'sparks', 'animate']) {
+for (const id of ['look', 'resonance-effect', 'bloom', 'ribbons', 'sparks', 'animate', 'outline', 'vignette']) {
   $(id).addEventListener('change', updateEffects);
 }
+$('bloom-strength').addEventListener('input', updateEffects);
+$('capture-png').addEventListener('click', () => {
+  try {
+    effects.render(camera.active, frameOptions, 0, grid);
+    const name = current.name.replace(/\.[^.]+$/, '') + '.png';
+    canvas.toBlob(blob => {
+      if (blob) downloadFile(blob, name);
+      else setStatus('Could not save the current frame.', true);
+    }, 'image/png');
+  } catch (error) {
+    setStatus(error.message || 'Could not save the current frame.', true);
+  }
+});
 updateEffects();
 let previous = performance.now();
 renderer.setAnimationLoop(now => {
   const delta = Math.min((now - previous) / 1000, .06);
   previous = now;
   const spinning = $('spin').checked;
-  const playing = mixer && $('play-animation').checked;
+  const playing = modelTools.update(delta);
   const movingEffects = frameOptions.animate && (frameOptions.ribbons || frameOptions.sparks || frameOptions.resonance);
   if (spinning) camera.spin(delta);
-  if (playing) mixer.update(delta);
   if (dirty || playing || movingEffects) {
     effects.render(camera.active, frameOptions, delta, grid);
     dirty = false;

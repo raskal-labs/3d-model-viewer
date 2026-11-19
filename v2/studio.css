@@ -194,3 +194,26 @@ h1 { font: 700 clamp(1.02rem, 2vw, 1.27rem)/1.1 PocketDisplay, sans-serif; white
 .custom-colours input[type=color] { width: 2.6rem; height: 1.85rem; padding: .16rem; cursor: pointer; background: #222832; border: 1px solid #3a4552; border-radius: .35rem; }
 #model-rune-fields > label { display: block; margin: .35rem 0 .12rem; }
 .rune-size input { width: 100%; accent-color: var(--accent); }
+
+.advanced-panel { border: 1px solid #a7c4d32c; border-radius: .55rem; padding: .36rem .5rem; font-size: .84rem; }
+.advanced-panel summary { padding: .28rem 0; cursor: pointer; }
+.advanced-fields { display: grid; gap: .52rem; padding: .46rem 0 .24rem; }
+.advanced-fields > label, .part-colour { display: flex; align-items: center; justify-content: space-between; gap: .55rem; }
+.advanced-fields label.toggle { justify-content: flex-start; }
+.advanced-fields select, .advanced-fields input[type="range"] { width: min(58%, 9.3rem); }
+.advanced-fields input[type="number"] { width: 4.2rem; max-width: 100%; padding: .28rem; color: inherit; background: #131a258f; border: 1px solid #a7c4d350; border-radius: .3rem; font: inherit; }
+.advanced-fields input[type="color"] { width: 2.5rem; height: 2rem; background: transparent; border: 1px solid #a7c4d350; border-radius: .3rem; cursor: pointer; }
+.advanced-fields fieldset { min-width: 0; margin: 0; padding: .3rem .4rem .42rem; border: 1px solid #a7c4d32c; border-radius: .4rem; }
+.axis-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .38rem; }
+.axis-fields label { display: grid; gap: .16rem; }
+.advanced-actions { display: flex; flex-wrap: wrap; gap: .3rem; }
+.advanced-actions button { min-height: 2.2rem; padding: .2rem .46rem; font-size: .77rem; }
+#inspector #palette-swatches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .3rem; }
+#inspector #palette-swatches button { min-height: 2.3rem; font-size: .7rem; padding: .12rem; background: var(--swatch); color: var(--swatch-text); }
+#palette-message:empty { display: none; }
+#precisionDual:not([hidden]) { display: flex; justify-content: center; gap: .6rem; }
+#precisionDual .circle-pad { width: min(38%, 112px); aspect-ratio: 1; padding: 0; border-radius: 50%; border: 1px solid #a7c4d380; color: #eef8ff; background: #14283aaa; touch-action: none; position: relative; display: grid; place-items: center; cursor: grab; }
+#precisionDual .circle-pad::before { content: ''; position: absolute; inset: 15%; border: 1px solid #a7c4d345; border-radius: 50%; pointer-events: none; }
+#precisionDual .circle-pad:active { background: #365e7ab0; cursor: grabbing; }
+#precisionMenu[data-studio] { width: min(232px, calc(100vw - 16px), calc(100dvh - 16px)); height: auto; aspect-ratio: 1; }
+#precisionMenu[data-studio] button { width: 54px; min-height: 48px; font-size: 10px; }

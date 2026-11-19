@@ -9,10 +9,15 @@ const surfaceFields = ['side', 'transparent', 'opacity', 'alphaMap', 'alphaTest'
   'depthWrite', 'depthTest', 'wireframe', 'vertexColors', 'polygonOffset',
   'polygonOffsetFactor', 'polygonOffsetUnits'];
 
-export function createLookMaterial(source, look, retroResolution) {
+export function createLookMaterial(source, look, retroResolution, index = 0) {
   let material;
   if (look === 'clay') {
     material = new THREE.MeshStandardMaterial({ color: 0xc5b7a1, roughness: .82, flatShading: source.flatShading });
+  } else if (look === 'wireframe') {
+    material = new THREE.MeshBasicMaterial({ color: 0xb5d8ec });
+  } else if (look === 'material-id') {
+    const color = new THREE.Color().setHSL(index * .61803398875, .58, .55);
+    material = new THREE.MeshBasicMaterial({ color });
   } else if (look === 'normals') {
     material = new THREE.MeshNormalMaterial({ flatShading: source.flatShading });
   } else if (look === 'unlit') {
@@ -30,6 +35,8 @@ export function createLookMaterial(source, look, retroResolution) {
     material[field] = source[field];
   }
 
+  if (look === 'wireframe') material.wireframe = true;
+  if (['wireframe', 'material-id'].includes(look)) material.vertexColors = false;
   if (look === 'banana-ps1') {
     // Screen-space vertex snap. Keep the source material and its texture bindings.
     material.customProgramCacheKey = () => 'studio-ps1';

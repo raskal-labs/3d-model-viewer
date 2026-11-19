@@ -14,6 +14,7 @@ const outputTreatment = `
   uniform sampler2D tDiffuse, tNormal, tDepth;
   uniform vec2 screenSize, retroSize;
   uniform int mode;
+  uniform bool outline, vignette;
   float luma(vec3 c) { return dot(c, vec3(.2126, .7152, .0722)); }
   float noise(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float bayer2(vec2 p) { return 2. * p.x + 3. * p.y - 4. * p.x * p.y; }
@@ -37,7 +38,7 @@ const outputTreatment = `
     bool pixel = mode == 2 || mode == 3;
     vec2 uv = pixel ? (floor(vUv * retroSize) + .5) / retroSize : vUv;
     vec4 color = texture2D(tDiffuse, uv);
-    if (mode == 1 || mode == 3 || mode == 5) {
+    if (outline || mode == 1 || mode == 3 || mode == 5) {
       float edge = edgeAt(uv, pixel ? 1. / retroSize : 1.25 / screenSize);
       color.rgb = mix(color.rgb, vec3(.068, .06, .058), edge * .79);
     }
@@ -59,6 +60,7 @@ const outputTreatment = `
       float dither = bayer4(vUv * retroSize) * .9;
       color.rgb = clamp(floor(color.rgb * steps + dither + .5) / steps, 0., 1.);
     }
+    if (vignette) color.rgb *= 1. - .37 * smoothstep(.25, .70, length(vUv - .5));
     gl_FragColor = color;
   }`;
 
@@ -171,7 +173,7 @@ export function createEffects(renderer, scene) {
     uniforms: {
       tDiffuse: { value: null }, tNormal: { value: null }, tDepth: { value: null },
       screenSize: { value: new THREE.Vector2() }, retroSize: { value: retroResolution },
-      mode: { value: 0 },
+      mode: { value: 0 }, outline: { value: false }, vignette: { value: false },
     },
     vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
     fragmentShader: outputTreatment,
@@ -204,23 +206,26 @@ export function createEffects(renderer, scene) {
     const colours = options.colours;
     if (options.ribbons || options.sparks) accents.update(time, colours);
     resonance.update(options.resonance, time, grid.position.y, colours[options.resonance]);
-    if (!mode && !options.bloom) {
+    if (!mode && !options.bloom && !options.outline && !options.vignette) {
       renderer.render(scene, camera);
       return;
     }
 
     colorPass.camera = camera;
     bloom.enabled = options.bloom;
+    bloom.strength = options.bloomStrength ?? .62;
     for (const tint of bloom.bloomTintColors) {
       if (colours.bloom) tint.set(colours.bloom.r, colours.bloom.g, colours.bloom.b);
       else tint.set(1, 1, 1);
     }
-    treatment.enabled = mode !== 0;
+    treatment.enabled = Boolean(mode || options.outline || options.vignette);
     treatment.uniforms.mode.value = mode;
+    treatment.uniforms.outline.value = Boolean(options.outline);
+    treatment.uniforms.vignette.value = Boolean(options.vignette);
     const size = treatment.uniforms.screenSize.value;
     const pixels = mode === 3 ? 180 : 240;
     retroResolution.set(Math.max(1, Math.round(size.x / Math.max(1, size.y) * pixels)), pixels);
-    if (mode) {
+    if (mode || options.outline) {
       // Use the geometry buffer for outlines and to keep paper effects off the background.
       const background = scene.background;
       const oldGrid = grid.visible;
