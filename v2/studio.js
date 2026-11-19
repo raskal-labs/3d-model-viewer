@@ -4,6 +4,7 @@ import { createEffects } from './effects.js';
 import { createLookMaterial } from './looks.js';
 import { createCamera } from './camera.js';
 import { importModel, disposeModel } from './import-model.js';
+import { installModelPicker } from './model-library.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('model-canvas');
@@ -86,7 +87,7 @@ for (const button of document.querySelectorAll('[data-view]')) {
   });
 }
 
-let current, mixer, animation, pending = 0;
+let current, mixer, animation, pending;
 const initialMaterials = new Map();
 const alternateMaterials = new Map();
 
@@ -166,26 +167,32 @@ function studioSample() {
   return { root, name: 'Studio sample', animations: [] };
 }
 
-async function openFiles(files) {
-  if (!files.length) return;
-  const request = ++pending;
+async function openAsset(load) {
+  pending?.abort();
+  const request = pending = new AbortController();
   setStatus('Opening model…');
   try {
-    const asset = await importModel(files);
-    if (request !== pending) { disposeModel(asset.root); return; }
+    const asset = await load(request.signal);
+    if (request.signal.aborted) { disposeModel(asset.root); return; }
     selectAsset(asset);
     setStatus('');
   } catch (error) {
-    if (request === pending) setStatus(error.message || 'Could not open this model.', true);
+    if (!request.signal.aborted) setStatus(error.message || 'Could not open this model.', true);
+  } finally {
+    if (pending === request) pending = null;
   }
 }
 
+function openFiles(files) {
+  if (files.length) openAsset(() => importModel(files));
+}
+
 $('sample').addEventListener('click', () => {
-  ++pending;
+  pending?.abort();
   selectAsset(studioSample());
   setStatus('');
 });
-$('open-model').addEventListener('click', () => $('files').click());
+installModelPicker($('files'), openAsset, importModel);
 $('files').addEventListener('change', event => {
   openFiles(Array.from(event.target.files));
   event.target.value = '';

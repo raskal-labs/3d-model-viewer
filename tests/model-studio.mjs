@@ -117,6 +117,29 @@ try {
   assert(await precision.evaluate(menu => menu.getBoundingClientRect().bottom <= window.visualViewport.height),
     'The precision menu fits in the phone viewport');
   await screenshot(phone, '06-phone-precision');
+  await phone.getByRole('menuitem', { name: 'pan' }).tap();
+  await phone.locator('#precisionInstrument[data-mode="pan"]').waitFor();
+  const surface = phone.locator('#precisionSurface');
+  await surface.tap();
+  assert(await surface.isVisible(), 'Tapping the control keeps the instrument open');
+  assert(await surface.evaluate(element => getComputedStyle(element).pointerEvents !== 'none'));
+  const box = await surface.boundingBox();
+  const cdp = await phone.context().newCDPSession(phone);
+  const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  const before = await phone.locator('#precisionValue').innerText();
+  await touch('touchStart', [{ x, y }]);
+  await touch('touchMove', [{ x: x + 40, y: y + 14 }]);
+  await touch('touchEnd', []);
+  assert.notEqual(await phone.locator('#precisionValue').innerText(), before, 'The pad receives a real touch drag');
+  await phone.getByRole('button', { name: 'Precision navigation' }).tap();
+  await phone.getByRole('menuitem', { name: 'zoom' }).tap();
+  await phone.locator('#precisionInstrument[data-mode="zoom"]').waitFor();
+  await phone.locator('#precisionZoomSlider').tap();
+  assert(await phone.locator('#precisionZoomSlider').isVisible(), 'Touching the zoom slider leaves it open');
+  assert.match(await phone.locator('#open-model').evaluate(el => getComputedStyle(el).fontFamily), /PocketText/);
+  assert.match(await phone.locator('h1').evaluate(el => getComputedStyle(el).fontFamily), /PocketDisplay/);
+  assert.match(await phone.locator('#precisionValue').evaluate(el => getComputedStyle(el).fontFamily), /PocketMono/);
   assert.deepEqual(errors, [], 'No page or WebGL shader errors');
   console.log('Verified studio defaults, shader looks, chamber effects, glTF sidecars, reversible materials, animation controls, projection, and phone-sized UI' +
     (process.env.DRACO_FIXTURE ? ', including Draco GLB.' : '.'));

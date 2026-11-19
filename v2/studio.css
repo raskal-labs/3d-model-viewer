@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  font: 15px/1.45 system-ui, sans-serif;
+  font: 15px/1.45 PocketText, sans-serif;
   color: #e6ebf1;
   background: #14171c;
   font-synthesis: none;
@@ -27,9 +27,9 @@ h1, h2, h3, h4, p { margin: 0; }
   border-bottom: 1px solid var(--line); background: #171b22; z-index: 12;
 }
 .identity, .toolbar-actions { display: flex; align-items: center; gap: .65rem; }
-h1 { font: 650 clamp(1.02rem, 2vw, 1.27rem)/1.1 system-ui, sans-serif; white-space: nowrap; letter-spacing: -.025em; }
+h1 { font: 700 clamp(1.02rem, 2vw, 1.27rem)/1.1 PocketDisplay, sans-serif; white-space: nowrap; letter-spacing: -.025em; }
 .mark { width: .88rem; height: .88rem; display: block; background: #a8dccc; transform: rotate(45deg); border-radius: .16rem; flex: none; }
-.primary { color: #101f1d; background: var(--accent); font-weight: 650; border-color: transparent; white-space: nowrap; }
+.primary { color: #101f1d; background: var(--accent); font-weight: 700; border-color: transparent; white-space: nowrap; }
 .primary:hover { background: #bee8dc; }
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 288px; flex: 1; min-height: 0; }
 #viewport { position: relative; overflow: hidden; min-width: 0; }
@@ -50,7 +50,7 @@ h1 { font: 650 clamp(1.02rem, 2vw, 1.27rem)/1.1 system-ui, sans-serif; white-spa
 #status[data-error] { border-color: #a26763; }
 #inspector { border-left: 1px solid var(--line); padding: 1.18rem; overflow-y: auto; background: #1a1e25; }
 .inspector-heading { display: flex; align-items: center; justify-content: space-between; }
-.inspector-heading h2 { font-size: 1.12rem; letter-spacing: -.018em; }
+.inspector-heading h2 { font-family: PocketDisplay, sans-serif; font-size: 1.12rem; letter-spacing: -.018em; }
 .settings-section { display: grid; gap: .54rem; padding: 1rem 0; border-bottom: 1px solid var(--line); }
 .settings-section h3 { font-size: .77rem; text-transform: uppercase; letter-spacing: .115em; color: var(--muted); }
 .settings-section h4 { font-size: .9rem; margin-bottom: .25rem; }
@@ -64,7 +64,6 @@ h1 { font: 650 clamp(1.02rem, 2vw, 1.27rem)/1.1 system-ui, sans-serif; white-spa
 .inspector-footer { padding: 1rem 0; display: grid; justify-items: start; gap: .75rem; font-size: .86rem; }
 #panel-toggle, #close-panel { display: none; }
 #navigationTools { inset: auto 0 0; position: absolute; }
-#navigationTools button { font-family: system-ui, sans-serif; }
 #navigationTools #precisionButton { pointer-events: auto; }
 @media (max-width: 740px) {
   .workspace { grid-template-columns: 1fr; }
@@ -92,3 +91,28 @@ h1 { font: 650 clamp(1.02rem, 2vw, 1.27rem)/1.1 system-ui, sans-serif; white-spa
   .identity .mark { display: none; }
   .toolbar { gap: .35rem; }
 }
+
+#model-picker {
+  width: min(540px, calc(100vw - 1.4rem)); max-height: min(730px, 89dvh);
+  padding: 0; color: inherit; background: #1a1e25; border: 1px solid #3a4552;
+  border-radius: .95rem; box-shadow: 0 20px 64px #0008;
+}
+#model-picker[open] { display: flex; flex-direction: column; }
+#model-picker::backdrop { background: #101218a3; }
+.picker-heading, .picker-footer { flex: none; padding: .75rem 1rem; }
+.picker-heading { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.picker-heading h2 { font: 700 1.32rem PocketDisplay, sans-serif; }
+.picker-heading button { min-width: 2.65rem; }
+.picker-library { display: flex; flex-direction: column; min-height: 0; padding: .8rem 1rem; }
+.picker-library label { font-weight: 700; margin-bottom: .35rem; }
+#library-search {
+  flex: none; width: 100%; color: inherit; background: #222832; border: 1px solid #3a4552;
+  border-radius: .55rem; padding: .62rem .72rem; min-height: 2.65rem;
+}
+#library-status { color: var(--muted); padding: .55rem 0 .3rem; }
+#library-results { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+#library-results section { display: grid; gap: .35rem; margin-bottom: .68rem; }
+#library-results h3 { font: 700 .91rem PocketDisplay, sans-serif; padding: .25rem 0; text-transform: capitalize; }
+#library-results button { text-align: left; display: grid; gap: .1rem; overflow-wrap: anywhere; }
+#library-results small { color: var(--muted); }
+.picker-footer { border-top: 1px solid var(--line); padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }

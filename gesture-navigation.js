@@ -54,42 +54,57 @@ export function createGestureNavigation(api) {
   }
   button.addEventListener('pointerdown',e=>{
     if(e.button!==0||buttonPointer)return;e.preventDefault();button.classList.add('is-active');button.setPointerCapture(e.pointerId);
-    buttonPointer={id:e.pointerId,x:e.clientX,y:e.clientY,shown:false};
+    buttonPointer={id:e.pointerId,x:e.clientX,y:e.clientY,shown:false,menuWasOpen:!menu.hidden};
     holdTimer=setTimeout(()=>{if(buttonPointer){buttonPointer.shown=true;showMenu(buttonPointer.x,buttonPointer.y,false);}},250);
   });
-  button.addEventListener('pointermove',e=>{
+  function selectDirection(e){
     if(!buttonPointer||e.pointerId!==buttonPointer.id||!buttonPointer.shown||clutched)return;
-    if(Math.hypot(e.clientX-buttonPointer.x,e.clientY-buttonPointer.y)<10)return;
+    if(Math.hypot(e.clientX-buttonPointer.x,e.clientY-buttonPointer.y)<10){choose(null);return;}
     const dx=e.clientX-buttonPointer.centerX,dy=e.clientY-buttonPointer.centerY,r=Math.hypot(dx,dy);
     if(r<40){choose(null);return;}
     const a=Math.atan2(dy,dx);let nearest=directions[0];
     for(const item of directions)if(Math.abs(angleDelta(a,item.angle))<Math.abs(angleDelta(a,nearest.angle)))nearest=item;
     choose(nearest.name==='clutch'&&r<56?null:nearest.name);
-  });
+  }
+  button.addEventListener('pointermove',selectDirection);
   function buttonEnd(e,cancelled=false){
     if(!buttonPointer||e.pointerId!==buttonPointer.id)return;clearTimeout(holdTimer);
+    if(!cancelled)selectDirection(e);
     const state=buttonPointer,choice=selected;buttonPointer=null;
     if(clutched){releaseClutch();hideMenu();return;}
     if(cancelled){hideMenu();return;}
-    if(state.shown){if(choice&&choice!=='clutch')openInstrument(choice);else hideMenu();}
-    else if(lastMode)openInstrument(lastMode);else showMenu(state.x,state.y,true);
+    if(state.shown && choice && choice!=='clutch'){openInstrument(choice);return;}
+    if(state.menuWasOpen && !state.shown){hideMenu();return;}
+    showMenu(state.x,state.y,true);
   }
   button.addEventListener('pointerup',e=>buttonEnd(e));
+  button.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    e.preventDefault();
+    if(!menu.hidden){hideMenu();return;}
+    const rect=button.getBoundingClientRect();
+    showMenu(rect.left+rect.width/2,rect.top+rect.height/2,true);
+    menu.querySelector('button')?.focus();
+  });
   for(const type of ['pointercancel','lostpointercapture'])button.addEventListener(type,e=>buttonEnd(e,true));
   // In the persistent menu Clutch is momentary, held directly on its sector.
   for(const el of menu.children){
     el.addEventListener('pointerdown',e=>{
-      if(!persistent)return;e.preventDefault();e.stopPropagation();
-      if(el.dataset.mode!=='clutch'){openInstrument(el.dataset.mode);return;}
+      if(!persistent||el.dataset.mode!=='clutch'||e.button!==0)return;
+      e.preventDefault();e.stopPropagation();
       el.setPointerCapture(e.pointerId);buttonPointer={id:e.pointerId,menuClutch:true};
       choose('clutch');
+    });
+    el.addEventListener('click',()=>{
+      if(persistent&&!menu.hidden&&el.dataset.mode!=='clutch')openInstrument(el.dataset.mode);
     });
     const end=e=>{if(buttonPointer?.menuClutch&&buttonPointer.id===e.pointerId){clearTimeout(dwellTimer);buttonPointer=null;releaseClutch();hideMenu();}};
     for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,end);
   }
   document.addEventListener('pointerdown',e=>{
-    if(!menu.hidden&&persistent&&!buttonPointer?.menuClutch&&!menu.contains(e.target)&&e.target!==button)hideMenu();
-    if(!instrument.hidden&&!instrument.contains(e.target)&&e.target!==button&&e.target!==surface){instrument.hidden=true;button.classList.remove('is-active');}
+    const onReticle=button.contains(e.target);
+    if(!menu.hidden&&persistent&&!buttonPointer?.menuClutch&&!menu.contains(e.target)&&!onReticle)hideMenu();
+    if(!instrument.hidden&&!instrument.contains(e.target)&&!onReticle){instrument.hidden=true;button.classList.remove('is-active');}
   },true);
   // Reset initial reference points whenever the set of viewport fingers changes.
   function rebase(){

@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#14171c">
+  <meta name="model-library" content="">
   <title>3D Model Viewer · Model Studio</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../gesture-navigation.css">
@@ -87,6 +88,19 @@
       </div>
     </aside>
   </main>
+  <dialog id="model-picker" aria-labelledby="model-picker-title">
+    <div class="picker-heading">
+      <h2 id="model-picker-title">Open model</h2>
+      <button id="close-picker" type="button" aria-label="Close model picker">×</button>
+    </div>
+    <div class="picker-library">
+      <label for="library-search">Asset library</label>
+      <input id="library-search" type="search" placeholder="Search models or collections" autocomplete="off">
+      <p id="library-status" role="status" aria-live="polite"></p>
+      <div id="library-results"></div>
+    </div>
+    <footer class="picker-footer"><button id="choose-device" type="button">Browse device files…</button></footer>
+  </dialog>
   <script type="module" src="./studio.js"></script>
 </body>
 </html>

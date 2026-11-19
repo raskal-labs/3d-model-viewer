@@ -33,7 +33,7 @@ try{
  await page.locator('[data-mode="clutch"]').dispatchEvent('pointerup',{pointerId:9,button:0,bubbles:true});
  assert.equal(await page.locator('#clutchStatus').isVisible(),false);
  await send('precisionButton','pointerdown',195,800,8);await send('precisionButton','pointerup',195,800,8);
- await page.locator('[data-mode="roll"]').dispatchEvent('pointerdown',{pointerId:9,button:0,bubbles:true});
+ await page.locator('[data-mode="roll"]').click();
  assert.equal(await page.locator('#precisionInstrument').isVisible(),true);
  await page.evaluate(()=>window.calls=[]);
  await send('precisionSurface','pointerdown',100,100,1);await send('precisionSurface','pointermove',140,100,1);await send('precisionSurface','pointermove',180,100,1);
@@ -43,7 +43,6 @@ try{
  await page.locator('#closePrecision').click();
  await send('precisionButton','pointerdown',195,400,18);await page.waitForTimeout(275);
  const center=await page.locator('#precisionMenu').evaluate(el=>{const r=el.getBoundingClientRect();return {x:r.left+120,y:r.top+120};});
- await send('precisionButton','pointermove',center.x-50,center.y+70,18);
  await send('precisionButton','pointerup',center.x-50,center.y+70,18);
  assert.equal(await page.locator('#precisionZoomSlider').isVisible(),true,'zoom uses a slider');
  const distanceBefore=await page.evaluate(()=>window.v.distance);

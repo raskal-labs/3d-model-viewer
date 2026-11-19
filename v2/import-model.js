@@ -10,7 +10,8 @@ const draco = new DRACOLoader().setDecoderPath(decoderPath).setWorkerLimit(2);
 const maxBytes = 64 * 1024 * 1024;
 const modelExtension = /\.(glb|gltf|obj|stl)$/i;
 
-export async function importModel(files) {
+export async function importModel(files, paths) {
+  const filePath = file => paths?.get(file) || file.webkitRelativePath || file.name;
   if (files.reduce((sum, file) => sum + file.size, 0) > maxBytes) {
     throw new Error('Select a model and sidecars totalling 64 MB or less.');
   }
@@ -23,14 +24,14 @@ export async function importModel(files) {
   const sidecars = new Map();
   const objectURLs = new Map();
   for (const file of files) {
-    const name = file.webkitRelativePath || file.name;
+    const name = filePath(file);
     if (sidecars.has(name)) throw new Error(`Duplicate sidecar name: ${name}`);
     sidecars.set(name, file);
   }
 
   const base = new URL('./local-import/', location.href);
   const basePath = base.pathname;
-  const directory = (model.webkitRelativePath || model.name).split('/').slice(0, -1).map(encodeURIComponent).join('/');
+  const directory = filePath(model).split('/').slice(0, -1).map(encodeURIComponent).join('/');
   const resourceBase = new URL(directory ? directory + '/' : '.', base).href;
   const manager = new THREE.LoadingManager();
   function resolveSidecar(url) {

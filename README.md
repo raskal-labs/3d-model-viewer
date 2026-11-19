@@ -4,6 +4,13 @@
 
 Serve the checkout with `python3 -m http.server 8765` and open `/v2/`. Open or drop a GLB, glTF, OBJ or STL. Select the buffers, textures or MTL alongside the model when they are separate files. The default view uses the model’s original materials and neutral studio lighting.
 
+### Optional asset library
+
+The public page opens the device file picker. For a private installation, serve your asset collections read-only with `python3 tools/serve-model-library.py /path/to/assets`. Reverse-proxy that service under a private, same-origin path such as `/model-library/` and set the `model-library` meta tag in the deployed V2 HTML to that path with a trailing slash. The library picker opens first and offers device files below the collection list. A collection symlink needs its name in `--collection-link`. The service indexes model files and serves the sidecars referenced by those models.
+
+Tap the precision reticle and tap a tool, or hold, slide to a sector, and release. Pan, Orbit, Roll and Zoom then accept touches directly.
+
+
 | Group | Controls |
 | --- | --- |
 | Studio | Original materials, Clay, Unlit, Geometry normals, and three lighting rigs |
