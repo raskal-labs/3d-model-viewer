@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#14171c">
   <meta name="model-library" content="">
+  <meta name="icon-runes" content="">
   <title>3D Model Viewer · Model Studio</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../gesture-navigation.css">
@@ -55,6 +56,23 @@
       <div class="inspector-content">
         <section class="settings-section" aria-labelledby="appearance-heading">
           <h3 id="appearance-heading">Appearance</h3>
+          <details id="model-customization" class="customization" hidden>
+            <summary>Model colours and rune</summary>
+            <div class="custom-colours">
+              <label>Body <input type="color" id="model-body-colour"></label>
+              <label id="model-accent-label">Accents <input type="color" id="model-accent-colour"></label>
+              <label id="model-helmet-label" hidden>Hard hat <input type="color" id="model-helmet-colour"></label>
+            </div>
+            <div id="model-rune-fields" hidden>
+              <label for="model-rune">Rune</label>
+              <select id="model-rune"></select>
+              <div class="custom-colours">
+                <label>Rune colour <input type="color" id="model-rune-colour"></label>
+              </div>
+              <label class="rune-size" for="model-rune-size">Rune size <input type="range" id="model-rune-size" min="70" max="130" value="100"></label>
+            </div>
+            <button id="model-customization-reset" type="button">Reset model</button>
+          </details>
           <label for="look">Surface</label>
           <select id="look">
             <optgroup label="Studio"><option value="original">Original materials</option><option value="clay">Clay</option><option value="unlit">Unlit</option><option value="normals">Geometry normals</option></optgroup>
@@ -77,6 +95,18 @@
           <select id="resonance-effect">
             <option value="">Off</option><option value="prism">Prism orbit</option><option value="electric">Electric trace</option><option value="tide">Pressure tide</option>
           </select>
+          <details class="customization" id="effect-colours">
+            <summary>Effect colours</summary>
+            <div class="custom-colours">
+              <label>Bloom <input type="color" data-effect-colour="bloom" value="#ffffff"></label>
+              <label>Light ribbons <input type="color" data-effect-colour="ribbons" value="#45d8ff"></label>
+              <label>Sparks <input type="color" data-effect-colour="sparks" value="#75d9ff"></label>
+              <label>Prism orbit <input type="color" data-effect-colour="prism" value="#a884ff"></label>
+              <label>Electric trace <input type="color" data-effect-colour="electric" value="#95d9ff"></label>
+              <label>Pressure tide <input type="color" data-effect-colour="tide" value="#7ee4ef"></label>
+            </div>
+            <button id="effect-colours-reset" type="button">Reset effects</button>
+          </details>
         </section>
         <section class="settings-section" aria-labelledby="camera-heading">
           <h3 id="camera-heading">Camera</h3>

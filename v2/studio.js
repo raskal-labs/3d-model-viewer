@@ -5,6 +5,7 @@ import { createLookMaterial } from './looks.js';
 import { createCamera } from './camera.js';
 import { importModel, disposeModel } from './import-model.js';
 import { installModelPicker } from './model-library.js';
+import { configureEffectColours, createModelCustomization } from './customization.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('model-canvas');
@@ -90,6 +91,7 @@ for (const button of document.querySelectorAll('[data-view]')) {
 let current, mixer, animation, pending;
 const initialMaterials = new Map();
 const alternateMaterials = new Map();
+const customizeModel = createModelCustomization(applyLook, invalidate);
 
 function clearLook() {
   for (const [object, original] of initialMaterials) object.material = original;
@@ -109,7 +111,7 @@ function applyLook() {
   clearLook();
   const look = $('look').value;
   if (['clay', 'unlit', 'normals', 'banana-cel', 'banana-ps1', 'legacy-pixel', 'resonance-mineral'].includes(look)) current?.root.traverse(object => {
-    if (!object.isMesh || !object.material) return;
+    if (!object.isMesh || !object.material || object.userData.modelRune) return;
     initialMaterials.set(object, object.material);
     object.material = Array.isArray(object.material) ?
       object.material.map(material => materialFor(material, look)) : materialFor(object.material, look);
@@ -150,7 +152,7 @@ function selectAsset(asset) {
   $('model-info').textContent = `${meshes} ${meshes === 1 ? 'mesh' : 'meshes'}${animation ? ' · Animated' : ''}`;
   canvas.dataset.ready = 'true';
   camera.setBounds(framed);
-  applyLook();
+  if (!customizeModel(asset)) applyLook();
 }
 
 function studioSample() {
@@ -298,6 +300,7 @@ effects.resize(viewport.clientWidth, viewport.clientHeight);
 camera.resize(viewport.clientWidth, viewport.clientHeight);
 selectAsset(studioSample());
 const frameOptions = {};
+frameOptions.colours = configureEffectColours(invalidate);
 $('animate').checked = !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function updateEffects() {
   frameOptions.look = $('look').value;

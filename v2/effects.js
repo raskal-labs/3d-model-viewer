@@ -70,7 +70,8 @@ function createAccents(scene) {
   scene.add(group);
 
   const pointCount = 120;
-  const strips = [0x45d8ff, 0xa884ff, 0x73ffbc].map((color, index) => {
+  const ribbonPalette = [0x45d8ff, 0xa884ff, 0x73ffbc].map(color => new THREE.Color(color));
+  const strips = ribbonPalette.map((color, index) => {
     const geometry = new THREE.BufferGeometry();
     const positions = new THREE.BufferAttribute(new Float32Array((pointCount + 1) * 6), 3);
     positions.setUsage(THREE.DynamicDrawUsage);
@@ -82,7 +83,7 @@ function createAccents(scene) {
     }
     geometry.setIndex(triangles);
     const strip = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-      color: new THREE.Color(color).multiplyScalar(1.55), transparent: true,
+      color: color.clone().multiplyScalar(1.55), transparent: true,
       blending: THREE.AdditiveBlending, opacity: .47 - index * .052,
       side: THREE.DoubleSide, depthWrite: false,
     }));
@@ -104,7 +105,8 @@ function createAccents(scene) {
   geometry.setAttribute('position', positions);
   geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
   const sparkMaterial = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, pointSize: { value: 12 } },
+    uniforms: { uTime: { value: 0 }, pointSize: { value: 12 },
+      customTint: { value: 0 }, ink: { value: new THREE.Color() } },
     vertexShader: `
       uniform float uTime, pointSize;
       attribute float phase;
@@ -121,9 +123,12 @@ function createAccents(scene) {
       }`,
     fragmentShader: `
       varying float twinkle, tint;
+      uniform float customTint;
+      uniform vec3 ink;
       void main() {
         float d = length(gl_PointCoord - .5) * 2.;
         vec3 color = mix(vec3(.12, 1.7, 2.7), vec3(1.5, .5, 2.5), tint);
+        color = mix(color, ink * (1.75 + tint), customTint);
         gl_FragColor = vec4(color, (1. - smoothstep(.08, 1., d)) * twinkle * .8);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -132,8 +137,9 @@ function createAccents(scene) {
   });
   sparks.add(new THREE.Points(geometry, sparkMaterial));
 
-  function update(time) {
+  function update(time, colours) {
     if (ribbons.visible) strips.forEach((strip, band) => {
+      ribbons.children[band].material.color.copy(colours.ribbons || ribbonPalette[band]).multiplyScalar(1.55);
       for (let i = 0; i <= pointCount; i++) {
         const t = i / pointCount * Math.PI * 2;
         const radius = 1.66 + band * .15 + Math.sin(t * 3 - time * .9 + band) * .085;
@@ -146,6 +152,8 @@ function createAccents(scene) {
       strip.needsUpdate = true;
     });
     sparkMaterial.uniforms.uTime.value = time;
+    sparkMaterial.uniforms.customTint.value = Number(Boolean(colours.sparks));
+    if (colours.sparks) sparkMaterial.uniforms.ink.value.copy(colours.sparks);
   }
   return { group, ribbons, sparks, update };
 }
@@ -193,8 +201,9 @@ export function createEffects(renderer, scene) {
     accents.ribbons.visible = options.ribbons;
     accents.sparks.visible = options.sparks;
     if (options.animate && (options.ribbons || options.sparks || options.resonance)) time += delta;
-    if (options.ribbons || options.sparks) accents.update(time);
-    resonance.update(options.resonance, time, grid.position.y);
+    const colours = options.colours;
+    if (options.ribbons || options.sparks) accents.update(time, colours);
+    resonance.update(options.resonance, time, grid.position.y, colours[options.resonance]);
     if (!mode && !options.bloom) {
       renderer.render(scene, camera);
       return;
@@ -202,6 +211,10 @@ export function createEffects(renderer, scene) {
 
     colorPass.camera = camera;
     bloom.enabled = options.bloom;
+    for (const tint of bloom.bloomTintColors) {
+      if (colours.bloom) tint.set(colours.bloom.r, colours.bloom.g, colours.bloom.b);
+      else tint.set(1, 1, 1);
+    }
     treatment.enabled = mode !== 0;
     treatment.uniforms.mode.value = mode;
     const size = treatment.uniforms.screenSize.value;

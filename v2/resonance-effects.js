@@ -15,7 +15,7 @@ function prismOrbit() {
     root.add(shard);
     return shard;
   });
-  return { root, update(time) {
+  return { root, update(time, floor, colour) {
     shards.forEach((shard, index) => {
       const angle = index * Math.PI / 2 + .32 + time * (.20 + index * .021);
       const radius = 1.44 + index * .11 + Math.sin(time * .32 + index) * .10;
@@ -25,6 +25,10 @@ function prismOrbit() {
       const hue = (index * .22 + time * .037) % 1;
       shard.material.color.setHSL(hue, .72, .55);
       shard.material.emissive.setHSL(hue, .84, .48);
+      if (colour) {
+        shard.material.color.lerp(colour, .93);
+        shard.material.emissive.lerp(colour, .93);
+      }
     });
   } };
 }
@@ -39,8 +43,9 @@ function electricTrace() {
   positions.setUsage(THREE.DynamicDrawUsage);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', positions);
+  const native = new THREE.Color(0x95d9ff);
   const material = new THREE.LineBasicMaterial({
-    color: new THREE.Color(0x95d9ff).multiplyScalar(2.7),
+    color: native.clone().multiplyScalar(2.7),
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   });
   const trace = new THREE.LineSegments(geometry, material);
@@ -53,7 +58,8 @@ function electricTrace() {
     return [Math.cos(angle) * radius, (step - .48) * 1.32 + flick * .09 + offset * .53,
       Math.sin(angle) * radius];
   };
-  return { root, update(time) {
+  return { root, update(time, floor, colour) {
+    material.color.copy(colour || native).multiplyScalar(2.7);
     for (let index = 0; index < segments; index++) {
       positions.setXYZ(index * 2, ...position(index, index / segments, time));
       positions.setXYZ(index * 2 + 1, ...position(index + 1, (index + 1) / segments, time));
@@ -76,9 +82,10 @@ function electricTrace() {
 function pressureTide() {
   const root = new THREE.Group();
   const geometry = new THREE.PlaneGeometry(4.1, 3.5).rotateX(-Math.PI / 2);
-  const layers = [0x628afe, 0x7ee4ef, 0x9978ff].map((tint, index) => {
+  const palette = [0x628afe, 0x7ee4ef, 0x9978ff].map(tint => new THREE.Color(tint));
+  const layers = palette.map((tint, index) => {
     const material = new THREE.ShaderMaterial({
-      uniforms: { time: { value: 0 }, phase: { value: index * 1.72 }, tint: { value: new THREE.Color(tint) } },
+      uniforms: { time: { value: 0 }, phase: { value: index * 1.72 }, tint: { value: tint.clone() } },
       vertexShader: `
         varying vec2 vLocal;
         void main() {
@@ -106,11 +113,13 @@ function pressureTide() {
     root.add(layer);
     return layer;
   });
-  return { root, update(time, floor) {
+  return { root, update(time, floor, colour) {
     root.position.y = floor;
     layers.forEach((layer, index) => {
       layer.position.y = .16 + index * .17 + Math.sin(time * .62 + index) * .085;
       layer.material.uniforms.time.value = time;
+      layer.material.uniforms.tint.value.copy(palette[index]);
+      if (colour) layer.material.uniforms.tint.value.lerp(colour, .93);
     });
   } };
 }
@@ -123,13 +132,13 @@ export function createResonanceAccents() {
     root.add(effect.root);
   }
   let active;
-  return { root, update(name, time, floor) {
+  return { root, update(name, time, floor, colour) {
     const effect = effects.get(name);
     if (effect !== active) {
       if (active) active.root.visible = false;
       active = effect;
       if (active) active.root.visible = true;
     }
-    active?.update(time, floor);
+    active?.update(time, floor, colour);
   } };
 }
