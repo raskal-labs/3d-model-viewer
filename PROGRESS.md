@@ -27,6 +27,12 @@ Read `PROJECT.yaml` for the single authoritative checkpoint, and `WORK.yaml` for
 
 ## Timeline
 
+### 2026-11-18 — Quick asset picker and floating controls
+
+- The V2 picker opens on recent models, with sideways scrolling, vertical swipes between library views, and preview images in both the quick picker and full search. The library gateway serves optional thumbnails for known catalog assets through the existing private route.
+- The Looks & View and precision panels have translucent backgrounds, draggable headings and resize grips. The header stays in view when panel content scrolls.
+- Work IDs `ux-a`, `ux-b`, `ux-c`. Chromium checks exercised the picker, touch drag and resize, menu dismissal, and camera controls with the pinned public fixtures and the local Draco sample. Physical iPhone Safari remains to be tested.
+
 ### 2026-11-18 — General model studio review branch
 
 - Added a static `/v2/` entry point with the shared gesture recognizer, perspective and orthographic snap views, source materials, Draco and sidecar import, and playback of the first animation clip. The default studio does not run a postprocessing pass.
