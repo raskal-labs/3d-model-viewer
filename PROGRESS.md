@@ -27,6 +27,12 @@ Read `PROJECT.yaml` for the single authoritative checkpoint, and `WORK.yaml` for
 
 ## Timeline
 
+### 2026-11-18 — Model colours and icon-maker runes
+
+- Studio installations can set the same-origin `icon-runes` meta setting to load the icon maker’s rune catalogue. The private deployment uses 18 source glyphs. The editor projects them onto the stone surface and saves rune, size and colours per library model in browser storage.
+- Added individual effect tints and colour controls for Minimal Porygon2 and the rebuilt Chief. Chief and the rebuilt Smoky Snowflake Slab were checked in the front, side and three-quarter views. Phone-sized Chromium verified the live library cards, persistence, resets and six effect tints. All 52 stone GLBs enabled rune controls and projected onto a front surface.
+- Work IDs `m2-looks`, `anatomical-model`.
+
 ### 2026-11-18 — Resonance chamber accents
 
 - Added Prism orbit, Electric trace and Pressure tide to Looks & View. These viewer adaptations share the existing animation toggle and can use bloom. Their default is off.
