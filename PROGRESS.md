@@ -27,6 +27,11 @@ Read `PROJECT.yaml` for the single authoritative checkpoint, and `WORK.yaml` for
 
 ## Timeline
 
+### 2026-11-18 — Resonance chamber accents
+
+- Added Prism orbit, Electric trace and Pressure tide to Looks & View. These viewer adaptations share the existing animation toggle and can use bloom. Their default is off.
+- Work ID `m2-looks`. Chromium compared a rendered frame for each effect to the clean frame, checked that switching the effect off restored the clean frame, and ran the existing studio coverage with the Khronos fixtures and local Draco sample.
+
 ### 2026-11-18 — Quick asset picker and floating controls
 
 - The V2 picker opens on recent models, with sideways scrolling, vertical swipes between library views, and preview images in both the quick picker and full search. The library gateway serves optional thumbnails for known catalog assets through the existing private route.
