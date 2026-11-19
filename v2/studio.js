@@ -211,17 +211,21 @@ viewport.addEventListener('drop', event => {
   openFiles(Array.from(event.dataTransfer.files));
 });
 const inspector = $('inspector');
+const inspectorBackdrop = $('inspector-backdrop');
 function showPanel(open) {
   inspector.toggleAttribute('data-open', open);
+  inspectorBackdrop.hidden = !open;
   $('panel-toggle').setAttribute('aria-expanded', String(open));
 }
 $('panel-toggle').addEventListener('click', () => showPanel(!inspector.hasAttribute('data-open')));
-$('close-panel').addEventListener('click', () => { showPanel(false); $('panel-toggle').focus(); });
+function closePanel() {
+  showPanel(false);
+  $('panel-toggle').focus();
+}
+$('close-panel').addEventListener('click', closePanel);
+inspectorBackdrop.addEventListener('click', closePanel);
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && inspector.hasAttribute('data-open')) {
-    showPanel(false);
-    $('panel-toggle').focus();
-  }
+  if (event.key === 'Escape' && inspector.hasAttribute('data-open') && !$('model-picker').open) closePanel();
 });
 
 new ResizeObserver(([entry]) => {

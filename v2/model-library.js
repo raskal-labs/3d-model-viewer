@@ -73,7 +73,22 @@ export function installModelPicker(fileInput, openAsset, importModel) {
     fileInput.click();
   });
   $('close-picker').addEventListener('click', () => dialog.close());
-  dialog.addEventListener('close', () => openButton.focus());
+  let pressedBackdrop = false;
+  function isBackdrop(event) {
+    if (event.target !== dialog) return false;
+    const { left, right, top, bottom } = dialog.getBoundingClientRect();
+    return event.clientX < left || event.clientX >= right || event.clientY < top || event.clientY >= bottom;
+  }
+  dialog.addEventListener('pointerdown', event => { pressedBackdrop = isBackdrop(event); });
+  dialog.addEventListener('pointercancel', () => { pressedBackdrop = false; });
+  dialog.addEventListener('click', event => {
+    if (pressedBackdrop && isBackdrop(event)) dialog.close();
+    pressedBackdrop = false;
+  });
+  dialog.addEventListener('close', () => {
+    pressedBackdrop = false;
+    openButton.focus();
+  });
   openButton.addEventListener('click', async () => {
     if (!dialog.open) dialog.showModal();
     if (loading) return;

@@ -109,8 +109,17 @@ try {
 
   await phone.getByRole('button', { name: 'Looks & View' }).tap();
   await phone.locator('#look').selectOption('legacy-pixel');
-  await phone.getByRole('button', { name: 'Close settings' }).tap();
-  assert.equal(await phone.locator('#inspector').isVisible(), false);
+  const settings = phone.locator('#inspector');
+  const closeSettings = phone.getByRole('button', { name: 'Close settings' });
+  const closeBeforeScroll = await closeSettings.boundingBox();
+  await settings.locator('.inspector-content').evaluate(element => { element.scrollTop = element.scrollHeight; });
+  assert(await settings.locator('.inspector-content').evaluate(element => element.scrollTop > 0));
+  assert.equal((await closeSettings.boundingBox()).y, closeBeforeScroll.y, 'The settings title bar stays pinned');
+  await phone.touchscreen.tap(22, (await settings.boundingBox()).y - 18);
+  assert.equal(await settings.isVisible(), false, 'A tap outside dismisses settings');
+  await phone.getByRole('button', { name: 'Looks & View' }).tap();
+  await closeSettings.tap();
+  assert.equal(await settings.isVisible(), false);
   await phone.getByRole('button', { name: 'Precision navigation' }).tap();
   const precision = phone.getByRole('menu', { name: 'Precision mode' });
   await precision.waitFor();
@@ -140,6 +149,32 @@ try {
   assert.match(await phone.locator('#open-model').evaluate(el => getComputedStyle(el).fontFamily), /PocketText/);
   assert.match(await phone.locator('h1').evaluate(el => getComputedStyle(el).fontFamily), /PocketDisplay/);
   assert.match(await phone.locator('#precisionValue').evaluate(el => getComputedStyle(el).fontFamily), /PocketMono/);
+  const libraryPhone = await browser.newPage({ viewport: { width: 390, height: 660 }, isMobile: true, hasTouch: true });
+  monitor(libraryPhone);
+  await libraryPhone.route(new URL(server).href, async route => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace('name="model-library" content=""',
+      'name="model-library" content="test-model-library/"');
+    await route.fulfill({ response, body });
+  });
+  await libraryPhone.route('**/test-model-library/catalog.json', route => route.fulfill({
+    json: { assets: Array.from({ length: 35 }, (_, id) => ({ id, path: `Fixtures/Model ${id}.glb` })) },
+  }));
+  await ready(libraryPhone);
+  await libraryPhone.getByRole('button', { name: 'Open model' }).tap();
+  const dialog = libraryPhone.getByRole('dialog', { name: 'Open model' });
+  await dialog.getByRole('button', { name: 'Model 34.glb' }).waitFor();
+  const closePicker = dialog.getByRole('button', { name: 'Close model picker' });
+  const pickerCloseBeforeScroll = await closePicker.boundingBox();
+  const results = dialog.locator('#library-results');
+  await results.evaluate(element => { element.scrollTop = element.scrollHeight; });
+  assert(await results.evaluate(element => element.scrollTop > 0));
+  assert.equal((await closePicker.boundingBox()).y, pickerCloseBeforeScroll.y, 'The library title bar stays pinned');
+  await dialog.getByRole('heading', { name: 'Open model' }).tap();
+  assert(await dialog.isVisible(), 'An inside tap leaves the picker open');
+  await libraryPhone.touchscreen.tap(22, (await dialog.boundingBox()).y - 12);
+  assert.equal(await dialog.isVisible(), false, 'A tap outside dismisses the picker');
+
   assert.deepEqual(errors, [], 'No page or WebGL shader errors');
   console.log('Verified studio defaults, shader looks, chamber effects, glTF sidecars, reversible materials, animation controls, projection, and phone-sized UI' +
     (process.env.DRACO_FIXTURE ? ', including Draco GLB.' : '.'));
