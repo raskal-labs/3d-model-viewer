@@ -167,7 +167,7 @@ def bundle_files(root, model):
 
 
 class Handler(BaseHTTPRequestHandler):
-    def headers(self, content_type, size):
+    def send_asset_headers(self, content_type, size):
         self.send_response(200)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(size))
@@ -177,7 +177,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def json_response(self, data):
         response = json.dumps(data, ensure_ascii=True).encode()
-        self.headers('application/json', len(response))
+        self.send_asset_headers('application/json', len(response))
         self.wfile.write(response)
 
     def do_GET(self):
@@ -200,7 +200,7 @@ class Handler(BaseHTTPRequestHandler):
                         if os.fstat(source.fileno()).st_size != part['size']:
                             self.send_error(409, 'Asset changed; open it again.')
                             return
-                        self.headers(mimetypes.guess_type(file)[0] or 'application/octet-stream', part['size'])
+                        self.send_asset_headers(mimetypes.guess_type(file)[0] or 'application/octet-stream', part['size'])
                         shutil.copyfileobj(source, self.wfile)
             else:
                 self.send_error(404)
