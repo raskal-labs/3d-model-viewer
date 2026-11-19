@@ -19,13 +19,14 @@ MODELS = {'.glb', '.gltf', '.obj', '.stl'}
 TEXTURES = {'.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.bmp', '.ktx2'}
 DEPENDENCIES = TEXTURES | {'.mtl', '.bin'}
 MAX_BYTES = 64 * 1024 * 1024
-BUNDLE_ROUTE = re.compile(r'/assets/([a-f0-9]{24})/(bundle\.json|[0-9]{1,4})')
+BUNDLE_ROUTE = re.compile(r'/assets/([a-f0-9]{24})/(bundle\.json|thumbnail\.png|[0-9]{1,4})')
 
 
 class Library:
-    def __init__(self, root, aliases):
+    def __init__(self, root, aliases, thumbnails=None):
         self.root = root.resolve(strict=True)
         self.aliases = set(aliases)
+        self.thumbnails = thumbnails.resolve(strict=True) if thumbnails else None
         self.models = {}
         self.bundles = {}
         self.scanned = -float('inf')
@@ -48,14 +49,16 @@ class Library:
                     if name.startswith('.') or file.suffix.lower() not in MODELS or file.is_symlink():
                         continue
                     try:
-                        size = file.stat().st_size
+                        stat = file.stat()
                     except FileNotFoundError:
                         continue
-                    if size > MAX_BYTES or not file.is_file():
+                    if stat.st_size > MAX_BYTES or not file.is_file():
                         continue
                     path = (Path(collection.name) / file.relative_to(directory)).as_posix()
                     key = hashlib.sha256(path.encode()).hexdigest()[:24]
-                    models[key] = (directory, file, {'id': key, 'path': path, 'size': size})
+                    models[key] = (directory, file, {
+                        'id': key, 'path': path, 'size': stat.st_size, 'modified': stat.st_mtime,
+                    })
         self.models = models
         # An expired bundle is resolved again from its model and sidecars.
         self.bundles = {key: item for key, item in self.bundles.items()
@@ -65,8 +68,27 @@ class Library:
     def catalog(self):
         with self.lock:
             self.scan()
-            return sorted((item[2] for item in self.models.values()),
-                          key=lambda entry: entry['path'].casefold())
+            return sorted(
+                (dict(entry, preview=self.thumbnail_path(key) is not None)
+                 for key, (_, _, entry) in self.models.items()),
+                key=lambda entry: entry['path'].casefold(),
+            )
+
+    def thumbnail_path(self, key):
+        if not self.thumbnails:
+            return None
+        path = self.thumbnails / f'{key}.png'
+        if path.is_file() and not path.is_symlink():
+            return path
+        return None
+
+    def thumbnail(self, key):
+        with self.lock:
+            self.scan()
+            path = self.thumbnail_path(key) if key in self.models else None
+            if path is None:
+                raise FileNotFoundError
+            return check_file(self.thumbnails, path)
 
     def bundle(self, key, refresh=False):
         with self.lock:
@@ -191,6 +213,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.json_response({'assets': self.server.library.catalog()})
             elif match:
                 key, resource = match.groups()
+                if resource == 'thumbnail.png':
+                    with self.server.library.thumbnail(key).open('rb') as source:
+                        self.send_asset_headers('image/png', os.fstat(source.fileno()).st_size)
+                        shutil.copyfileobj(source, self.wfile)
+                    return
                 parts = self.server.library.bundle(key, refresh=resource == 'bundle.json')
                 if resource == 'bundle.json':
                     self.json_response({'files': [item[2] for item in parts]})
@@ -219,9 +246,10 @@ def main():
     parser.add_argument('--port', type=int, default=8771)
     parser.add_argument('--peer', action='append', default=[])
     parser.add_argument('--collection-link', action='append', default=[])
+    parser.add_argument('--thumbnails', type=Path)
     args = parser.parse_args()
     with ThreadingHTTPServer((args.bind, args.port), Handler) as server:
-        server.library = Library(args.root, args.collection_link)
+        server.library = Library(args.root, args.collection_link, args.thumbnails)
         server.peers = set(args.peer)
         server.serve_forever()
 

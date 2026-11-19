@@ -36,11 +36,14 @@
         <button id="precisionButton" type="button" aria-label="Precision navigation" aria-expanded="false"><span class="reticle"></span></button>
         <div id="precisionMenu" role="menu" aria-label="Precision mode" hidden></div>
         <section id="precisionInstrument" aria-label="Precision instrument" hidden>
-          <div class="precision-heading"><strong id="precisionTitle"></strong><button id="closePrecision" type="button" aria-label="Close precision instrument">×</button></div>
-          <p id="precisionHint"></p>
-          <output id="precisionValue"></output>
-          <div id="precisionSurface" tabindex="0"><div class="surface-art"></div></div>
-          <div id="precisionZoom" hidden><label for="precisionZoomSlider">Camera distance</label><input id="precisionZoomSlider" type="range" min="0" max="1000"></div>
+          <div class="precision-heading" title="Drag to move"><strong id="precisionTitle"></strong><button id="closePrecision" type="button" aria-label="Close precision instrument">×</button></div>
+          <div class="precision-body">
+            <p id="precisionHint"></p>
+            <output id="precisionValue"></output>
+            <div id="precisionSurface" tabindex="0"><div class="surface-art"></div></div>
+            <div id="precisionZoom" hidden><label for="precisionZoomSlider">Camera distance</label><input id="precisionZoomSlider" type="range" min="0" max="1000"></div>
+          </div>
+          <div class="panel-grip" title="Drag to resize" aria-hidden="true"></div>
         </section>
         <div id="clutchStatus" hidden>Precision clutch</div>
       </div>
@@ -48,7 +51,7 @@
     </section>
     <div id="inspector-backdrop" aria-hidden="true" hidden></div>
     <aside id="inspector" aria-label="Model settings">
-      <div class="inspector-heading"><h2>Looks &amp; View</h2><button id="close-panel" type="button" aria-label="Close settings">×</button></div>
+      <div class="inspector-heading" title="Drag to move"><h2>Looks &amp; View</h2><button id="close-panel" type="button" aria-label="Close settings">×</button></div>
       <div class="inspector-content">
         <section class="settings-section" aria-labelledby="appearance-heading">
           <h3 id="appearance-heading">Appearance</h3>
@@ -89,6 +92,7 @@
           <a href="../index.html">Legacy Render Lab ↗</a>
         </div>
       </div>
+      <div id="resize-panel" class="panel-grip" title="Drag to resize" aria-hidden="true"></div>
     </aside>
   </main>
   <dialog id="model-picker" aria-labelledby="model-picker-title">
@@ -97,12 +101,28 @@
       <button id="close-picker" type="button" aria-label="Close model picker">×</button>
     </div>
     <div class="picker-library">
-      <label for="library-search">Asset library</label>
-      <input id="library-search" type="search" placeholder="Search models or collections" autocomplete="off">
       <p id="library-status" role="status" aria-live="polite"></p>
-      <div id="library-results"></div>
+      <div id="library-quick">
+        <div class="library-modes" role="group" aria-label="Asset library view">
+          <button type="button" data-mode="recent" aria-pressed="true">Recent</button>
+          <button type="button" data-mode="collections" aria-pressed="false">Collections</button>
+          <button type="button" data-mode="all" aria-pressed="false">All models</button>
+        </div>
+        <div class="library-rail-wrap">
+          <button id="library-prev" class="rail-arrow" type="button" aria-label="Previous models">‹</button>
+          <div id="library-rail" aria-label="Model previews"></div>
+          <button id="library-next" class="rail-arrow" type="button" aria-label="Next models">›</button>
+        </div>
+      </div>
+      <div id="library-full" hidden>
+        <input id="library-search" type="search" aria-label="Search asset library" placeholder="Search models or collections" autocomplete="off">
+        <div id="library-results"></div>
+      </div>
     </div>
-    <footer class="picker-footer"><button id="choose-device" type="button">Browse device files…</button></footer>
+    <footer class="picker-footer">
+      <button id="library-toggle" type="button">Full library</button>
+      <button id="choose-device" type="button">Browse device files…</button>
+    </footer>
   </dialog>
   <script type="module" src="./studio.js"></script>
 </body>

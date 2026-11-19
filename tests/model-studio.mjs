@@ -37,6 +37,16 @@ async function open(page, files, name) {
   await page.waitForFunction(expected => document.querySelector('#model-name')?.textContent === expected, name);
   await page.locator('#status').waitFor({ state: 'hidden' });
 }
+async function touchDrag(page, { x, y }, dx, dy) {
+  const session = await page.context().newCDPSession(page);
+  const touch = (type, points) => session.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+  await touch('touchStart', [{ x, y }]);
+  for (const step of [.25, .5, .75, 1]) {
+    await touch('touchMove', [{ x: x + dx * step, y: y + dy * step }]);
+  }
+  await touch('touchEnd', []);
+  await session.detach();
+}
 
 try {
   const page = await browser.newPage({ viewport: { width: 1180, height: 850 } });
@@ -118,6 +128,14 @@ try {
   await phone.touchscreen.tap(22, (await settings.boundingBox()).y - 18);
   assert.equal(await settings.isVisible(), false, 'A tap outside dismisses settings');
   await phone.getByRole('button', { name: 'Looks & View' }).tap();
+  const panelStart = await settings.boundingBox();
+  await touchDrag(phone, { x: panelStart.x + 45, y: panelStart.y + 18 }, -60, -70);
+  const moved = await settings.boundingBox();
+  assert(moved.x < panelStart.x - 40 && moved.y < panelStart.y - 40, 'Touch drag moves the settings panel');
+  const grip = await phone.locator('#resize-panel').boundingBox();
+  await touchDrag(phone, { x: grip.x + grip.width / 2, y: grip.y + grip.height / 2 }, 38, -55);
+  const resized = await settings.boundingBox();
+  assert(resized.width > moved.width + 25 && resized.height < moved.height - 40, 'Touch resize changes both dimensions');
   await closeSettings.tap();
   assert.equal(await settings.isVisible(), false);
   await phone.getByRole('button', { name: 'Precision navigation' }).tap();
@@ -141,6 +159,17 @@ try {
   await touch('touchMove', [{ x: x + 40, y: y + 14 }]);
   await touch('touchEnd', []);
   assert.notEqual(await phone.locator('#precisionValue').innerText(), before, 'The pad receives a real touch drag');
+  const instrument = phone.locator('#precisionInstrument');
+  const instrumentStart = await instrument.boundingBox();
+  await touchDrag(phone, { x: instrumentStart.x + 40, y: instrumentStart.y + 18 }, -35, -65);
+  const instrumentMoved = await instrument.boundingBox();
+  assert(instrumentMoved.x < instrumentStart.x - 20 && instrumentMoved.y < instrumentStart.y - 45,
+    'The precision instrument can be moved independently of the pad');
+  const precisionGrip = await instrument.locator('.panel-grip').boundingBox();
+  await touchDrag(phone, { x: precisionGrip.x + precisionGrip.width / 2, y: precisionGrip.y + precisionGrip.height / 2 }, 25, 35);
+  const instrumentResized = await instrument.boundingBox();
+  assert(instrumentResized.width > instrumentMoved.width + 15 && instrumentResized.height > instrumentMoved.height + 20,
+    'The precision instrument can be resized');
   await phone.getByRole('button', { name: 'Precision navigation' }).tap();
   await phone.getByRole('menuitem', { name: 'zoom' }).tap();
   await phone.locator('#precisionInstrument[data-mode="zoom"]').waitFor();
@@ -158,11 +187,28 @@ try {
     await route.fulfill({ response, body });
   });
   await libraryPhone.route('**/test-model-library/catalog.json', route => route.fulfill({
-    json: { assets: Array.from({ length: 35 }, (_, id) => ({ id, path: `Fixtures/Model ${id}.glb` })) },
+    json: { assets: Array.from({ length: 35 }, (_, id) => ({
+      id, path: `Fixtures/Model ${id}.glb`, modified: id, preview: id === 34,
+    })) },
+  }));
+  await libraryPhone.route('**/test-model-library/assets/34/thumbnail.png', route => route.fulfill({
+    contentType: 'image/png',
+    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aAdsAAAAASUVORK5CYII=', 'base64'),
   }));
   await ready(libraryPhone);
   await libraryPhone.getByRole('button', { name: 'Open model' }).tap();
   const dialog = libraryPhone.getByRole('dialog', { name: 'Open model' });
+  const rail = dialog.locator('#library-rail');
+  assert.match(await rail.locator('button').first().innerText(), /Model 34/);
+  assert(await rail.locator('img').evaluate(image => image.decode().then(() => image.naturalWidth > 0)));
+  const railBox = await rail.boundingBox();
+  await touchDrag(libraryPhone, { x: railBox.x + 180, y: railBox.y + 45 }, -155, 0);
+  assert(await rail.evaluate(element => element.scrollLeft > 0), 'A horizontal flick scrolls the previews');
+  await touchDrag(libraryPhone, { x: railBox.x + 55, y: railBox.y + 85 }, 0, -60);
+  assert.equal(await dialog.getByRole('button', { name: 'Collections' }).getAttribute('aria-pressed'), 'true');
+  await rail.getByRole('button', { name: 'Fixtures 35 models' }).tap();
+  await rail.getByRole('button', { name: 'Model 0 Fixtures' }).waitFor();
+  await dialog.getByRole('button', { name: 'Full library' }).tap();
   await dialog.getByRole('button', { name: 'Model 34.glb' }).waitFor();
   const closePicker = dialog.getByRole('button', { name: 'Close model picker' });
   const pickerCloseBeforeScroll = await closePicker.boundingBox();

@@ -211,22 +211,80 @@ viewport.addEventListener('drop', event => {
   openFiles(Array.from(event.dataTransfer.files));
 });
 const inspector = $('inspector');
+const precisionInstrument = $('precisionInstrument');
 const inspectorBackdrop = $('inspector-backdrop');
+const panelToggle = $('panel-toggle');
+const modelPicker = $('model-picker');
 function showPanel(open) {
   inspector.toggleAttribute('data-open', open);
   inspectorBackdrop.hidden = !open;
-  $('panel-toggle').setAttribute('aria-expanded', String(open));
+  panelToggle.setAttribute('aria-expanded', String(open));
+  if (open && inspector.hasAttribute('data-positioned')) setPanelBounds(inspector, inspector.getBoundingClientRect());
 }
-$('panel-toggle').addEventListener('click', () => showPanel(!inspector.hasAttribute('data-open')));
+panelToggle.addEventListener('click', () => showPanel(!inspector.hasAttribute('data-open')));
 function closePanel() {
   showPanel(false);
-  $('panel-toggle').focus();
+  panelToggle.focus();
 }
 $('close-panel').addEventListener('click', closePanel);
 inspectorBackdrop.addEventListener('click', closePanel);
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && inspector.hasAttribute('data-open') && !$('model-picker').open) closePanel();
+  if (event.key === 'Escape' && inspector.hasAttribute('data-open') && !modelPicker.open) closePanel();
 });
+
+function setPanelBounds(panel, bounds, resize = false) {
+  const inset = 6;
+  const { clientWidth, clientHeight } = document.documentElement;
+  const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+  const minWidth = Math.min(210, clientWidth - inset * 2);
+  const minHeight = Math.min(panel === inspector ? 155 : 128, clientHeight - inset * 2);
+  const left = clamp(bounds.left, inset, clientWidth - inset - minWidth);
+  const top = clamp(bounds.top, inset, clientHeight - inset - minHeight);
+  const width = clamp(bounds.width, minWidth, clientWidth - inset - (resize ? left : inset));
+  const height = clamp(bounds.height, minHeight, clientHeight - inset - (resize ? top : inset));
+  Object.assign(panel.style, {
+    left: `${Math.min(left, clientWidth - inset - width)}px`,
+    top: `${Math.min(top, clientHeight - inset - height)}px`,
+    width: `${width}px`,
+    height: `${height}px`,
+  });
+  panel.toggleAttribute('data-positioned', true);
+}
+
+function enablePanelGesture(panel, handle, resize = false) {
+  let gesture;
+  handle.addEventListener('pointerdown', event => {
+    if (!event.isPrimary || event.button !== 0 || event.target.closest('button')) return;
+    gesture = {
+      id: event.pointerId, x: event.clientX, y: event.clientY, bounds: panel.getBoundingClientRect(),
+    };
+    handle.setPointerCapture(event.pointerId);
+  });
+  handle.addEventListener('pointermove', event => {
+    if (event.pointerId !== gesture?.id) return;
+    const dx = event.clientX - gesture.x;
+    const dy = event.clientY - gesture.y;
+    const { left, top, width, height } = gesture.bounds;
+    setPanelBounds(panel, resize ? { left, top, width: width + dx, height: height + dy } :
+      { left: left + dx, top: top + dy, width, height }, resize);
+  });
+  handle.addEventListener('lostpointercapture', () => { gesture = null; });
+}
+
+for (const [panel, title] of [[inspector, '.inspector-heading'], [precisionInstrument, '.precision-heading']]) {
+  enablePanelGesture(panel, panel.querySelector(title));
+  enablePanelGesture(panel, panel.querySelector('.panel-grip'), true);
+  window.addEventListener('resize', () => {
+    if (!panel.hasAttribute('data-positioned')) return;
+    const bounds = panel.getBoundingClientRect();
+    if (bounds.width) setPanelBounds(panel, bounds);
+    else {
+      panel.removeAttribute('data-positioned');
+      panel.removeAttribute('style');
+    }
+  });
+}
+showPanel(!matchMedia('(max-width: 740px)').matches);
 
 new ResizeObserver(([entry]) => {
   const { width, height } = entry.contentRect;
