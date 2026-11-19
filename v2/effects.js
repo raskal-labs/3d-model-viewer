@@ -4,6 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { createResonanceAccents } from './resonance-effects.js';
 
 const modes = new Map([['banana-cel', 1], ['banana-ps1', 2], ['legacy-pixel', 3],
   ['legacy-watercolour', 4], ['legacy-ink', 5], ['legacy-mono', 6]]);
@@ -176,6 +177,8 @@ export function createEffects(renderer, scene) {
   composer.addPass(new OutputPass());
   composer.addPass(treatment);
   const accents = createAccents(scene);
+  const resonance = createResonanceAccents();
+  accents.group.add(resonance.root);
   const clear = new THREE.Color();
   let time = 0;
 
@@ -189,8 +192,9 @@ export function createEffects(renderer, scene) {
     const mode = modes.get(options.look) ?? 0;
     accents.ribbons.visible = options.ribbons;
     accents.sparks.visible = options.sparks;
-    if (options.animate && (options.ribbons || options.sparks)) time += delta;
+    if (options.animate && (options.ribbons || options.sparks || options.resonance)) time += delta;
     if (options.ribbons || options.sparks) accents.update(time);
+    resonance.update(options.resonance, time, grid.position.y);
     if (!mode && !options.bloom) {
       renderer.render(scene, camera);
       return;

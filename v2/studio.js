@@ -297,14 +297,17 @@ renderer.setSize(viewport.clientWidth, viewport.clientHeight, false);
 effects.resize(viewport.clientWidth, viewport.clientHeight);
 camera.resize(viewport.clientWidth, viewport.clientHeight);
 selectAsset(studioSample());
-const frameOptions = { look: 'original', bloom: false, ribbons: false, sparks: false, animate: false };
+const frameOptions = {};
 $('animate').checked = !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function updateEffects() {
   frameOptions.look = $('look').value;
+  frameOptions.resonance = $('resonance-effect').value;
   for (const key of ['bloom', 'ribbons', 'sparks', 'animate']) frameOptions[key] = $(key).checked;
   invalidate();
 }
-for (const id of ['look', 'bloom', 'ribbons', 'sparks', 'animate']) $(id).addEventListener('change', updateEffects);
+for (const id of ['look', 'resonance-effect', 'bloom', 'ribbons', 'sparks', 'animate']) {
+  $(id).addEventListener('change', updateEffects);
+}
 updateEffects();
 let previous = performance.now();
 renderer.setAnimationLoop(now => {
@@ -312,7 +315,7 @@ renderer.setAnimationLoop(now => {
   previous = now;
   const spinning = $('spin').checked;
   const playing = mixer && $('play-animation').checked;
-  const movingEffects = frameOptions.animate && (frameOptions.ribbons || frameOptions.sparks);
+  const movingEffects = frameOptions.animate && (frameOptions.ribbons || frameOptions.sparks || frameOptions.resonance);
   if (spinning) camera.spin(delta);
   if (playing) mixer.update(delta);
   if (dirty || playing || movingEffects) {

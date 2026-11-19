@@ -104,6 +104,13 @@ try {
   await styled.selectOption('resonance-mineral');
   await page.locator('#lighting').selectOption('resonance');
   const mineral = await frame(page);
+  const resonanceEffect = page.locator('#resonance-effect');
+  for (const effect of ['prism', 'electric', 'tide']) {
+    await resonanceEffect.selectOption(effect);
+    assert.notDeepEqual(await frame(page), mineral, `${effect} changes the rendered frame`);
+  }
+  await resonanceEffect.selectOption('');
+  assert.deepEqual(await frame(page), mineral, 'Turning the chamber accent off restores the clean frame');
   for (const id of ['bloom', 'ribbons', 'sparks']) await page.locator('#' + id).check();
   assert.notDeepEqual(await frame(page), mineral, 'Chamber effects change the rendered pixels');
   await screenshot(page, '04-resonance');
