@@ -20,7 +20,15 @@ try {
   assert.equal(await page.locator('#sample').count(), 0, 'Public V3 must not include a demo model');
   await page.locator('#files').setInputFiles({
     name: 'synthetic-test.stl', mimeType: 'model/stl',
-    buffer: Buffer.from('solid qa\\nfacet normal 0 0 1\\nouter loop\\nvertex 0 0 0\\nvertex 1 0 0\\nvertex 0 1 0\\nendloop\\nendfacet\\nendsolid qa'),
+    buffer: Buffer.from(`solid qa
+facet normal 0 0 1
+outer loop
+vertex 0 0 0
+vertex 1 0 0
+vertex 0 1 0
+endloop
+endfacet
+endsolid qa`),
   });
   await page.waitForFunction(() => document.querySelector('#model-name')?.textContent === 'synthetic-test.stl');
   await page.locator('#model-canvas[data-ready="true"]').waitFor({ timeout: 10000 });
