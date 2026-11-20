@@ -18,8 +18,12 @@ try {
   await page.locator('#model-canvas[data-ready="empty"]').waitFor({ timeout: 60000 });
   assert.equal(await page.locator('#model-name').innerText(), 'No model loaded');
   assert.equal(await page.locator('#sample').count(), 0, 'Public V3 must not include a demo model');
-  await page.locator('#open-model').click();
-  await page.getByText('Browse device files', { exact: false }).first().waitFor({ timeout: 15000 });
+  await page.locator('#files').setInputFiles({
+    name: 'synthetic-test.stl', mimeType: 'model/stl',
+    buffer: Buffer.from('solid qa\\nfacet normal 0 0 1\\nouter loop\\nvertex 0 0 0\\nvertex 1 0 0\\nvertex 0 1 0\\nendloop\\nendfacet\\nendsolid qa'),
+  });
+  await page.waitForFunction(() => document.querySelector('#model-name')?.textContent === 'synthetic-test.stl');
+  await page.locator('#model-canvas[data-ready="true"]').waitFor({ timeout: 10000 });
   assert.deepEqual(errors, [], 'No JS errors');
   console.log('Public V3 loads in mobile Chromium with zero embedded models.');
 } finally {
