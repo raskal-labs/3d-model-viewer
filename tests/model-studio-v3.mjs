@@ -15,7 +15,9 @@ try {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('http://127.0.0.1:8765/v3/', { waitUntil: 'domcontentloaded' });
-  await page.locator('#model-canvas[data-ready]').waitFor({ timeout: 60000 });
+  await page.locator('#model-canvas[data-ready="empty"]').waitFor({ timeout: 60000 });
+  assert.equal(await page.locator('#model-name').innerText(), 'No model loaded');
+  assert.equal(await page.locator('#sample').count(), 0, 'Public V3 must not include a demo model');
   await page.locator('#open-model').click();
   await page.getByText('Browse device files', { exact: false }).first().waitFor({ timeout: 15000 });
   assert.deepEqual(errors, [], 'No JS errors');
