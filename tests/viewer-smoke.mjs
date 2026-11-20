@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { chromium, webkit } from 'playwright';
+import { useLocalThree } from './local-three.mjs';
 
 // A small static GLB with vertex colours exercises the real upload path.
 function testGLB(){
@@ -28,6 +29,7 @@ const bindErrors=page=>{
   });
 };
 const view = async(page,label) => {
+  await useLocalThree(page);
   await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('meshes · ready'),null,{timeout:45000});
   assert.match(await page.locator('#status').innerText(),/\d+ meshes · ready/);

@@ -14,12 +14,14 @@ jobs:
   chromium-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      STUDIO_THREE: ${{ github.workspace }}/node_modules/three
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-save playwright@1.56.1
+      - run: npm install --no-save playwright@1.56.1 three@0.168.0
       - run: npx playwright install --with-deps chromium webkit
       - name: Launch site
         run: |
