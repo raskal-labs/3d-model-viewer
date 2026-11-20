@@ -194,24 +194,11 @@ function selectAsset(asset) {
   $('model-name').textContent = asset.name;
   $('model-info').textContent = `${meshes} ${meshes === 1 ? 'mesh' : 'meshes'}${asset.animations.length ? ' · Animated' : ''}`;
   canvas.dataset.ready = 'true';
+  $('capture-png').disabled = false;
   camera.setBounds(framed);
   const appearance = customizeModel(asset);
   if (appearance?.stone) stoneStudio.setAsset(appearance, framed);
   if (!appearance || appearance.stone) applyLook();
-}
-
-function studioSample() {
-  const root = new THREE.Group();
-  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(.98, 0), new THREE.MeshPhysicalMaterial({
-    color: 0x60a596, roughness: .26, metalness: .17, clearcoat: .35, flatShading: true,
-  }));
-  core.rotation.set(.05, .24, .28);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.16, .083, 16, 80), new THREE.MeshStandardMaterial({
-    color: 0xc9bd9f, roughness: .25, metalness: .86,
-  }));
-  ring.rotation.set(1.16, .21, .46);
-  root.add(core, ring);
-  return { root, name: 'Studio sample', animations: [] };
 }
 
 async function openAsset(load) {
@@ -234,11 +221,6 @@ function openFiles(files) {
   if (files.length) openAsset(() => importModel(files));
 }
 
-$('sample').addEventListener('click', () => {
-  pending?.abort();
-  selectAsset(studioSample());
-  setStatus('');
-});
 installModelPicker($('files'), openAsset, importModel);
 $('files').addEventListener('change', event => {
   openFiles(Array.from(event.target.files));
@@ -343,7 +325,8 @@ new ResizeObserver(([entry]) => {
 renderer.setSize(viewport.clientWidth, viewport.clientHeight, false);
 effects.resize(viewport.clientWidth, viewport.clientHeight);
 camera.resize(viewport.clientWidth, viewport.clientHeight);
-selectAsset(studioSample());
+canvas.dataset.ready = 'empty';
+$('capture-png').disabled = true;
 const frameOptions = { stoneEdges: stoneStudio.edgeGroup };
 frameOptions.colours = configureEffectColours(invalidate);
 $('animate').checked = !matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -360,6 +343,7 @@ for (const id of ['look', 'resonance-effect', 'bloom', 'ribbons', 'sparks', 'ani
 $('bloom-strength').addEventListener('input', updateEffects);
 $('capture-png').addEventListener('click', () => {
   try {
+    if (!current) return;
     stoneStudio.refresh();
     effects.render(camera.active, frameOptions, 0, grid);
     const name = current.name.replace(/\.[^.]+$/, '') + '.png';

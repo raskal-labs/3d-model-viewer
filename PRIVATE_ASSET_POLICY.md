@@ -9,3 +9,5 @@ This public repository contains **viewer code only**. Never commit, embed, bundl
 - Public tests use **synthetic meshes generated in test code** and may not include copyrighted/proprietary models or screenshots of private models.
 
 **History notice:** Older versions of this public repository included model files. Their removal from the current branch does **not** remove those blobs from Git history, forks, or caches. Treat full history sanitization/repository-privacy changes as a separate, explicitly verified operation. Do not assert that old copies are inaccessible.
+
+The public V2 viewer starts with **no default model**, not even a procedural demo mesh. No Minimal, Mini, Chief, PhaseOne, official, fan-made or other 3D model may be preloaded into its public release. Synthetic test fixtures may be generated only during CI; they are not published as viewer assets.
