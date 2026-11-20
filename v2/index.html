@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#14171c">
+  <meta name="model-library" content="">
+  <meta name="icon-runes" content="">
+  <title>3D Model Viewer · Model Studio</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../gesture-navigation.css">
+  <link rel="stylesheet" href="./studio.css">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <header class="toolbar">
+    <div class="identity"><span class="mark" aria-hidden="true"></span><h1>Model Studio</h1></div>
+    <div class="toolbar-actions">
+      <button id="panel-toggle" type="button" aria-controls="inspector" aria-expanded="false">Looks &amp; View</button>
+      <button id="open-model" class="primary" type="button">Open model</button>
+      <input id="files" type="file" multiple hidden
+        accept=".glb,.gltf,.obj,.stl,.mtl,.bin,.png,.jpg,.jpeg,.webp,.avif,.gif,.bmp">
+    </div>
+  </header>
+  <main class="workspace">
+    <section id="viewport" aria-label="Model viewport">
+      <canvas id="model-canvas" aria-label="Interactive 3D model"></canvas>
+      <div class="asset-label">
+        <strong id="model-name">Studio sample</strong>
+        <span id="model-info"></span>
+      </div>
+      <div id="navigationTools">
+        <button id="undoCamera" type="button" aria-label="Undo camera movement" title="Undo view" disabled>↶</button>
+        <button id="quickReset" type="button" aria-label="Frame model" title="Frame model">⌗</button>
+        <button id="precisionButton" type="button" aria-label="Precision navigation" aria-haspopup="menu" aria-controls="precisionMenu" aria-expanded="false"><span class="reticle"></span></button>
+        <div id="precisionMenu" role="menu" aria-label="Precision mode" hidden></div>
+        <section id="precisionInstrument" aria-label="Precision instrument" hidden>
+          <div class="precision-heading" title="Drag to move"><strong id="precisionTitle"></strong><button id="closePrecision" type="button" aria-label="Close precision instrument">×</button></div>
+          <div class="precision-body">
+            <p id="precisionHint"></p>
+            <output id="precisionValue"></output>
+            <div id="precisionSurface" tabindex="0"><div class="surface-art"></div></div>
+            <div id="precisionDual" hidden aria-label="Yaw and pitch pads">
+              <button type="button" class="circle-pad" data-pad-axis="yaw" aria-label="Yaw pad, use left and right arrow keys"><span>Yaw</span></button>
+              <button type="button" class="circle-pad" data-pad-axis="pitch" aria-label="Pitch pad, use up and down arrow keys"><span>Pitch</span></button>
+            </div>
+            <div id="precisionZoom" hidden><label for="precisionZoomSlider">Camera distance</label><input id="precisionZoomSlider" type="range" min="0" max="1000"></div>
+          </div>
+          <div class="panel-grip" title="Drag to resize" aria-hidden="true"></div>
+        </section>
+        <div id="clutchStatus" hidden>Precision clutch</div>
+      </div>
+      <p id="status" role="status" aria-live="polite" hidden></p>
+    </section>
+    <div id="inspector-backdrop" aria-hidden="true" hidden></div>
+    <aside id="inspector" aria-label="Model settings">
+      <div class="inspector-heading" title="Drag to move"><h2>Looks &amp; View</h2><button id="close-panel" type="button" aria-label="Close settings">×</button></div>
+      <div class="inspector-content">
+        <section class="settings-section" aria-labelledby="appearance-heading">
+          <h3 id="appearance-heading">Appearance</h3>
+          <details id="model-customization" class="customization" hidden>
+            <summary>Model colours and rune</summary>
+            <div class="custom-colours">
+              <label>Body <input type="color" id="model-body-colour"></label>
+              <label id="model-accent-label">Accents <input type="color" id="model-accent-colour"></label>
+              <label id="model-helmet-label" hidden>Hard hat <input type="color" id="model-helmet-colour"></label>
+            </div>
+            <div id="model-rune-fields" hidden>
+              <label for="model-rune">Rune</label>
+              <select id="model-rune"></select>
+              <div class="custom-colours">
+                <label>Rune colour <input type="color" id="model-rune-colour"></label>
+              </div>
+              <label class="rune-size" for="model-rune-size">Rune size <input type="range" id="model-rune-size" min="70" max="130" value="100"></label>
+            </div>
+            <button id="model-customization-reset" type="button">Reset model</button>
+          </details>
+          <details class="advanced-panel" id="stone-studio" hidden>
+            <summary>Stone motion and effects</summary>
+            <div class="advanced-fields">
+              <label>Levitation <select id="stone-motion"><option value="off">Off</option><option value="hover">Hover</option><option value="sway">Hover and sway</option><option value="turn">Hover and turn</option></select></label>
+              <label>Lift <input id="stone-lift" type="range" min=".2" max="2" step=".05" value="1"></label>
+              <label>Speed <input id="stone-speed" type="range" min=".25" max="2.5" step=".05" value="1"></label>
+              <label>Colour motion <select id="stone-colour-motion"><option value="off">Off</option><option value="pulse">Pulse to colour</option><option value="spectrum">Hue cycle</option></select></label>
+              <label>Pulse colour <input id="stone-motion-colour" type="color" value="#72c7ff"></label>
+              <label>Stone effect <select id="stone-effect"><option value="off">Off</option><option value="ember">Inner Ember</option><option value="rune">Rune Current</option><option value="edges">Facet Edge Glow</option></select></label>
+              <label>Effect colour <input id="stone-effect-colour" type="color" value="#8de4ff"></label>
+              <label>Effect strength <input id="stone-effect-strength" type="range" min="0" max="1" step=".02" value=".7"></label>
+              <label class="toggle"><input id="stone-playing" type="checkbox"> Animate stone</label>
+              <div class="advanced-actions"><button id="stone-reset" type="button">Reset motion and effects</button></div>
+            </div>
+          </details>
+          <label for="look">Surface</label>
+          <select id="look">
+            <optgroup label="Studio"><option value="original">Original materials</option><option value="clay">Clay</option><option value="unlit">Unlit</option><option value="normals">Geometry normals</option><option value="wireframe">Wireframe</option><option value="material-id">Material IDs</option></optgroup>
+            <optgroup label="Resonance"><option value="resonance-mineral">Mineral sheen</option></optgroup>
+            <optgroup label="Banana Palm"><option value="banana-cel">Initial cel shading</option><option value="banana-ps1">PS1</option></optgroup>
+            <optgroup label="Legacy looks"><option value="legacy-pixel">Pixel</option><option value="legacy-watercolour">Watercolour</option><option value="legacy-ink">Ink / Sketch</option><option value="legacy-mono">Monochrome</option></optgroup>
+          </select>
+          <label for="lighting">Lighting</label>
+          <select id="lighting">
+            <option value="neutral">Neutral studio</option><option value="softbox">Softbox</option><option value="rim">Rim light</option><option value="resonance">Resonance chamber</option><option value="banana">Banana Palm daylight</option><option value="daylight">High key</option><option value="duotone">Warm key, cool rim</option><option value="silhouette">Silhouette</option>
+          </select>
+          <details class="advanced-panel" id="light-details">
+            <summary>Light and render tools</summary>
+            <div class="advanced-fields">
+              <label>Backdrop <input id="backdrop-colour" type="color" ></label>
+              <label>Key light colour <input id="key-colour" type="color" ></label>
+              <label>Rim light colour <input id="rim-colour" type="color" ></label>
+              <label>Key angle <input id="key-angle" type="range" min="-180" max="180" value="-37"></label>
+              <label>Key elevation <input id="key-elevation" type="range" min="-20" max="88" value="45"></label>
+              <label>Key strength <input id="key-strength" type="range" min="0" max="6" step=".05"></label>
+              <label>Environment <input id="env-strength" type="range" min="0" max="2" step=".02"></label>
+              <label>Exposure <input id="exposure" type="range" min=".2" max="3" step=".05" value="1"></label>
+              <label>Bloom strength <input id="bloom-strength" type="range" min="0" max="2" step=".02" value=".62"></label>
+              <label class="toggle"><input id="outline" type="checkbox"> Geometry outlines</label>
+              <label class="toggle"><input id="vignette" type="checkbox"> Vignette</label>
+              <div class="advanced-actions"><button id="reset-light" type="button">Reset lighting</button><button id="capture-png" type="button">Save PNG</button></div>
+            </div>
+          </details>
+          <details class="advanced-panel" id="colour-guide">
+            <summary>Colour suggestions</summary>
+            <div class="advanced-fields">
+              <label>Base colour <input id="palette-base" type="color" value="#547dad"></label>
+              <label>Harmony <select id="palette-mode"><option value="complementary">Complementary</option><option value="analogous">Analogous</option><option value="monochrome">Monochrome</option><option value="triadic">Triadic</option></select></label>
+              <label>Apply swatch to <select id="palette-target"><option value="backdrop-colour">Backdrop</option><option value="key-colour">Key light</option><option value="rim-colour">Rim light</option><option value="part">Selected mesh</option></select></label>
+              <output id="palette-message" aria-live="polite"></output>
+              <div id="palette-swatches" role="group" aria-label="Suggested colours"></div>
+            </div>
+          </details>
+          <div id="effect-controls">
+            <h4>Effects</h4>
+            <label class="toggle"><input id="bloom" type="checkbox"> Bloom</label>
+            <label class="toggle"><input id="ribbons" type="checkbox"> Light ribbons</label>
+            <label class="toggle"><input id="sparks" type="checkbox"> Sparks</label>
+            <label class="toggle"><input id="animate" type="checkbox"> Animate effects</label>
+          </div>
+          <label for="resonance-effect">Resonance effect</label>
+          <select id="resonance-effect">
+            <option value="">Off</option><option value="prism">Prism orbit</option><option value="electric">Electric trace</option><option value="tide">Pressure tide</option>
+          </select>
+          <details class="customization" id="effect-colours">
+            <summary>Effect colours</summary>
+            <div class="custom-colours">
+              <label>Bloom <input type="color" data-effect-colour="bloom" value="#ffffff"></label>
+              <label>Light ribbons <input type="color" data-effect-colour="ribbons" value="#45d8ff"></label>
+              <label>Sparks <input type="color" data-effect-colour="sparks" value="#75d9ff"></label>
+              <label>Prism orbit <input type="color" data-effect-colour="prism" value="#a884ff"></label>
+              <label>Electric trace <input type="color" data-effect-colour="electric" value="#95d9ff"></label>
+              <label>Pressure tide <input type="color" data-effect-colour="tide" value="#7ee4ef"></label>
+            </div>
+            <button id="effect-colours-reset" type="button">Reset effects</button>
+          </details>
+        </section>
+        <section class="settings-section" aria-labelledby="camera-heading">
+          <h3 id="camera-heading">Camera</h3>
+          <label for="projection">Projection</label>
+          <select id="projection"><option value="perspective">Perspective</option><option value="orthographic">Orthographic</option></select>
+          <div class="snap-views" role="group" aria-label="Snap view">
+            <button type="button" data-view="front">Front</button><button type="button" data-view="back">Back</button>
+            <button type="button" data-view="left">Left</button><button type="button" data-view="right">Right</button>
+            <button type="button" data-view="top">Top</button><button type="button" data-view="bottom">Bottom</button>
+          </div>
+          <label class="toggle"><input id="grid" type="checkbox"> Ground grid</label>
+          <label class="toggle"><input id="spin" type="checkbox"> Turntable</label>
+        </section>
+        <section class="settings-section" aria-labelledby="motion-heading">
+          <h3 id="motion-heading">Model tools</h3>
+          <label id="animation-control" class="toggle" hidden><input id="play-animation" type="checkbox"> Play model animation</label>
+          <details class="advanced-panel" id="animation-editor" hidden>
+            <summary>Animation playback</summary>
+            <div class="advanced-fields">
+              <label>Clip <select id="animation-clip"></select></label>
+              <label>Loop <select id="clip-loop"><option value="repeat">Repeat</option><option value="once">Once</option><option value="pingpong">Ping-pong</option></select></label>
+              <label>Speed <select id="clip-speed"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+              <label>Time <input id="clip-time" type="range" min="0" max="1000" value="0" step="1"></label>
+              <output id="clip-readout"></output>
+            </div>
+          </details>
+          <details class="advanced-panel">
+            <summary>Pose and edit parts</summary>
+            <div class="advanced-fields">
+              <label>Model part <select id="model-part"></select></label>
+              <fieldset><legend>Move (% of model size)</legend><div class="axis-fields"><label>X<input type="number" data-transform="move" data-axis="0" min="-200" max="200" step="1" value="0"></label><label>Y<input type="number" data-transform="move" data-axis="1" min="-200" max="200" step="1" value="0"></label><label>Z<input type="number" data-transform="move" data-axis="2" min="-200" max="200" step="1" value="0"></label></div></fieldset>
+              <fieldset><legend>Rotate (degrees)</legend><div class="axis-fields"><label>X<input type="number" data-transform="rotate" data-axis="0" min="-360" max="360" step="1" value="0"></label><label>Y<input type="number" data-transform="rotate" data-axis="1" min="-360" max="360" step="1" value="0"></label><label>Z<input type="number" data-transform="rotate" data-axis="2" min="-360" max="360" step="1" value="0"></label></div></fieldset>
+              <label>Scale <input type="number" data-transform="scale" min=".05" max="5" step=".05" value="1"></label>
+              <label class="toggle"><input id="part-hidden" type="checkbox"> Hide part</label>
+              <div class="part-colour"><label class="toggle"><input id="part-tint-enabled" type="checkbox"> Tint mesh</label><input id="part-tint" aria-label="Mesh tint" type="color"></div>
+              <div class="advanced-actions"><button id="undo-model-edit" type="button">Undo</button><button id="redo-model-edit" type="button">Redo</button><button id="reset-part" type="button">Reset part</button><button id="reset-pose" type="button">Reset pose</button><button id="frame-edits" type="button">Frame model</button></div>
+              <div class="advanced-actions"><button id="save-pose" type="button">Save pose JSON</button><button id="open-pose" type="button">Load pose JSON</button></div>
+              <input id="pose-file" type="file" accept=".json,application/json" hidden>
+            </div>
+          </details>
+        </section>
+        <div class="inspector-footer">
+          <button id="sample" type="button">Studio sample</button>
+          <a href="../index.html">Legacy Render Lab ↗</a>
+        </div>
+      </div>
+      <div id="resize-panel" class="panel-grip" title="Drag to resize" aria-hidden="true"></div>
+    </aside>
+  </main>
+  <dialog id="model-picker" aria-labelledby="model-picker-title">
+    <div class="picker-heading">
+      <h2 id="model-picker-title">Open model</h2>
+      <button id="close-picker" type="button" aria-label="Close model picker">×</button>
+    </div>
+    <div class="picker-library">
+      <p id="library-status" role="status" aria-live="polite"></p>
+      <div id="library-quick">
+        <div class="library-modes" role="group" aria-label="Asset library view">
+          <button type="button" data-mode="recent" aria-pressed="true">Recent</button>
+          <button type="button" data-mode="collections" aria-pressed="false">Collections</button>
+          <button type="button" data-mode="all" aria-pressed="false">All models</button>
+        </div>
+        <div class="library-rail-wrap">
+          <button id="library-prev" class="rail-arrow" type="button" aria-label="Previous models">‹</button>
+          <div id="library-rail" aria-label="Model previews"></div>
+          <button id="library-next" class="rail-arrow" type="button" aria-label="Next models">›</button>
+        </div>
+      </div>
+      <div id="library-full" hidden>
+        <input id="library-search" type="search" aria-label="Search asset library" placeholder="Search models or collections" autocomplete="off">
+        <div id="library-results"></div>
+      </div>
+    </div>
+    <footer class="picker-footer">
+      <button id="library-toggle" type="button">Full library</button>
+      <button id="choose-device" type="button">Browse device files…</button>
+    </footer>
+  </dialog>
+  <script type="module" src="./studio.js"></script>
+</body>
+</html>

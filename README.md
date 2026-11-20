@@ -1,8 +1,32 @@
-# Porygon2 & Chief Style Lab
+# 3D Model Viewer
+
+## Model Studio (V2)
+
+Serve the checkout with `python3 -m http.server 8765` and open `/v2/`. Open or drop a GLB, glTF, OBJ or STL. Select the buffers, textures or MTL alongside the model when they are separate files. The default view uses the model’s original materials and neutral studio lighting.
+
+### Stone controls
+
+Open a stone from the library or import a model with stone metadata. **Looks & View → Stone colours and rune** edits the materials and rune. **Stone motion and effects** offers levitation, lift and speed, a colour pulse or hue cycle, and Inner Ember, Rune Current, or Facet Edge Glow. Toggle **Animate stone** to freeze the current pose. Colour and motion settings are saved per model in the browser.
+
+### Optional asset library
+
+The public page opens the device file picker. For a private installation, serve your asset collections read-only with `python3 tools/serve-model-library.py /path/to/assets`. Reverse-proxy that service under a private, same-origin path such as `/model-library/` and set the `model-library` meta tag in the deployed V2 HTML to that path with a trailing slash. The library picker opens first and offers device files below the collection list. A collection symlink needs its name in `--collection-link`. The service indexes model files and serves the sidecars referenced by those models.
+
+Tap the precision reticle and tap a tool, or hold, slide to a sector, and release. Pan, Orbit, Roll and Zoom then accept touches directly.
+
+
+| Group | Controls |
+| --- | --- |
+| Studio | Original materials, Clay, Unlit, Geometry normals, and three lighting rigs |
+| Resonance | Mineral sheen, chamber lighting, and independent bloom, light ribbons and sparks |
+| Banana Palm | Daylight, Initial cel shading with geometry contours, and PS1 vertex snap with ordered dithering |
+| Legacy looks | Pixel, Watercolour, Ink / Sketch and Monochrome for arbitrary models |
+
+The Resonance effects animate locally. Use **Animate effects** to pause them. **Model tools** selects and scrubs embedded animation clips and saves reversible part edits as pose JSON. The browser loads Three.js and the Draco decoder from the pinned jsDelivr release; local model and sidecar contents stay in the browser.
+
+The original lab at `/` contains the exact Porygon2 and Chief looks, full palette/filter tools and V1 comparison. The public Pages deployment serves `main:/`. V2 is reviewed on a separate branch.
 
 ## Project governance and V2 work
-
-The active development authority is **this standalone repository**, not the older `raskal-labs.github.io/porygon2/` hosting copy. V1 already has gesture-first controls, static OBJ/STL/GLB uploads and Render Lab. **V2 is planned but not implemented.** The current implementation guide follows below.
 
 Atlas project source:
 - [PROJECT.yaml](./PROJECT.yaml) — current state, issues, next checkpoint.
@@ -28,7 +52,7 @@ The initial structural check confirms authority links but is **not** a substitut
 
 GitHub Pages viewer at https://raskal-labs.github.io/3d-model-viewer/. Serve over HTTPS; opening HTML directly from Files on iOS does not load JavaScript modules.
 
-## Default appearance
+## V1 default appearance
 Style **Pixel**, outlines **Reactive 2px**, palette **Original**, resolution **Native** (pixel ratio capped at 2). Six styles: Flat, Cel shaded, Pixel, Watercolour, Ink / Sketch, Monochrome. Six palettes: Original, Game Boy, Graphite, Amber, Virtual Boy, Cyanotype. Outline modes: Off, Solid, Reactive, Ink; the outline colour is selected separately from its style and the model palette; the Surface lines slider adds subtle mesh edges. Reactive and Ink vary edge coverage, and output colour reduction preserves the outline colour; render resolutions: 80p, 160p, 240p, Native.
 
 ## Camera and controls

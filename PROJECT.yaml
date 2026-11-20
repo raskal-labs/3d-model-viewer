@@ -15,16 +15,15 @@ projects:
       /3d-model-viewer/. It already has gesture-first navigation, optional
       precision instruments, static OBJ/STL/self-contained GLB/glTF uploads,
       custom palettes/effects, comparison and Playwright smoke tests.
-      The V2 hybrid rebuild is planned; no separate V2 runtime, original-PBR
-      pipeline, Draco decoder, external model-sidecar loader, rig/animation
-      playback, or redesigned GUI is verified. Prior formal Atlas documents
-      were mistakenly committed to another hosting repository; this repository
-      is now the intended source for future viewer governance.
+      The V2 review branch adds an isolated model studio under /v2/ with
+      original material rendering, optional studio, legacy, Resonance and
+      Banana Palm looks, animation and part editing, and camera controls.
+      Stone presets add levitation, colour motion and local effects to tagged models.
+      GitHub Pages still serves main at the repository root.
     next_checkpoint: >-
-      Capture fixed-pose baseline screenshots from this repository and verify
-      its existing Pages/CI configuration (M0); prototype the A/B/C mobile
-      interfaces in parallel; then implement a small V2 importer/material
-      fidelity + Draco spike without changing the V1 deployment.
+      Review the V2 studio on iPhone Safari, including the file picker, gestures,
+      importer fidelity and shader performance. Complete the comparison and
+      legacy preset parity work before deciding on a production cutover.
     issues:
       - id: atlas-projection
         kind: question

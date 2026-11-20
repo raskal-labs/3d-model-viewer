@@ -106,7 +106,7 @@ items:
     title: Inspect actual standalone repo Pages deployment and isolate V2
     parent: m0
     priority: P0
-    status: Proposed
+    status: In Progress
     acceptance: >-
       Document actual Pages publication configuration and maintain a separate
       V2 preview without modifying /3d-model-viewer/ before user approval.
@@ -116,7 +116,7 @@ items:
     title: Fetch and validate licensed public glTF fixtures
     parent: m0
     priority: P1
-    status: Proposed
+    status: In Progress
     acceptance: >-
       Execute pinned fixture-fetch script, inspect per-asset licenses and
       hashes, add local test-only Draco variant, and document manual 233.glb
@@ -127,7 +127,7 @@ items:
     title: Build model-independent GLB/Draco and external-sidecar import spike
     parent: m1
     priority: P0
-    status: Proposed
+    status: In Progress
     acceptance: >-
       Independent V2 test PR with faithful GLB materials, Draco decoder
       packaged locally, OBJ+MTL and glTF sidecars, animation/rig handling
@@ -139,11 +139,25 @@ items:
     title: Extract and test reusable V1 shader, palette and effect algorithms
     parent: m2
     priority: P0
-    status: Proposed
+    status: In Progress
     acceptance: >-
       Separate original surface materials from final look/quantization;
       preserve source colours and a faithful original simplified Porygon2
       preset under deterministic visual regressions.
+
+  - id: stone-studio-controls
+    kind: task
+    title: Add stone motion, colours and effects in Model Studio
+    parent: m2
+    priority: P1
+    status: In Progress
+    acceptance: >-
+      Stone models expose controllable levitation, colour and effects in the
+      private viewer. Check authored and projected runes, pausing, resetting,
+      independent model state, and compatibility with camera input.
+    evidence:
+      - tests/model-studio-stones.mjs
+      - PROGRESS.md
 
   - id: ux-a
     kind: task
@@ -187,7 +201,7 @@ items:
     title: Add orthographic projection and standard camera orientation views
     parent: m3
     priority: P0
-    status: Proposed
+    status: In Progress
     acceptance: >-
       Perspective/orthographic toggle retains viewing direction, target and
       apparent framing; Front, Back, Left, Right, Top and Bottom snap to an

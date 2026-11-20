@@ -4,21 +4,24 @@ export function createGestureNavigation(api) {
   const button=$('precisionButton'),menu=$('precisionMenu'),instrument=$('precisionInstrument');
   const surface=$('precisionSurface'),undo=$('undoCamera'),clutchStatus=$('clutchStatus');
   const zoomBox=$('precisionZoom'),zoomSlider=$('precisionZoomSlider');
-  const names=['orbit','pan','roll','zoom','clutch'];
-  const hints={orbit:'Drag the rocker to orbit.',pan:'Drag the pad to pan.',roll:'Touch, move outward, then turn. Wider arcs are finer.',zoom:'Slide to move the camera closer or farther.'};
-  const icons={orbit:'<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c-4 4-4 12 0 16M12 4c4 4 4 12 0 16"/>',pan:'<path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',roll:'<path d="M20 12a8 8 0 1 1-2-5M18 3v5h-5"/>',zoom:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5M7 10h6M10 7v6"/>',clutch:'<circle cx="12" cy="12" r="8"/><path d="M9 8v8M15 8v8"/>'};
+  const dual=$('precisionDual');
+  const names=dual?['orbit','pan','dual','roll','zoom','clutch']:['orbit','pan','roll','zoom','clutch'];
+  if(dual)menu.dataset.studio='';
+  const hints={orbit:'Drag the rocker to orbit.',pan:'Drag the pad to pan.',roll:'Touch, move outward, then turn. Wider arcs are finer.',zoom:'Slide to move the camera closer or farther.',dual:'Drag left and right for yaw, up and down for pitch.'};
+  const icons={dual:'<circle cx="6.5" cy="12" r="4.5"/><circle cx="17.5" cy="12" r="4.5"/><path d="M4 12h5m8.5-2.5v5"/>',orbit:'<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c-4 4-4 12 0 16M12 4c4 4 4 12 0 16"/>',pan:'<path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',roll:'<path d="M20 12a8 8 0 1 1-2-5M18 3v5h-5"/>',zoom:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5M7 10h6M10 7v6"/>',clutch:'<circle cx="12" cy="12" r="8"/><path d="M9 8v8M15 8v8"/>'};
   const feedback=()=>{try{navigator.vibrate?.(8);}catch{}};
   // The menu is arranged in a full circle; selection uses a directional sector.
   const directions=names.map((name,i)=>({name,angle:-Math.PI/2+i*Math.PI*2/names.length}));
   for(const {name,angle} of directions){
     const el=document.createElement('button');el.type='button';el.role='menuitem';el.dataset.mode=name;
-    el.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]}</svg><span>${name[0].toUpperCase()+name.slice(1)}</span>`;el.setAttribute('aria-label',name);el.style.setProperty('--x',`${Math.cos(angle)*82}px`);el.style.setProperty('--y',`${Math.sin(angle)*82}px`);menu.append(el);
+    const label=name==='dual'?'Dual pads':name[0].toUpperCase()+name.slice(1);
+    el.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]}</svg><span>${label}</span>`;el.setAttribute('aria-label',name==='dual'?label:name);el.style.setProperty('--x',`${Math.cos(angle)*82}px`);el.style.setProperty('--y',`${Math.sin(angle)*82}px`);menu.append(el);
   }
   const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
   const angleDelta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
   let lastMode=null,clutched=false,buttonPointer=null,holdTimer=null,dwellTimer=null,selected=null,persistent=false;
   let toolPointer=null,toolState=null,transaction=null,zoomActive=false;
-  const pointers=new Map(), history=[];
+  const pointers=new Map(), dualPointers=new Map(), history=[];
   let pair=null,single=null;
   function begin(){if(!transaction){transaction=api.getView();if(transaction)api.onManual();}}
   function finish(){if(!transaction)return;const after=api.getView();if(after&&JSON.stringify(transaction)!==JSON.stringify(after)){history.push(transaction);if(history.length>50)history.shift();undo.disabled=false;}transaction=null;}
@@ -28,21 +31,30 @@ export function createGestureNavigation(api) {
     if(instrument.hidden)return;
     const v=api.getView();if(!v)return;
     if(lastMode==='zoom'&&!zoomActive){const {min,max}=api.getZoomLimits();zoomSlider.value=String(Math.round(1000*Math.log(max/v.distance)/Math.log(max/min)));}
-    $('precisionValue').textContent=lastMode==='orbit'?`Yaw ${v.yaw.toFixed(1)}° · Pitch ${v.pitch.toFixed(1)}°`:lastMode==='pan'?`Target ${v.target.map(n=>n.toFixed(2)).join(' / ')}`:lastMode==='roll'?`Roll ${v.roll.toFixed(1)}°`:`Distance ${v.distance.toFixed(3)}`;
+    $('precisionValue').textContent=(lastMode==='orbit'||lastMode==='dual')?`Yaw ${v.yaw.toFixed(1)}° · Pitch ${v.pitch.toFixed(1)}°`:lastMode==='pan'?`Target ${v.target.map(n=>n.toFixed(2)).join(' / ')}`:lastMode==='roll'?`Roll ${v.roll.toFixed(1)}°`:`Distance ${v.distance.toFixed(3)}`;
   }
   function hideMenu(){button.classList.remove('is-active');clearTimeout(dwellTimer);dwellTimer=null;selected=null;menu.style.opacity='';menu.hidden=true;button.setAttribute('aria-expanded','false');for(const b of menu.children)b.classList.remove('selected');}
   function releaseClutch(){clutched=false;clutchStatus.hidden=true;}
   function showMenu(x,y,isPersistent){
     instrument.hidden=true;persistent=isPersistent;menu.hidden=false;button.classList.add('is-active');button.setAttribute('aria-expanded','true');
-    const size=240,margin=8,topInset=8;
+    const size=dual?menu.offsetWidth:240,margin=8,topInset=8;
+    if(dual) {
+      const radius=size*.325;
+      directions.forEach(({angle},index)=>{
+        menu.children[index].style.setProperty('--x',`${Math.cos(angle)*radius}px`);
+        menu.children[index].style.setProperty('--y',`${Math.sin(angle)*radius}px`);
+      });
+    }
     menu.style.left=clamp(x-size/2,margin,Math.max(margin,innerWidth-size-margin))+'px';
-    menu.style.top=clamp(y-size/2,topInset,Math.max(topInset,innerHeight-size-margin))+'px';
+    menu.style.top=clamp((dual?y-size-16:y-size/2),topInset,Math.max(topInset,innerHeight-size-margin))+'px';
     const box=menu.getBoundingClientRect();if(buttonPointer){buttonPointer.centerX=box.left+size/2;buttonPointer.centerY=box.top+size/2;}
   }
   function openInstrument(mode){
     hideMenu();if(!hints[mode])return;lastMode=mode;instrument.hidden=false;instrument.dataset.mode=mode;button.classList.add('is-active');
-    surface.hidden=mode==='zoom';zoomBox.hidden=mode!=='zoom';feedback();
-    $('precisionTitle').textContent=mode[0].toUpperCase()+mode.slice(1);$('precisionHint').textContent=hints[mode];update();
+    surface.hidden=mode==='zoom'||mode==='dual';zoomBox.hidden=mode!=='zoom';
+    if(dual)dual.hidden=mode!=='dual';
+    feedback();
+    $('precisionTitle').textContent=mode==='dual'?'Dual pads':mode[0].toUpperCase()+mode.slice(1);$('precisionHint').textContent=hints[mode];update();
   }
   $('closePrecision').onclick=()=>{instrument.hidden=true;button.classList.remove('is-active');};
   function choose(name){
@@ -54,42 +66,105 @@ export function createGestureNavigation(api) {
   }
   button.addEventListener('pointerdown',e=>{
     if(e.button!==0||buttonPointer)return;e.preventDefault();button.classList.add('is-active');button.setPointerCapture(e.pointerId);
-    buttonPointer={id:e.pointerId,x:e.clientX,y:e.clientY,shown:false};
+    buttonPointer={id:e.pointerId,x:e.clientX,y:e.clientY,shown:false,menuWasOpen:!menu.hidden};
     holdTimer=setTimeout(()=>{if(buttonPointer){buttonPointer.shown=true;showMenu(buttonPointer.x,buttonPointer.y,false);}},250);
   });
-  button.addEventListener('pointermove',e=>{
+  function selectDirection(e){
     if(!buttonPointer||e.pointerId!==buttonPointer.id||!buttonPointer.shown||clutched)return;
-    if(Math.hypot(e.clientX-buttonPointer.x,e.clientY-buttonPointer.y)<10)return;
+    if(Math.hypot(e.clientX-buttonPointer.x,e.clientY-buttonPointer.y)<10){choose(null);return;}
+    if(dual){
+      const hit=document.elementFromPoint(e.clientX,e.clientY)?.closest('#precisionMenu [data-mode]');
+      choose(hit?.dataset.mode??null);
+      return;
+    }
     const dx=e.clientX-buttonPointer.centerX,dy=e.clientY-buttonPointer.centerY,r=Math.hypot(dx,dy);
     if(r<40){choose(null);return;}
     const a=Math.atan2(dy,dx);let nearest=directions[0];
     for(const item of directions)if(Math.abs(angleDelta(a,item.angle))<Math.abs(angleDelta(a,nearest.angle)))nearest=item;
     choose(nearest.name==='clutch'&&r<56?null:nearest.name);
-  });
+  }
+  button.addEventListener('pointermove',selectDirection);
   function buttonEnd(e,cancelled=false){
     if(!buttonPointer||e.pointerId!==buttonPointer.id)return;clearTimeout(holdTimer);
+    if(!cancelled)selectDirection(e);
     const state=buttonPointer,choice=selected;buttonPointer=null;
     if(clutched){releaseClutch();hideMenu();return;}
     if(cancelled){hideMenu();return;}
-    if(state.shown){if(choice&&choice!=='clutch')openInstrument(choice);else hideMenu();}
-    else if(lastMode)openInstrument(lastMode);else showMenu(state.x,state.y,true);
+    if(state.shown && choice && choice!=='clutch'){openInstrument(choice);return;}
+    if(state.menuWasOpen && !state.shown){hideMenu();return;}
+    showMenu(state.x,state.y,true);
   }
   button.addEventListener('pointerup',e=>buttonEnd(e));
+  button.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    e.preventDefault();
+    if(!menu.hidden){hideMenu();return;}
+    const rect=button.getBoundingClientRect();
+    showMenu(rect.left+rect.width/2,rect.top+rect.height/2,true);
+    menu.querySelector('button')?.focus();
+  });
   for(const type of ['pointercancel','lostpointercapture'])button.addEventListener(type,e=>buttonEnd(e,true));
+  if(dual) {
+    menu.addEventListener('keydown',e=>{
+      const items=[...menu.children],index=items.indexOf(document.activeElement);
+      const offset={ArrowRight:1,ArrowDown:1,ArrowLeft:-1,ArrowUp:-1}[e.key];
+      if(!offset)return;
+      e.preventDefault();
+      items[(index+offset+items.length)%items.length]?.focus();
+    });
+    document.addEventListener('keydown',e=>{
+      if(e.key!=='Escape'||(menu.hidden&&instrument.hidden))return;
+      e.preventDefault();
+      e.stopPropagation();
+      hideMenu();
+      instrument.hidden=true;
+      button.focus();
+    },true);
+    for(const pad of dual.querySelectorAll('button')){
+      const yaw=pad.dataset.padAxis==='yaw';
+      pad.addEventListener('pointerdown',e=>{
+        if(e.button!==0||[...dualPointers.values()].some(state=>state.pad===pad))return;
+        e.preventDefault();
+        begin();
+        dualPointers.set(e.pointerId,{pad,value:yaw?e.clientX:e.clientY});
+        pad.setPointerCapture(e.pointerId);
+      });
+      pad.addEventListener('pointermove',e=>{
+        const state=dualPointers.get(e.pointerId);
+        if(state?.pad!==pad)return;
+        const value=yaw?e.clientX:e.clientY,delta=(value-state.value)*.32;
+        state.value=value;
+        api.orbit(yaw?delta:0,yaw?0:delta);
+      });
+      for(const name of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(name,e=>{
+        if(dualPointers.delete(e.pointerId)&&!dualPointers.size&&!pointers.size)finish();
+      });
+      pad.addEventListener('keydown',e=>{
+        const delta=(yaw?{ArrowLeft:-4,ArrowRight:4}:{ArrowUp:-4,ArrowDown:4})[e.key];
+        if(!delta)return;
+        e.preventDefault();
+        begin();api.orbit(yaw?delta:0,yaw?0:delta);finish();
+      });
+    }
+  }
   // In the persistent menu Clutch is momentary, held directly on its sector.
   for(const el of menu.children){
     el.addEventListener('pointerdown',e=>{
-      if(!persistent)return;e.preventDefault();e.stopPropagation();
-      if(el.dataset.mode!=='clutch'){openInstrument(el.dataset.mode);return;}
+      if(!persistent||el.dataset.mode!=='clutch'||e.button!==0)return;
+      e.preventDefault();e.stopPropagation();
       el.setPointerCapture(e.pointerId);buttonPointer={id:e.pointerId,menuClutch:true};
       choose('clutch');
+    });
+    el.addEventListener('click',()=>{
+      if(persistent&&!menu.hidden&&el.dataset.mode!=='clutch')openInstrument(el.dataset.mode);
     });
     const end=e=>{if(buttonPointer?.menuClutch&&buttonPointer.id===e.pointerId){clearTimeout(dwellTimer);buttonPointer=null;releaseClutch();hideMenu();}};
     for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,end);
   }
   document.addEventListener('pointerdown',e=>{
-    if(!menu.hidden&&persistent&&!buttonPointer?.menuClutch&&!menu.contains(e.target)&&e.target!==button)hideMenu();
-    if(!instrument.hidden&&!instrument.contains(e.target)&&e.target!==button&&e.target!==surface){instrument.hidden=true;button.classList.remove('is-active');}
+    const onReticle=button.contains(e.target);
+    if(!menu.hidden&&persistent&&!buttonPointer?.menuClutch&&!menu.contains(e.target)&&!onReticle)hideMenu();
+    if(!instrument.hidden&&!instrument.contains(e.target)&&!onReticle){instrument.hidden=true;button.classList.remove('is-active');}
   },true);
   // Reset initial reference points whenever the set of viewport fingers changes.
   function rebase(){
@@ -129,7 +204,7 @@ export function createGestureNavigation(api) {
     const p=pointers.get(e.pointerId);if(!p)return;e.preventDefault();p.x=e.clientX;p.y=e.clientY;
     if(!pendingFrame)pendingFrame=requestAnimationFrame(flushMoves);
   });
-  function endViewport(e){if(!pointers.has(e.pointerId))return;flushMoves();pointers.delete(e.pointerId);if(!pointers.size)finish();rebase();}
+  function endViewport(e){if(!pointers.has(e.pointerId))return;flushMoves();pointers.delete(e.pointerId);if(!pointers.size&&!dualPointers.size)finish();rebase();}
   for(const type of ['pointerup','pointercancel','lostpointercapture'])api.canvas.addEventListener(type,endViewport);
   surface.addEventListener('pointerdown',e=>{
     if(toolPointer!==null||e.button!==0||!api.getView())return;e.preventDefault();e.stopPropagation();
@@ -159,7 +234,7 @@ export function createGestureNavigation(api) {
   });
   function endZoom(){if(!zoomActive)return;zoomActive=false;finish();update();}
   for(const event of ['pointerup','pointercancel','lostpointercapture','change'])zoomSlider.addEventListener(event,endZoom);
-  function cancel(){clearTimeout(holdTimer);clearTimeout(dwellTimer);buttonPointer=null;releaseClutch();hideMenu();if(zoomActive){zoomActive=false;finish();}if(toolPointer!==null){toolPointer=null;toolState=null;finish();}if(pointers.size){flushMoves();pointers.clear();finish();rebase();}}
+  function cancel(){if(dualPointers.size){dualPointers.clear();finish();}clearTimeout(holdTimer);clearTimeout(dwellTimer);buttonPointer=null;releaseClutch();hideMenu();if(zoomActive){zoomActive=false;finish();}if(toolPointer!==null){toolPointer=null;toolState=null;finish();}if(pointers.size){flushMoves();pointers.clear();finish();rebase();}}
   document.addEventListener('visibilitychange',()=>{if(document.hidden)cancel();});
   addEventListener('blur',cancel);addEventListener('resize',cancel);
   function clearHistory(){history.length=0;undo.disabled=true;transaction=null;}
