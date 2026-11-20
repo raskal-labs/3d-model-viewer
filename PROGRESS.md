@@ -27,6 +27,12 @@ Read `PROJECT.yaml` for the single authoritative checkpoint, and `WORK.yaml` for
 
 ## Timeline
 
+### 2026-11-19 — Touch part editing and PhaseOne sprite lighting
+
+- Work IDs `mobile-precision` and `phaseone-sprite-lighting`. Added viewport picking, touch move/rotate/scale with one undo per gesture, a clip shortcut and mesh isolation. Named groups and bones are available in the part list.
+- Added a PhaseOne Crystal library profile with original GLB, fixed source-white regions and moving white highlights. The latter two use the reference black, white, red `#CE4A52` and blue `#5263C6`. White-region detection currently uses source colour and names. A per-part painted mask still requires comparison with the actual asset.
+- `tests/model-studio-touch.mjs` exercises the controls and palette in phone-sized Chromium with a generated five-mesh fixture. Checked the reference sprite palette and opened the earlier PhaseOne baseline in all three material modes. Real iPhone Safari and the current private library revision remain open.
+
 ### 2026-11-19 — Stone motion and local effects
 
 - Added per-stone lift, sway and turn, colour pulse and hue cycle, and Inner Ember, Rune Current and Facet Edge Glow. Settings persist by model. The authored inlay is selectable, and projected runes follow the moving model.

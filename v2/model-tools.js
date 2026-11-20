@@ -12,12 +12,16 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
   const time = $('clip-time');
   const clip = $('animation-clip');
   const rate = $('clip-speed');
+  const isolate = $('isolate-part');
+  const partName = $('touch-part-name');
+  const layerMasks = new Map();
   const loop = $('clip-loop');
   const rotation = new THREE.Euler();
   const turn = new THREE.Quaternion();
   let asset, mixer, action, unit, playhead = 0, direction = 1;
   let nodes = new Map(), edits = new Map(), originals = new Map();
   const undo = [], redo = [];
+  let isolated = false, gesture;
 
   function updateTransport() {
     const duration = action?.getClip().duration ?? 0;
@@ -93,8 +97,10 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
     for (const field of fields) {
       const { transform, axis } = field.dataset;
       const value = transform === 'scale' ? edit.scale : edit[transform][Number(axis)];
-      field.value = transform === 'move' ? Math.round(value * 10000) / 100 : value;
+      field.value = transform === 'move' ? Math.round(value * 10000) / 100 : Math.round(value * 1000) / 1000;
     }
+    partName.textContent = current?.object === asset?.root ? 'Tap or drag a mesh to edit it' : current?.name ?? '';
+    isolate.disabled = !current?.object.isMesh;
     $('part-hidden').checked = edit.hidden;
     $('part-hidden').disabled = !current || Boolean(current.object.isBone);
     $('part-tint-enabled').disabled = !current?.object.isMesh;
@@ -124,18 +130,50 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
     replaceEdits(next);
   }
 
+  function nextEdit(base, id, change) {
+    const edit = { ...(base.get(id) ?? defaultEdit), ...change };
+    const next = new Map(base);
+    if (JSON.stringify(edit) === JSON.stringify(defaultEdit)) next.delete(id);
+    else next.set(id, edit);
+    return next;
+  }
+
   function updatePart(change) {
     const id = nodeSelect.value;
     if (!nodes.has(id)) return;
+    gesture?.end(true);
     playback.checked = false;
-    const edit = { ...(edits.get(id) ?? defaultEdit), ...change };
-    const next = new Map(edits);
-    if (JSON.stringify(edit) === JSON.stringify(defaultEdit)) next.delete(id);
-    else next.set(id, edit);
-    commit(next);
+    commit(nextEdit(edits, id, change));
   }
 
-  nodeSelect.addEventListener('change', showPart);
+  function syncIsolation() {
+    for (const [object, mask] of layerMasks) object.layers.mask = mask;
+    layerMasks.clear();
+    const selected = nodes.get(nodeSelect.value)?.object;
+    if (!selected?.isMesh) isolated = false;
+    if (isolated) {
+      asset.root.traverse(object => {
+        if (object === selected || !object.isMesh) return;
+        layerMasks.set(object, object.layers.mask);
+        object.layers.disableAll();
+      });
+    }
+    isolate.setAttribute('aria-pressed', String(isolated));
+    isolate.textContent = isolated ? 'Show all meshes' : 'Isolate mesh';
+    invalidate();
+  }
+
+  function changedPart() {
+    gesture?.end(true);
+    syncIsolation();
+    showPart();
+  }
+
+  nodeSelect.addEventListener('change', changedPart);
+  isolate.addEventListener('click', () => {
+    isolated = !isolated;
+    syncIsolation();
+  });
   for (const field of fields) {
     field.addEventListener('change', () => {
       const { transform, axis } = field.dataset;
@@ -215,6 +253,9 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
 
   return {
     setAsset(next, size) {
+      gesture?.end(true);
+      isolated = false;
+      syncIsolation();
       if (mixer && asset) { mixer.stopAllAction(); mixer.uncacheRoot(asset.root); }
       asset = next;
       unit = size;
@@ -224,9 +265,10 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
       undo.length = redo.length = 0;
       nodeSelect.replaceChildren();
       function addNodes(object, path, depth) {
-        if (!depth || object.isMesh || object.isBone) {
+        const namedGroup = object.name && object.children.length && !object.isMesh && !object.isBone;
+        if (!depth || (object.isMesh && !object.userData.modelRune) || object.isBone || namedGroup) {
           const name = depth ? object.name || (object.isBone ? 'Bone' : 'Mesh') : 'Whole model';
-          const type = object.isBone ? ' · Bone' : object.isMesh && depth ? ' · Mesh' : '';
+          const type = !depth ? '' : object.isBone ? ' · Bone' : object.isMesh ? ' · Mesh' : ' · Group';
           nodeSelect.add(new Option(' '.repeat(Math.min(depth, 8)) + name + type, path));
           nodes.set(path, { object, name });
         }
@@ -236,11 +278,52 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
       clip.replaceChildren(...next.animations.map((item, index) => new Option(item.name || ('Clip ' + (index + 1)), index)));
       action = null;
       mixer = next.animations.length ? new THREE.AnimationMixer(next.root) : null;
-      $('animation-control').hidden = $('animation-editor').hidden = !mixer;
+      $('show-animation').hidden = $('animation-control').hidden = $('animation-editor').hidden = !mixer;
       playback.checked = Boolean(mixer) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
       time.disabled = !mixer;
       selectClip();
       showPart();
+    },
+    root: () => asset?.root,
+    selected: () => nodes.get(nodeSelect.value)?.object,
+    selectObject(object) {
+      for (const [id, node] of nodes) {
+        if (node.object !== object) continue;
+        nodeSelect.value = id;
+        changedPart();
+        break;
+      }
+    },
+    beginGesture() {
+      const id = nodeSelect.value;
+      const object = nodes.get(id)?.object;
+      if (!object?.parent) return null;
+      gesture?.end(true);
+      const wasPlaying = playback.checked;
+      playback.checked = false;
+      const before = edits;
+      const edit = before.get(id) ?? defaultEdit;
+      const session = {
+        unit, object, edit,
+        preview(change) {
+          if (gesture === session) replaceEdits(nextEdit(before, id, change));
+        },
+        end(cancel) {
+          if (gesture !== session) return;
+          gesture = null;
+          const next = edits;
+          const changed = JSON.stringify(before.get(id)) !== JSON.stringify(next.get(id));
+          if (cancel || !changed) {
+            if (cancel) playback.checked = wasPlaying;
+            if (next !== before) replaceEdits(before);
+          } else {
+            edits = before;
+            commit(next);
+          }
+        },
+      };
+      gesture = session;
+      return session;
     },
     update(delta) {
       if (!action || !playback.checked) return false;

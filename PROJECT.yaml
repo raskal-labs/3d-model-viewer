@@ -22,8 +22,10 @@ projects:
       GitHub Pages still serves main at the repository root.
     next_checkpoint: >-
       Review the V2 studio on iPhone Safari, including the file picker, gestures,
-      importer fidelity and shader performance. Complete the comparison and
-      legacy preset parity work before deciding on a production cutover.
+      importer fidelity and shader performance. Check direct part editing on
+      iPhone and compare both sprite lighting modes on the private PhaseOne
+      Crystal model. Complete comparison and legacy preset parity before a
+      production cutover.
     issues:
       - id: atlas-projection
         kind: question

@@ -244,3 +244,5 @@ try {
 } finally {
   await browser.close();
 }
+
+await import('./model-studio-touch.mjs');

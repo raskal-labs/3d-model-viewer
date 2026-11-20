@@ -9,6 +9,8 @@ import { configureEffectColours, createModelCustomization } from './customizatio
 import { downloadFile, installModelTools } from './model-tools.js';
 import { installPaletteGuide } from './palette-guide.js';
 import { createStoneStudio } from './stone-studio.js';
+import { installPartTouch } from './part-touch.js';
+import { createCrystalMaterial, crystalPartRole, isPhaseOneCrystal } from './crystal-lighting.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('model-canvas');
@@ -62,6 +64,8 @@ const rim = new THREE.DirectionalLight();
 key.position.set(-3, 5, 4);
 rim.position.set(3, 2, -5);
 scene.add(sky, key, rim);
+const crystalWhite = $('crystal-white');
+const crystalLight = { direction: { value: new THREE.Vector3() }, strength: { value: 0 } };
 
 const lightInputs = ['backdrop-colour', 'key-colour', 'rim-colour', 'key-angle', 'key-elevation', 'key-strength', 'env-strength', 'exposure'];
 function applyLighting() {
@@ -75,6 +79,8 @@ function applyLighting() {
   const azimuth = THREE.MathUtils.degToRad(Number($('key-angle').value));
   const elevation = THREE.MathUtils.degToRad(Number($('key-elevation').value));
   key.position.setFromSphericalCoords(7, Math.PI / 2 - elevation, azimuth);
+  crystalLight.direction.value.copy(key.position).normalize();
+  crystalLight.strength.value = key.intensity;
   rim.color.set($('rim-colour').value);
   rim.intensity = rig.rimPower;
   const environmentStrength = Number($('env-strength').value);
@@ -122,6 +128,32 @@ const modelTools = installModelTools({
     if (!bounds.isEmpty()) camera.setBounds(bounds);
   },
 });
+const partTouch = installPartTouch({
+  surface: $('part-touch-surface'), toggle: $('touch-edit'), toolbar: $('touch-edit-tools'),
+  camera, modelTools, invalidate, stopSpin: () => { $('spin').checked = false; },
+});
+const partBounds = new THREE.Box3();
+const partSelection = new THREE.Box3Helper(partBounds, 0xa8dccc);
+partSelection.material.toneMapped = false;
+partSelection.visible = false;
+scene.add(partSelection);
+function refreshPartSelection() {
+  const part = modelTools.selected();
+  partSelection.visible = false;
+  if (!partTouch.enabled || !part || part === modelTools.root()) return;
+  for (let ancestor = part; ancestor; ancestor = ancestor.parent) {
+    if (!ancestor.visible) return;
+  }
+  if (part.isBone) {
+    const center = part.getWorldPosition(new THREE.Vector3());
+    partBounds.setFromCenterAndSize(center, new THREE.Vector3(.08, .08, .08));
+  } else {
+    part.updateWorldMatrix(true, true);
+    partBounds.setFromObject(part);
+    if (partBounds.isEmpty()) return;
+  }
+  partSelection.visible = true;
+}
 installPaletteGuide({ applyLight: applyLighting, applyTint: modelTools.applyTint });
 
 function clearLook() {
@@ -132,10 +164,12 @@ function clearLook() {
   alternateMaterials.clear();
 }
 
-function materialFor(original, look, tint, index, stoneMaterial) {
-  const key = original.uuid + (tint ?? '') + (stoneMaterial ? ':stone' : '');
+function materialFor(original, look, tint, index, stoneMaterial, crystalRole) {
+  const key = original.uuid + (tint ?? '') + (stoneMaterial ? ':stone' : '') + (crystalRole ?? '');
   if (!alternateMaterials.has(key)) {
-    const material = createLookMaterial(original, look, effects.retroResolution, index);
+    const material = crystalRole
+      ? createCrystalMaterial(original, crystalRole, crystalWhite.value, crystalLight)
+      : createLookMaterial(original, look, effects.retroResolution, index);
     if (tint && !['wireframe', 'material-id'].includes(look)) material.color?.set(tint);
     if (stoneMaterial) stoneStudio.prepareMaterial(material);
     alternateMaterials.set(key, material);
@@ -146,25 +180,34 @@ function materialFor(original, look, tint, index, stoneMaterial) {
 function applyLook() {
   clearLook();
   const look = $('look').value;
+  const sprite = isPhaseOneCrystal(current ?? {}) && crystalWhite.value !== 'original';
   const changesSurface = ['clay', 'unlit', 'normals', 'wireframe', 'material-id', 'banana-cel', 'banana-ps1', 'legacy-pixel', 'resonance-mineral'].includes(look);
   const ids = new Map();
   current?.root.traverse(object => {
     if (!object.isMesh || !object.material || object.userData.modelRune) return;
     const tint = modelTools.tintFor(object);
     const stoneMaterial = stoneStudio.usesMaterial(object, look);
-    if (!changesSurface && !tint && !stoneMaterial) return;
+    if (!sprite && !changesSurface && !tint && !stoneMaterial) return;
     initialMaterials.set(object, object.material);
     function styled(material) {
       if (!ids.has(material)) ids.set(material, ids.size);
-      return materialFor(material, look, tint, ids.get(material), stoneMaterial);
+      const role = sprite ? crystalPartRole(object, material) : null;
+      return materialFor(material, look, tint, ids.get(material), stoneMaterial, role);
     }
     object.material = Array.isArray(object.material) ? object.material.map(styled) : styled(object.material);
   });
-  canvas.dataset.look = look;
+  canvas.dataset.look = sprite ? 'phaseone-crystal' : look;
   stoneStudio.refresh();
   invalidate();
 }
-$('look').addEventListener('change', applyLook);
+$('look').addEventListener('change', () => {
+  crystalWhite.value = 'original';
+  applyLook();
+});
+crystalWhite.addEventListener('change', () => {
+  if (crystalWhite.value !== 'original') $('look').value = 'original';
+  applyLook();
+});
 
 function selectAsset(asset) {
   const bounds = new THREE.Box3().setFromObject(asset.root, true);
@@ -172,6 +215,7 @@ function selectAsset(asset) {
     disposeModel(asset.root);
     throw new Error('No finite, visible geometry was found.');
   }
+  partTouch.cancel();
   const previous = current;
   stoneStudio.setAsset(null);
   if (previous) {
@@ -179,6 +223,8 @@ function selectAsset(asset) {
     pivot.remove(previous.root);
   }
   current = asset;
+  $('crystal-lighting').hidden = !isPhaseOneCrystal(asset);
+  crystalWhite.value = 'original';
   const size = bounds.getSize(new THREE.Vector3());
   const maxDimension = Math.max(size.x, size.y, size.z, 1e-9);
   const scale = 2.8 / maxDimension;
@@ -269,6 +315,13 @@ function showPanel(open) {
   if (open && inspector.hasAttribute('data-positioned')) setPanelBounds(inspector, inspector.getBoundingClientRect());
 }
 panelToggle.addEventListener('click', () => showPanel(!inspector.hasAttribute('data-open')));
+$('show-animation').addEventListener('click', () => {
+  showPanel(true);
+  const editor = $('animation-editor');
+  editor.open = true;
+  editor.scrollIntoView({ block: 'nearest' });
+  $('animation-clip').focus({ preventScroll: true });
+});
 function closePanel() {
   showPanel(false);
   panelToggle.focus();
@@ -344,24 +397,29 @@ renderer.setSize(viewport.clientWidth, viewport.clientHeight, false);
 effects.resize(viewport.clientWidth, viewport.clientHeight);
 camera.resize(viewport.clientWidth, viewport.clientHeight);
 selectAsset(studioSample());
-const frameOptions = { stoneEdges: stoneStudio.edgeGroup };
+const frameOptions = { stoneEdges: stoneStudio.edgeGroup, partSelection };
 frameOptions.colours = configureEffectColours(invalidate);
 $('animate').checked = !matchMedia('(prefers-reduced-motion: reduce)').matches;
 function updateEffects() {
-  frameOptions.look = $('look').value;
   frameOptions.resonance = $('resonance-effect').value;
   for (const key of ['bloom', 'ribbons', 'sparks', 'animate', 'outline', 'vignette']) frameOptions[key] = $(key).checked;
   frameOptions.bloomStrength = Number($('bloom-strength').value);
   invalidate();
 }
-for (const id of ['look', 'resonance-effect', 'bloom', 'ribbons', 'sparks', 'animate', 'outline', 'vignette']) {
+for (const id of ['resonance-effect', 'bloom', 'ribbons', 'sparks', 'animate', 'outline', 'vignette']) {
   $(id).addEventListener('change', updateEffects);
 }
 $('bloom-strength').addEventListener('input', updateEffects);
+function renderFrame(delta) {
+  frameOptions.look = canvas.dataset.look;
+  effects.render(camera.active, frameOptions, delta, grid);
+}
 $('capture-png').addEventListener('click', () => {
   try {
     stoneStudio.refresh();
-    effects.render(camera.active, frameOptions, 0, grid);
+    partSelection.visible = false;
+    renderFrame(0);
+    invalidate();
     const name = current.name.replace(/\.[^.]+$/, '') + '.png';
     canvas.toBlob(blob => {
       if (blob) downloadFile(blob, name);
@@ -378,12 +436,14 @@ renderer.setAnimationLoop(now => {
   previous = now;
   const spinning = $('spin').checked;
   const playing = modelTools.update(delta);
-  const movingEffects = frameOptions.animate && (frameOptions.ribbons || frameOptions.sparks || frameOptions.resonance);
+  const movingEffects = canvas.dataset.look !== 'phaseone-crystal' && frameOptions.animate &&
+    (frameOptions.ribbons || frameOptions.sparks || frameOptions.resonance);
   if (spinning) camera.spin(delta);
   const movingStone = stoneStudio.tick(delta);
   if (dirty || playing || movingEffects || movingStone) {
     if (!movingStone) stoneStudio.refresh();
-    effects.render(camera.active, frameOptions, delta, grid);
+    refreshPartSelection();
+    renderFrame(delta);
     dirty = false;
   }
 });
