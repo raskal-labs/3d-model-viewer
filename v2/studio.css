@@ -40,8 +40,12 @@ h1 { font: 700 clamp(1.02rem, 2vw, 1.27rem)/1.1 PocketDisplay, sans-serif; white
 .part-toolbar { display: flex; flex-wrap: wrap; gap: .28rem; }
 .part-toolbar button { min-height: 2.75rem; padding-inline: .58rem; background: #171c25ed; font-size: .84rem; }
 .part-toolbar button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-#touch-edit-tools { padding: .35rem; border-radius: .65rem; background: #171c25ed; }
+#touch-edit-tools { display: grid; gap: .3rem; padding: .35rem; border-radius: .65rem; background: #171c25ed; }
 #touch-part-name { display: block; max-width: 14rem; padding: .28rem .2rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; }
+#touch-backup-status, #model-backup-status { display: block; color: var(--muted); font-size: .76rem; }
+#touch-backup-status:empty, #model-backup-status:empty { display: none; }
+#touch-backup-status { max-width: 15rem; padding-inline: .2rem; }
+#model-backup-history { display: grid; gap: .28rem; }
 #crystal-lighting p { color: var(--muted); }
 #viewport[data-dragging] { outline: 2px dashed var(--accent); outline-offset: -9px; }
 .asset-label {

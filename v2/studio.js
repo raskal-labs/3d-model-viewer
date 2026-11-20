@@ -257,7 +257,7 @@ function studioSample() {
   }));
   ring.rotation.set(1.16, .21, .46);
   root.add(core, ring);
-  return { root, name: 'Studio sample', animations: [] };
+  return { root, name: 'Studio sample', animations: [], backupKey: 'studio-sample-v1' };
 }
 
 async function openAsset(load) {

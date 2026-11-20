@@ -114,13 +114,16 @@ try {
     `Scaled ${await phone.locator('#touch-part-name').textContent()} to ${await scale.inputValue()}, tool ${await phone.locator('[data-part-tool][aria-pressed="true"]').textContent()}`);
 
   await phone.screenshot({ path: `${artifacts}/touch-part-edit.png` });
+  await phone.locator('#touch-undo').tap();
+  assert.equal(Number(await scale.inputValue()), 1);
+  assert(Number(await rotate.inputValue()) < -10, 'Viewport Undo restores the previous gesture only');
+  await phone.locator('#touch-reset').tap();
+  assert.equal(Number(await move.inputValue()), 0);
+  await phone.locator('#touch-undo').tap();
+  assert(Number(await move.inputValue()) < -2, 'Resetting all edits is undoable');
+  await phone.locator('#touch-reset').tap();
   await phone.locator('#panel-toggle').tap();
   await phone.getByText('Pose and edit parts', { exact: true }).tap();
-  await phone.locator('#undo-model-edit').tap();
-  assert.equal(Number(await scale.inputValue()), 1);
-  assert(Number(await rotate.inputValue()) < -10, 'Undo restores the previous gesture only');
-  await phone.locator('#reset-pose').tap();
-  assert.equal(Number(await move.inputValue()), 0);
   async function frame() {
     await phone.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     return canvas.screenshot({
@@ -201,11 +204,104 @@ try {
   await setSpriteMode('original');
   assert.deepEqual(await readPixels(await frame(), billPixel), source);
 
-  await phone.locator('#files').setInputFiles({ name: 'model.glb', mimeType: 'model/gltf-binary', buffer });
+  async function openLibraryModel() {
+    await phone.locator('#open-model').tap();
+    await phone.locator('.library-card').first().tap();
+    await phone.waitForFunction(() => document.querySelector('#model-name').textContent === 'model.glb');
+    await phone.locator('#status').waitFor({ state: 'hidden' });
+  }
+
+  async function selectBody() {
+    const part = phone.locator('#model-part');
+    const label = await part.locator('option').filter({ hasText: /body · Mesh/ }).textContent();
+    await part.selectOption({ label });
+  }
+
+  async function editBody() {
+    await phone.locator('#panel-toggle').tap();
+    const editor = phone.getByText('Pose and edit parts', { exact: true });
+    if (!await move.isVisible()) await editor.tap();
+    await selectBody();
+  }
+
+  async function setMove(value) {
+    await move.fill(String(value));
+    await move.press('Tab');
+  }
+
+  await editBody();
+  await setMove(12);
+  assert.match(await phone.locator('#model-backup-status').textContent(), /Draft saved/);
+  await phone.reload();
+  await openLibraryModel();
+  await editBody();
+  assert.equal(Number(await move.inputValue()), 12, 'Unapplied edits survive reopening the model');
+  await phone.locator('#close-panel').tap();
+  await phone.locator('#touch-edit').tap();
+  await phone.locator('#touch-apply').tap();
+  assert.match(await phone.locator('#touch-backup-status').textContent(), /Applied version/);
+
+  await editBody();
+  await setMove(28);
+  await phone.locator('#apply-model-edits').tap();
+  await setMove(42);
+  await phone.locator('#discard-model-draft').tap();
+  assert.equal(Number(await move.inputValue()), 28);
+  await phone.reload();
+  await openLibraryModel();
+  await editBody();
+  assert.equal(Number(await move.inputValue()), 28, 'The latest applied version survives reopening the model');
+  await phone.locator('#model-backup-version').selectOption('0');
+  await phone.locator('#restore-model-backup').tap();
+  assert.equal(Number(await move.inputValue()), 12);
+  await phone.locator('#discard-model-draft').tap();
+  assert.equal(Number(await move.inputValue()), 28, 'Restoring history leaves the applied version available');
+
+  await phone.locator('#reset-pose').tap();
+  assert.equal(Number(await move.inputValue()), 0);
+  await phone.reload();
+  await openLibraryModel();
+  await editBody();
+  assert.equal(Number(await move.inputValue()), 0, 'A draft reset overrides the applied version on reopen');
+  await phone.locator('#discard-model-draft').tap();
+  assert.equal(Number(await move.inputValue()), 28);
+
+  async function openLocal(bytes) {
+    await phone.locator('#files').setInputFiles({ name: 'model.glb', mimeType: 'model/gltf-binary', buffer: bytes });
+    await phone.locator('#status').waitFor({ state: 'hidden' });
+  }
+
+  await openLocal(buffer);
   await phone.waitForFunction(() => document.getElementById('crystal-lighting').hidden);
   assert.equal(await canvas.getAttribute('data-look'), 'original');
+  await selectBody();
+  await setMove(35);
+  const differentModel = Buffer.from(buffer);
+  const clipNameOffset = differentModel.indexOf('"Nod"');
+  assert(clipNameOffset > 0);
+  differentModel.write('"Bob"', clipNameOffset);
+  await openLocal(differentModel);
+  await selectBody();
+  assert.equal(Number(await move.inputValue()), 0, 'A different model with the same filename has its own edits');
+  await openLocal(buffer);
+  await selectBody();
+  assert.equal(Number(await move.inputValue()), 35, 'The original file recovers its own draft');
+  await phone.evaluate(() => {
+    const write = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key, value) {
+      if (key.startsWith('model-studio:part-edits:')) throw new DOMException('', 'QuotaExceededError');
+      return write.call(this, key, value);
+    };
+  });
+  await setMove(50);
+  await phone.locator('#apply-model-edits').tap();
+  assert.equal(Number(await move.inputValue()), 50);
+  assert.match(await phone.locator('#model-backup-status').textContent(), /Could not apply/);
+  await openLocal(buffer);
+  await selectBody();
+  assert.equal(Number(await move.inputValue()), 35, 'A failed write preserves the last stored backup');
   assert.deepEqual(errors, []);
-  console.log('Verified phone touch selection, transforms, cancellation and undo, animation access, mesh isolation, and scoped four-colour relighting.');
+  console.log('Verified phone touch selection, transforms, cancellation and undo, animation access, mesh isolation, scoped four-colour relighting, and restorable drafts and applied versions.');
 } finally {
   await browser.close();
 }

@@ -17,7 +17,8 @@ projects:
       custom palettes/effects, comparison and Playwright smoke tests.
       The V2 review branch adds an isolated model studio under /v2/ with
       original material rendering, optional studio, legacy, Resonance and
-      Banana Palm looks, animation and part editing, and camera controls.
+      Banana Palm looks, animation and part editing, and camera controls. The
+      edit toolbar supports draft recovery and applied versions in browser storage.
       Stone presets add levitation, colour motion and local effects to tagged models.
       GitHub Pages still serves main at the repository root.
     next_checkpoint: >-

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { readModelBackup, sameParts, writeModelBackup } from './model-backups.js';
 
 const $ = id => document.getElementById(id);
 const defaultEdit = { move: [0, 0, 0], rotate: [0, 0, 0], scale: 1, hidden: false, tint: null };
@@ -14,6 +15,8 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
   const rate = $('clip-speed');
   const isolate = $('isolate-part');
   const partName = $('touch-part-name');
+  const backupVersion = $('model-backup-version');
+  const backupDate = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
   const layerMasks = new Map();
   const loop = $('clip-loop');
   const rotation = new THREE.Euler();
@@ -21,7 +24,8 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
   let asset, mixer, action, unit, playhead = 0, direction = 1;
   let nodes = new Map(), edits = new Map(), originals = new Map();
   const undo = [], redo = [];
-  let isolated = false, gesture;
+  let isolated = false, gesture, modelKey;
+  let backup = { draft: null, versions: [] }, backupMessage = '';
 
   function updateTransport() {
     const duration = action?.getClip().duration ?? 0;
@@ -107,11 +111,78 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
     $('part-tint-enabled').checked = Boolean(edit.tint);
     $('part-tint').value = edit.tint ?? '#83b9e5';
     $('part-tint').disabled = !current?.object.isMesh || !edit.tint;
-    $('undo-model-edit').disabled = !undo.length;
+    $('touch-undo').disabled = $('undo-model-edit').disabled = !undo.length;
     $('redo-model-edit').disabled = !redo.length;
     $('reset-part').disabled = !edits.has(nodeSelect.value);
-    $('reset-pose').disabled = !edits.size;
-    $('save-pose').disabled = !edits.size;
+    $('touch-reset').disabled = $('reset-pose').disabled = !edits.size && !isolated;
+    $('save-pose').disabled = !edits.size && !backup.versions.length;
+    if (!gesture) showBackup();
+  }
+
+  function poseParts(source = edits) {
+    return [...source].sort(([a], [b]) => a.localeCompare(b))
+      .map(([id, value]) => ({ id, name: nodes.get(id).name, ...value }));
+  }
+
+  function poseEdits(parts) {
+    if (!Array.isArray(parts) || parts.length > nodes.size) {
+      throw new Error('Open the matching model before loading this pose.');
+    }
+    const next = new Map();
+    const validVector = (values, max) => Array.isArray(values) && values.length === 3 &&
+      values.every(value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= max);
+    for (const part of parts) {
+      const { id, name, move, rotate, scale, hidden, tint } = part;
+      const node = nodes.get(id);
+      if (!node || node.name !== name || next.has(id) || !validVector(move, 2) || !validVector(rotate, 360) ||
+          typeof scale !== 'number' || !(scale >= .05 && scale <= 5) ||
+          typeof hidden !== 'boolean' || (hidden && node.object.isBone) ||
+          (tint !== null && (!node.object.isMesh || !/^#[\da-f]{6}$/i.test(tint)))) {
+        throw new Error('This pose contains an invalid or mismatched model part.');
+      }
+      next.set(id, { move, rotate, scale, hidden, tint });
+    }
+    return next;
+  }
+
+  function showBackup() {
+    const applied = backup.versions.at(-1)?.parts ?? [];
+    const changed = !sameParts(poseParts(), applied);
+    $('touch-apply').disabled = $('apply-model-edits').disabled = !modelKey || !changed;
+    $('discard-model-draft').disabled = !changed;
+    const message = backupMessage || (backup.draft !== null ? 'Draft saved on this device.'
+      : backup.versions.length ? 'Applied version saved on this device.' : '');
+    for (const id of ['model-backup-status', 'touch-backup-status']) {
+      if ($(id).textContent !== message) $(id).textContent = message;
+    }
+  }
+
+  function showVersions() {
+    const selected = backupVersion.value;
+    $('model-backup-history').hidden = !backup.versions.length;
+    backupVersion.replaceChildren(...backup.versions.map(({ time }, index) =>
+      new Option(`Version ${index + 1} · ${backupDate.format(time)}`, index)).reverse());
+    if (backup.versions[Number(selected)] && selected !== '') backupVersion.value = selected;
+  }
+
+  function saveBackup(apply = false) {
+    try {
+      const latest = readModelBackup(modelKey);
+      const parts = poseParts();
+      const changed = !sameParts(parts, latest.versions.at(-1)?.parts ?? []);
+      if (apply && changed) latest.versions.push({ time: Date.now(), parts });
+      latest.draft = !apply && changed ? parts : null;
+      writeModelBackup(modelKey, latest);
+      const versionsChanged = latest.versions.length !== backup.versions.length;
+      backup = latest;
+      if (apply || versionsChanged) showVersions();
+      if (apply && backup.versions.length) backupVersion.value = String(backup.versions.length - 1);
+      backupMessage = '';
+    } catch {
+      backupMessage = apply ? 'Could not apply edits on this device. Use Save pose JSON.'
+        : 'Draft backup unavailable. Use Save pose JSON.';
+    }
+    showBackup();
   }
 
   function replaceEdits(next) {
@@ -128,6 +199,7 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
     if (undo.length > 50) undo.shift();
     redo.length = 0;
     replaceEdits(next);
+    saveBackup();
   }
 
   function nextEdit(base, id, change) {
@@ -173,12 +245,14 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
   isolate.addEventListener('click', () => {
     isolated = !isolated;
     syncIsolation();
+    showPart();
   });
   for (const field of fields) {
     field.addEventListener('change', () => {
       const { transform, axis } = field.dataset;
       if (field.value === '' || !field.checkValidity()) return showPart();
       const value = Number(field.value);
+      gesture?.end(true);
       if (transform === 'scale') {
         updatePart({ scale: value });
       } else {
@@ -194,26 +268,58 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
   }));
   $('part-tint').addEventListener('change', event => updatePart({ tint: event.target.value }));
   $('reset-part').addEventListener('click', () => {
+    gesture?.end(true);
     const next = new Map(edits);
     next.delete(nodeSelect.value);
     commit(next);
   });
-  $('reset-pose').addEventListener('click', () => commit(new Map()));
-  $('undo-model-edit').addEventListener('click', () => {
+  function resetAll() {
+    gesture?.end(true);
+    isolated = false;
+    syncIsolation();
+    if (edits.size) commit(new Map());
+    else showPart();
+  }
+  function undoEdit() {
+    gesture?.end(true);
     if (!undo.length) return;
     redo.push(edits);
     replaceEdits(undo.pop());
-  });
+    saveBackup();
+  }
+  function applyEdits() {
+    gesture?.end(true);
+    saveBackup(true);
+  }
+  for (const id of ['touch-reset', 'reset-pose']) $(id).addEventListener('click', resetAll);
+  for (const id of ['touch-undo', 'undo-model-edit']) $(id).addEventListener('click', undoEdit);
+  for (const id of ['touch-apply', 'apply-model-edits']) $(id).addEventListener('click', applyEdits);
   $('redo-model-edit').addEventListener('click', () => {
+    gesture?.end(true);
     if (!redo.length) return;
     undo.push(edits);
     replaceEdits(redo.pop());
+    saveBackup();
+  });
+  $('discard-model-draft').addEventListener('click', () => {
+    gesture?.end(true);
+    commit(poseEdits(backup.versions.at(-1)?.parts ?? []));
+  });
+  $('restore-model-backup').addEventListener('click', () => {
+    const version = backup.versions[Number(backupVersion.value)];
+    if (!version) return;
+    try {
+      gesture?.end(true);
+      const next = poseEdits(version.parts);
+      if (!sameParts(poseParts(), poseParts(next))) commit(next);
+    } catch (error) {
+      setStatus(error.message || 'Could not open this version.', true);
+    }
   });
   $('frame-edits').addEventListener('click', frameModel);
 
   $('save-pose').addEventListener('click', () => {
-    const parts = [...edits].map(([id, value]) => ({ id, name: nodes.get(id).name, ...value }));
-    const json = JSON.stringify({ version: 1, model: asset.name, parts }, null, 2);
+    const json = JSON.stringify({ version: 1, model: asset.name, parts: poseParts() }, null, 2);
     downloadFile(new Blob([json], { type: 'application/json' }), asset.name + '.pose.json');
   });
   $('open-pose').addEventListener('click', () => $('pose-file').click());
@@ -226,23 +332,11 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
       if (file.size > 1024 * 1024) throw new Error('Pose file exceeds 1 MB.');
       const { version, model, parts } = JSON.parse(await file.text());
       if (loadedAsset !== asset) return;
-      if (version !== 1 || model !== asset.name || !Array.isArray(parts) || parts.length > nodes.size) {
+      if (version !== 1 || model !== asset.name) {
         throw new Error('Open the matching model before loading this pose.');
       }
-      const next = new Map();
-      for (const part of parts) {
-        const { id, name, move, rotate, scale, hidden, tint } = part;
-        const node = nodes.get(id);
-        const validVector = (values, max) => Array.isArray(values) && values.length === 3 &&
-          values.every(value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= max);
-        if (!node || node.name !== name || next.has(id) || !validVector(move, 2) || !validVector(rotate, 360) ||
-            typeof scale !== 'number' || !(scale >= .05 && scale <= 5) ||
-            typeof hidden !== 'boolean' || (hidden && node.object.isBone) ||
-            (tint !== null && (!node.object.isMesh || !/^#[\da-f]{6}$/i.test(tint)))) {
-          throw new Error('This pose contains an invalid or mismatched model part.');
-        }
-        next.set(id, { move, rotate, scale, hidden, tint });
-      }
+      const next = poseEdits(parts);
+      gesture?.end(true);
       playback.checked = false;
       commit(next);
       setStatus('');
@@ -282,6 +376,18 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
       playback.checked = Boolean(mixer) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
       time.disabled = !mixer;
       selectClip();
+      modelKey = asset.backupKey;
+      backup = { draft: null, versions: [] };
+      backupMessage = '';
+      try {
+        backup = readModelBackup(modelKey);
+        const parts = backup.draft ?? backup.versions.at(-1)?.parts;
+        if (parts) replaceEdits(poseEdits(parts));
+      } catch {
+        backupMessage = 'Automatic backups unavailable. Use Save pose JSON.';
+      }
+      backupVersion.replaceChildren();
+      showVersions();
       showPart();
     },
     root: () => asset?.root,

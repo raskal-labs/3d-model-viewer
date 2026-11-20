@@ -145,6 +145,20 @@ items:
       preserve source colours and a faithful original simplified Porygon2
       preset under deterministic visual regressions.
 
+  - id: model-edit-recovery
+    kind: task
+    title: Recover drafts and applied model edits
+    parent: m3
+    priority: P1
+    status: In Progress
+    acceptance: >-
+      Expose touch undo and reset for part edits, retain a draft after reopening
+      the same model, and keep applied versions available in the inspector.
+      Verify model identity and storage failure behavior in the browser.
+    evidence:
+      - tests/model-studio-touch.mjs
+      - PROGRESS.md
+
   - id: phaseone-sprite-lighting
     kind: task
     title: Compare fixed white and live sprite highlights on PhaseOne Crystal

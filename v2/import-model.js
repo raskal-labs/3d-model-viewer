@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { identifyModelFiles } from './model-backups.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
@@ -86,7 +87,8 @@ export async function importModel(files, paths) {
       }));
     }
     if (!root) throw new Error('This file does not contain a scene.');
-    return { root, animations, name: model.name };
+    const backupKey = await identifyModelFiles(files, filePath);
+    return { root, animations, name: model.name, backupKey };
   } finally {
     for (const url of objectURLs.values()) URL.revokeObjectURL(url);
   }

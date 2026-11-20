@@ -27,11 +27,17 @@ Read `PROJECT.yaml` for the single authoritative checkpoint, and `WORK.yaml` for
 
 ## Timeline
 
+### 2026-11-19 — Undo, reset and model edit recovery
+
+- Work ID `model-edit-recovery`. The touch toolbar exposes Undo, Reset all and Apply edits. Part transforms, hidden flags and tints autosave as a browser draft after each completed edit. Reset is undoable. Applying the draft keeps a version in browser storage and retains older applied versions. Pose JSON remains available for portable backups.
+- Phone-sized Chromium verified undo by gesture, undo after reset, draft and applied recovery after reload, version restoration, independent same-named model files and failed-storage handling.
+- A read-only GameCube job opened the current PhaseOne V3 library GLB. It has eight flat-colour materials, nine mesh nodes, and no textures, vertex colours or animation tracks. The white material belongs to the eyes. The private viewer catalog lists the same asset and returns its bundle. Placement of moving white highlights against the sprite still needs visual verification on that revision.
+
 ### 2026-11-19 — Touch part editing and PhaseOne sprite lighting
 
 - Work IDs `mobile-precision` and `phaseone-sprite-lighting`. Added viewport picking, touch move/rotate/scale with one undo per gesture, a clip shortcut and mesh isolation. Named groups and bones are available in the part list.
 - Added a PhaseOne Crystal library profile with original GLB, fixed source-white regions and moving white highlights. The latter two use the reference black, white, red `#CE4A52` and blue `#5263C6`. White-region detection currently uses source colour and names. A per-part painted mask still requires comparison with the actual asset.
-- `tests/model-studio-touch.mjs` exercises the controls and palette in phone-sized Chromium with a generated five-mesh fixture. Checked the reference sprite palette and opened the earlier PhaseOne baseline in all three material modes. Real iPhone Safari and the current private library revision remain open.
+- `tests/model-studio-touch.mjs` exercises the controls and palette in phone-sized Chromium with a generated five-mesh fixture. Checked the reference sprite palette and opened the earlier PhaseOne baseline in all three material modes. Visual comparison on the current private library revision and physical iPhone testing remain open.
 
 ### 2026-11-19 — Stone motion and local effects
 

@@ -43,7 +43,13 @@
             <button type="button" data-part-tool="rotate" aria-pressed="false">Rotate</button>
             <button type="button" data-part-tool="scale" aria-pressed="false">Scale</button>
           </div>
+          <div class="part-toolbar" role="group" aria-label="Edit history">
+            <button id="touch-undo" type="button">Undo</button>
+            <button id="touch-reset" type="button">Reset all</button>
+            <button id="touch-apply" type="button">Apply edits</button>
+          </div>
           <output id="touch-part-name"></output>
+          <output id="touch-backup-status" aria-live="polite"></output>
         </div>
       </div>
       <div id="navigationTools">
@@ -214,8 +220,17 @@
               <label>Scale <input type="number" data-transform="scale" min=".05" max="5" step="any" value="1"></label>
               <label class="toggle"><input id="part-hidden" type="checkbox"> Hide part</label>
               <div class="part-colour"><label class="toggle"><input id="part-tint-enabled" type="checkbox"> Tint mesh</label><input id="part-tint" aria-label="Mesh tint" type="color"></div>
-              <div class="advanced-actions"><button id="undo-model-edit" type="button">Undo</button><button id="redo-model-edit" type="button">Redo</button><button id="reset-part" type="button">Reset part</button><button id="reset-pose" type="button">Reset pose</button><button id="frame-edits" type="button">Frame model</button></div>
+              <div class="advanced-actions"><button id="undo-model-edit" type="button">Undo</button><button id="redo-model-edit" type="button">Redo</button><button id="reset-part" type="button">Reset part</button><button id="reset-pose" type="button">Reset all edits</button><button id="frame-edits" type="button">Frame model</button></div>
               <div class="advanced-actions"><button id="save-pose" type="button">Save pose JSON</button><button id="open-pose" type="button">Load pose JSON</button></div>
+              <div class="advanced-actions">
+                <button id="apply-model-edits" type="button">Apply edits</button>
+                <button id="discard-model-draft" type="button">Discard draft</button>
+              </div>
+              <output id="model-backup-status" aria-live="polite"></output>
+              <div id="model-backup-history" hidden>
+                <label>Applied versions <select id="model-backup-version"></select></label>
+                <button id="restore-model-backup" type="button">Restore as draft</button>
+              </div>
               <input id="pose-file" type="file" accept=".json,application/json" hidden>
             </div>
           </details>
