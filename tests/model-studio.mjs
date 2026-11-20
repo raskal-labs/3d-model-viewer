@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, readdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { useLocalThree } from './local-three.mjs';
 
 const server = process.env.STUDIO_URL || 'http://127.0.0.1:8765/v2/';
 const artifacts = process.env.STUDIO_ARTIFACTS || 'viewer-smoke-artifacts/v2';
@@ -18,7 +19,8 @@ function monitor(page) {
   });
 }
 async function ready(page) {
-  await page.goto(server);
+  await useLocalThree(page);
+  await page.goto(server, { waitUntil: 'domcontentloaded' });
   await page.locator('#model-canvas[data-ready]').waitFor();
 }
 async function painted(page) {
@@ -118,6 +120,7 @@ try {
   await page.getByRole('button', { name: 'Top', exact: true }).click();
   await screenshot(page, '05-orthographic');
 
+  await page.close();
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   monitor(phone);
   await ready(phone);
@@ -185,6 +188,7 @@ try {
   assert.match(await phone.locator('#open-model').evaluate(el => getComputedStyle(el).fontFamily), /PocketText/);
   assert.match(await phone.locator('h1').evaluate(el => getComputedStyle(el).fontFamily), /PocketDisplay/);
   assert.match(await phone.locator('#precisionValue').evaluate(el => getComputedStyle(el).fontFamily), /PocketMono/);
+  await phone.close();
   const libraryPhone = await browser.newPage({ viewport: { width: 390, height: 660 }, isMobile: true, hasTouch: true });
   monitor(libraryPhone);
   await libraryPhone.route(new URL(server).href, async route => {
@@ -200,7 +204,7 @@ try {
   }));
   await libraryPhone.route('**/test-model-library/assets/34/thumbnail.png', route => route.fulfill({
     contentType: 'image/png',
-    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aAdsAAAAASUVORK5CYII=', 'base64'),
+    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNI6tsFAAMAAatF3neQAAAAAElFTkSuQmCC', 'base64'),
   }));
   await ready(libraryPhone);
   await libraryPhone.getByRole('button', { name: 'Open model' }).tap();

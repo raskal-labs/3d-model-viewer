@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { useLocalThree } from './local-three.mjs';
 
 const url = process.env.STUDIO_URL || 'http://127.0.0.1:18723/v2/';
-const vendor = process.env.STUDIO_THREE;
 const artifacts = process.env.STUDIO_ARTIFACTS;
 const browser = await chromium.launch({
   executablePath: process.env.STUDIO_CHROMIUM,
@@ -15,10 +14,7 @@ const errors = [];
 async function ready(page) {
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', event => { if (event.type() === 'error') errors.push(event.text()); });
-  if (vendor) await page.route('https://cdn.jsdelivr.net/npm/three@0.168.0/**', route => {
-    const name = new URL(route.request().url()).pathname.split('/three@0.168.0/')[1];
-    return route.fulfill({ body: readFileSync(join(vendor, name)), contentType: 'text/javascript' });
-  });
+  await useLocalThree(page);
   await page.route(url, async route => {
     const response = await route.fetch();
     const body = (await response.text()).replace('name="icon-runes" content=""', 'name="icon-runes" content="qa-runes.json"');
@@ -28,7 +24,7 @@ async function ready(page) {
     interlock1: { label: 'Triangle', viewBox: '0 0 100 100',
       markup: '<path d="M50 8 L90 85 H10 Z" fill="none" stroke="white" stroke-width="11"/>' },
   } }));
-  await page.goto(url);
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.locator('#model-canvas[data-ready="true"]').waitFor();
 }
 
@@ -143,6 +139,7 @@ try {
   await page.getByRole('button', { name: 'Studio sample' }).click();
   assert.equal(await studio.isVisible(), false);
 
+  await page.close();
   const phone = await browser.newPage({ viewport: { width: 390, height: 680 }, isMobile: true, hasTouch: true });
   await ready(phone);
   await upload(phone, 'stone-qa.glb', fixture);
