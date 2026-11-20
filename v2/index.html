@@ -31,6 +31,27 @@
         <strong id="model-name">Studio sample</strong>
         <span id="model-info"></span>
       </div>
+      <div id="part-touch-surface" hidden></div>
+      <div class="viewport-tools">
+        <div class="part-toolbar" role="group" aria-label="Viewport tools">
+          <button id="touch-edit" type="button" aria-pressed="false" aria-controls="touch-edit-tools">Edit parts</button>
+          <button id="show-animation" type="button" aria-controls="animation-editor" hidden>Animation</button>
+        </div>
+        <div id="touch-edit-tools" hidden>
+          <div class="part-toolbar" role="group" aria-label="Part transform">
+            <button type="button" data-part-tool="move" aria-pressed="true">Move</button>
+            <button type="button" data-part-tool="rotate" aria-pressed="false">Rotate</button>
+            <button type="button" data-part-tool="scale" aria-pressed="false">Scale</button>
+          </div>
+          <div class="part-toolbar" role="group" aria-label="Edit history">
+            <button id="touch-undo" type="button">Undo</button>
+            <button id="touch-reset" type="button">Reset all</button>
+            <button id="touch-apply" type="button">Apply edits</button>
+          </div>
+          <output id="touch-part-name"></output>
+          <output id="touch-backup-status" aria-live="polite"></output>
+        </div>
+      </div>
       <div id="navigationTools">
         <button id="undoCamera" type="button" aria-label="Undo camera movement" title="Undo view" disabled>↶</button>
         <button id="quickReset" type="button" aria-label="Frame model" title="Frame model">⌗</button>
@@ -60,6 +81,16 @@
       <div class="inspector-content">
         <section class="settings-section" aria-labelledby="appearance-heading">
           <h3 id="appearance-heading">Appearance</h3>
+          <div id="crystal-lighting" class="advanced-fields" hidden>
+            <label>PhaseOne sprite lighting
+              <select id="crystal-white">
+                <option value="original">Original GLB</option>
+                <option value="fixed">Fixed white patches</option>
+                <option value="light">Moving white highlights</option>
+              </select>
+            </label>
+            <p>Compare using key light angle, elevation and strength. Sprite mode uses four surface colours and pauses render effects.</p>
+          </div>
           <details id="model-customization" class="customization" hidden>
             <summary>Model colours and rune</summary>
             <div class="custom-colours">
@@ -183,13 +214,23 @@
             <summary>Pose and edit parts</summary>
             <div class="advanced-fields">
               <label>Model part <select id="model-part"></select></label>
-              <fieldset><legend>Move (% of model size)</legend><div class="axis-fields"><label>X<input type="number" data-transform="move" data-axis="0" min="-200" max="200" step="1" value="0"></label><label>Y<input type="number" data-transform="move" data-axis="1" min="-200" max="200" step="1" value="0"></label><label>Z<input type="number" data-transform="move" data-axis="2" min="-200" max="200" step="1" value="0"></label></div></fieldset>
-              <fieldset><legend>Rotate (degrees)</legend><div class="axis-fields"><label>X<input type="number" data-transform="rotate" data-axis="0" min="-360" max="360" step="1" value="0"></label><label>Y<input type="number" data-transform="rotate" data-axis="1" min="-360" max="360" step="1" value="0"></label><label>Z<input type="number" data-transform="rotate" data-axis="2" min="-360" max="360" step="1" value="0"></label></div></fieldset>
-              <label>Scale <input type="number" data-transform="scale" min=".05" max="5" step=".05" value="1"></label>
+              <button id="isolate-part" type="button" aria-pressed="false">Isolate mesh</button>
+              <fieldset><legend>Move (% of model size)</legend><div class="axis-fields"><label>X<input type="number" data-transform="move" data-axis="0" min="-200" max="200" step="any" value="0"></label><label>Y<input type="number" data-transform="move" data-axis="1" min="-200" max="200" step="any" value="0"></label><label>Z<input type="number" data-transform="move" data-axis="2" min="-200" max="200" step="any" value="0"></label></div></fieldset>
+              <fieldset><legend>Rotate (degrees)</legend><div class="axis-fields"><label>X<input type="number" data-transform="rotate" data-axis="0" min="-360" max="360" step="any" value="0"></label><label>Y<input type="number" data-transform="rotate" data-axis="1" min="-360" max="360" step="any" value="0"></label><label>Z<input type="number" data-transform="rotate" data-axis="2" min="-360" max="360" step="any" value="0"></label></div></fieldset>
+              <label>Scale <input type="number" data-transform="scale" min=".05" max="5" step="any" value="1"></label>
               <label class="toggle"><input id="part-hidden" type="checkbox"> Hide part</label>
               <div class="part-colour"><label class="toggle"><input id="part-tint-enabled" type="checkbox"> Tint mesh</label><input id="part-tint" aria-label="Mesh tint" type="color"></div>
-              <div class="advanced-actions"><button id="undo-model-edit" type="button">Undo</button><button id="redo-model-edit" type="button">Redo</button><button id="reset-part" type="button">Reset part</button><button id="reset-pose" type="button">Reset pose</button><button id="frame-edits" type="button">Frame model</button></div>
+              <div class="advanced-actions"><button id="undo-model-edit" type="button">Undo</button><button id="redo-model-edit" type="button">Redo</button><button id="reset-part" type="button">Reset part</button><button id="reset-pose" type="button">Reset all edits</button><button id="frame-edits" type="button">Frame model</button></div>
               <div class="advanced-actions"><button id="save-pose" type="button">Save pose JSON</button><button id="open-pose" type="button">Load pose JSON</button></div>
+              <div class="advanced-actions">
+                <button id="apply-model-edits" type="button">Apply edits</button>
+                <button id="discard-model-draft" type="button">Discard draft</button>
+              </div>
+              <output id="model-backup-status" aria-live="polite"></output>
+              <div id="model-backup-history" hidden>
+                <label>Applied versions <select id="model-backup-version"></select></label>
+                <button id="restore-model-backup" type="button">Restore as draft</button>
+              </div>
               <input id="pose-file" type="file" accept=".json,application/json" hidden>
             </div>
           </details>

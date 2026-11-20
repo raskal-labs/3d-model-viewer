@@ -199,14 +199,15 @@ export function createEffects(renderer, scene) {
   }
 
   function render(camera, options, delta, grid) {
+    const sprite = options.look === 'phaseone-crystal';
     const mode = modes.get(options.look) ?? 0;
-    accents.ribbons.visible = options.ribbons;
-    accents.sparks.visible = options.sparks;
-    if (options.animate && (options.ribbons || options.sparks || options.resonance)) time += delta;
+    accents.ribbons.visible = !sprite && options.ribbons;
+    accents.sparks.visible = !sprite && options.sparks;
+    if (!sprite && options.animate && (options.ribbons || options.sparks || options.resonance)) time += delta;
     const colours = options.colours;
-    if (options.ribbons || options.sparks) accents.update(time, colours);
-    resonance.update(options.resonance, time, grid.position.y, colours[options.resonance]);
-    if (!mode && !options.bloom && !options.outline && !options.vignette) {
+    if (accents.ribbons.visible || accents.sparks.visible) accents.update(time, colours);
+    resonance.update(sprite ? '' : options.resonance, time, grid.position.y, colours[options.resonance]);
+    if (sprite || (!mode && !options.bloom && !options.outline && !options.vignette)) {
       renderer.render(scene, camera);
       return;
     }
@@ -231,12 +232,14 @@ export function createEffects(renderer, scene) {
       const oldGrid = grid.visible;
       const stoneEdges = options.stoneEdges;
       const oldStoneEdges = stoneEdges?.visible;
+      const oldPartSelection = options.partSelection?.visible;
       const oldAlpha = renderer.getClearAlpha();
       renderer.getClearColor(clear);
       try {
         grid.visible = false;
         accents.group.visible = false;
         if (stoneEdges) stoneEdges.visible = false;
+        if (options.partSelection) options.partSelection.visible = false;
         scene.background = null;
         scene.overrideMaterial = normalMaterial;
         renderer.setRenderTarget(normalTarget);
@@ -250,6 +253,7 @@ export function createEffects(renderer, scene) {
         scene.overrideMaterial = null;
         accents.group.visible = true;
         if (stoneEdges) stoneEdges.visible = oldStoneEdges;
+        if (options.partSelection) options.partSelection.visible = oldPartSelection;
         grid.visible = oldGrid;
       }
     }

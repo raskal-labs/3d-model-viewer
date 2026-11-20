@@ -136,7 +136,7 @@ try {
   assert(await settings.locator('.inspector-content').evaluate(element => element.scrollTop > 0));
   assert.equal((await closeSettings.boundingBox()).y, closeBeforeScroll.y, 'The settings title bar stays pinned');
   await phone.touchscreen.tap(22, (await settings.boundingBox()).y - 18);
-  assert.equal(await settings.isVisible(), false, 'A tap outside dismisses settings');
+  await settings.waitFor({ state: 'hidden' });
   await phone.getByRole('button', { name: 'Looks & View' }).tap();
   const panelStart = await settings.boundingBox();
   await touchDrag(phone, { x: panelStart.x + 45, y: panelStart.y + 18 }, -60, -70);
@@ -147,7 +147,7 @@ try {
   const resized = await settings.boundingBox();
   assert(resized.width > moved.width + 25 && resized.height < moved.height - 40, 'Touch resize changes both dimensions');
   await closeSettings.tap();
-  assert.equal(await settings.isVisible(), false);
+  await settings.waitFor({ state: 'hidden' });
   await phone.getByRole('button', { name: 'Precision navigation' }).tap();
   const precision = phone.getByRole('menu', { name: 'Precision mode' });
   await precision.waitFor();
@@ -244,3 +244,5 @@ try {
 } finally {
   await browser.close();
 }
+
+await import('./model-studio-touch.mjs');

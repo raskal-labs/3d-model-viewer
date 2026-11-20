@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { readModelBackup, sameParts, writeModelBackup } from './model-backups.js';
 
 const $ = id => document.getElementById(id);
 const defaultEdit = { move: [0, 0, 0], rotate: [0, 0, 0], scale: 1, hidden: false, tint: null };
@@ -12,12 +13,19 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
   const time = $('clip-time');
   const clip = $('animation-clip');
   const rate = $('clip-speed');
+  const isolate = $('isolate-part');
+  const partName = $('touch-part-name');
+  const backupVersion = $('model-backup-version');
+  const backupDate = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'medium' });
+  const layerMasks = new Map();
   const loop = $('clip-loop');
   const rotation = new THREE.Euler();
   const turn = new THREE.Quaternion();
   let asset, mixer, action, unit, playhead = 0, direction = 1;
   let nodes = new Map(), edits = new Map(), originals = new Map();
   const undo = [], redo = [];
+  let isolated = false, gesture, modelKey;
+  let backup = { draft: null, versions: [] }, backupMessage = '';
 
   function updateTransport() {
     const duration = action?.getClip().duration ?? 0;
@@ -93,19 +101,88 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
     for (const field of fields) {
       const { transform, axis } = field.dataset;
       const value = transform === 'scale' ? edit.scale : edit[transform][Number(axis)];
-      field.value = transform === 'move' ? Math.round(value * 10000) / 100 : value;
+      field.value = transform === 'move' ? Math.round(value * 10000) / 100 : Math.round(value * 1000) / 1000;
     }
+    partName.textContent = current?.object === asset?.root ? 'Tap or drag a mesh to edit it' : current?.name ?? '';
+    isolate.disabled = !current?.object.isMesh;
     $('part-hidden').checked = edit.hidden;
     $('part-hidden').disabled = !current || Boolean(current.object.isBone);
     $('part-tint-enabled').disabled = !current?.object.isMesh;
     $('part-tint-enabled').checked = Boolean(edit.tint);
     $('part-tint').value = edit.tint ?? '#83b9e5';
     $('part-tint').disabled = !current?.object.isMesh || !edit.tint;
-    $('undo-model-edit').disabled = !undo.length;
+    $('touch-undo').disabled = $('undo-model-edit').disabled = !undo.length;
     $('redo-model-edit').disabled = !redo.length;
     $('reset-part').disabled = !edits.has(nodeSelect.value);
-    $('reset-pose').disabled = !edits.size;
-    $('save-pose').disabled = !edits.size;
+    $('touch-reset').disabled = $('reset-pose').disabled = !edits.size && !isolated;
+    $('save-pose').disabled = !edits.size && !backup.versions.length;
+    if (!gesture) showBackup();
+  }
+
+  function poseParts(source = edits) {
+    return [...source].sort(([a], [b]) => a.localeCompare(b))
+      .map(([id, value]) => ({ id, name: nodes.get(id).name, ...value }));
+  }
+
+  function poseEdits(parts) {
+    if (!Array.isArray(parts) || parts.length > nodes.size) {
+      throw new Error('Open the matching model before loading this pose.');
+    }
+    const next = new Map();
+    const validVector = (values, max) => Array.isArray(values) && values.length === 3 &&
+      values.every(value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= max);
+    for (const part of parts) {
+      const { id, name, move, rotate, scale, hidden, tint } = part;
+      const node = nodes.get(id);
+      if (!node || node.name !== name || next.has(id) || !validVector(move, 2) || !validVector(rotate, 360) ||
+          typeof scale !== 'number' || !(scale >= .05 && scale <= 5) ||
+          typeof hidden !== 'boolean' || (hidden && node.object.isBone) ||
+          (tint !== null && (!node.object.isMesh || !/^#[\da-f]{6}$/i.test(tint)))) {
+        throw new Error('This pose contains an invalid or mismatched model part.');
+      }
+      next.set(id, { move, rotate, scale, hidden, tint });
+    }
+    return next;
+  }
+
+  function showBackup() {
+    const applied = backup.versions.at(-1)?.parts ?? [];
+    const changed = !sameParts(poseParts(), applied);
+    $('touch-apply').disabled = $('apply-model-edits').disabled = !modelKey || !changed;
+    $('discard-model-draft').disabled = !changed;
+    const message = backupMessage || (backup.draft !== null ? 'Draft saved on this device.'
+      : backup.versions.length ? 'Applied version saved on this device.' : '');
+    for (const id of ['model-backup-status', 'touch-backup-status']) {
+      if ($(id).textContent !== message) $(id).textContent = message;
+    }
+  }
+
+  function showVersions() {
+    const selected = backupVersion.value;
+    $('model-backup-history').hidden = !backup.versions.length;
+    backupVersion.replaceChildren(...backup.versions.map(({ time }, index) =>
+      new Option(`Version ${index + 1} · ${backupDate.format(time)}`, index)).reverse());
+    if (backup.versions[Number(selected)] && selected !== '') backupVersion.value = selected;
+  }
+
+  function saveBackup(apply = false) {
+    try {
+      const latest = readModelBackup(modelKey);
+      const parts = poseParts();
+      const changed = !sameParts(parts, latest.versions.at(-1)?.parts ?? []);
+      if (apply && changed) latest.versions.push({ time: Date.now(), parts });
+      latest.draft = !apply && changed ? parts : null;
+      writeModelBackup(modelKey, latest);
+      const versionsChanged = latest.versions.length !== backup.versions.length;
+      backup = latest;
+      if (apply || versionsChanged) showVersions();
+      if (apply && backup.versions.length) backupVersion.value = String(backup.versions.length - 1);
+      backupMessage = '';
+    } catch {
+      backupMessage = apply ? 'Could not apply edits on this device. Use Save pose JSON.'
+        : 'Draft backup unavailable. Use Save pose JSON.';
+    }
+    showBackup();
   }
 
   function replaceEdits(next) {
@@ -122,25 +199,60 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
     if (undo.length > 50) undo.shift();
     redo.length = 0;
     replaceEdits(next);
+    saveBackup();
+  }
+
+  function nextEdit(base, id, change) {
+    const edit = { ...(base.get(id) ?? defaultEdit), ...change };
+    const next = new Map(base);
+    if (JSON.stringify(edit) === JSON.stringify(defaultEdit)) next.delete(id);
+    else next.set(id, edit);
+    return next;
   }
 
   function updatePart(change) {
     const id = nodeSelect.value;
     if (!nodes.has(id)) return;
+    gesture?.end(true);
     playback.checked = false;
-    const edit = { ...(edits.get(id) ?? defaultEdit), ...change };
-    const next = new Map(edits);
-    if (JSON.stringify(edit) === JSON.stringify(defaultEdit)) next.delete(id);
-    else next.set(id, edit);
-    commit(next);
+    commit(nextEdit(edits, id, change));
   }
 
-  nodeSelect.addEventListener('change', showPart);
+  function syncIsolation() {
+    for (const [object, mask] of layerMasks) object.layers.mask = mask;
+    layerMasks.clear();
+    const selected = nodes.get(nodeSelect.value)?.object;
+    if (!selected?.isMesh) isolated = false;
+    if (isolated) {
+      asset.root.traverse(object => {
+        if (object === selected || !object.isMesh) return;
+        layerMasks.set(object, object.layers.mask);
+        object.layers.disableAll();
+      });
+    }
+    isolate.setAttribute('aria-pressed', String(isolated));
+    isolate.textContent = isolated ? 'Show all meshes' : 'Isolate mesh';
+    invalidate();
+  }
+
+  function changedPart() {
+    gesture?.end(true);
+    syncIsolation();
+    showPart();
+  }
+
+  nodeSelect.addEventListener('change', changedPart);
+  isolate.addEventListener('click', () => {
+    isolated = !isolated;
+    syncIsolation();
+    showPart();
+  });
   for (const field of fields) {
     field.addEventListener('change', () => {
       const { transform, axis } = field.dataset;
       if (field.value === '' || !field.checkValidity()) return showPart();
       const value = Number(field.value);
+      gesture?.end(true);
       if (transform === 'scale') {
         updatePart({ scale: value });
       } else {
@@ -156,26 +268,58 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
   }));
   $('part-tint').addEventListener('change', event => updatePart({ tint: event.target.value }));
   $('reset-part').addEventListener('click', () => {
+    gesture?.end(true);
     const next = new Map(edits);
     next.delete(nodeSelect.value);
     commit(next);
   });
-  $('reset-pose').addEventListener('click', () => commit(new Map()));
-  $('undo-model-edit').addEventListener('click', () => {
+  function resetAll() {
+    gesture?.end(true);
+    isolated = false;
+    syncIsolation();
+    if (edits.size) commit(new Map());
+    else showPart();
+  }
+  function undoEdit() {
+    gesture?.end(true);
     if (!undo.length) return;
     redo.push(edits);
     replaceEdits(undo.pop());
-  });
+    saveBackup();
+  }
+  function applyEdits() {
+    gesture?.end(true);
+    saveBackup(true);
+  }
+  for (const id of ['touch-reset', 'reset-pose']) $(id).addEventListener('click', resetAll);
+  for (const id of ['touch-undo', 'undo-model-edit']) $(id).addEventListener('click', undoEdit);
+  for (const id of ['touch-apply', 'apply-model-edits']) $(id).addEventListener('click', applyEdits);
   $('redo-model-edit').addEventListener('click', () => {
+    gesture?.end(true);
     if (!redo.length) return;
     undo.push(edits);
     replaceEdits(redo.pop());
+    saveBackup();
+  });
+  $('discard-model-draft').addEventListener('click', () => {
+    gesture?.end(true);
+    commit(poseEdits(backup.versions.at(-1)?.parts ?? []));
+  });
+  $('restore-model-backup').addEventListener('click', () => {
+    const version = backup.versions[Number(backupVersion.value)];
+    if (!version) return;
+    try {
+      gesture?.end(true);
+      const next = poseEdits(version.parts);
+      if (!sameParts(poseParts(), poseParts(next))) commit(next);
+    } catch (error) {
+      setStatus(error.message || 'Could not open this version.', true);
+    }
   });
   $('frame-edits').addEventListener('click', frameModel);
 
   $('save-pose').addEventListener('click', () => {
-    const parts = [...edits].map(([id, value]) => ({ id, name: nodes.get(id).name, ...value }));
-    const json = JSON.stringify({ version: 1, model: asset.name, parts }, null, 2);
+    const json = JSON.stringify({ version: 1, model: asset.name, parts: poseParts() }, null, 2);
     downloadFile(new Blob([json], { type: 'application/json' }), asset.name + '.pose.json');
   });
   $('open-pose').addEventListener('click', () => $('pose-file').click());
@@ -188,23 +332,11 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
       if (file.size > 1024 * 1024) throw new Error('Pose file exceeds 1 MB.');
       const { version, model, parts } = JSON.parse(await file.text());
       if (loadedAsset !== asset) return;
-      if (version !== 1 || model !== asset.name || !Array.isArray(parts) || parts.length > nodes.size) {
+      if (version !== 1 || model !== asset.name) {
         throw new Error('Open the matching model before loading this pose.');
       }
-      const next = new Map();
-      for (const part of parts) {
-        const { id, name, move, rotate, scale, hidden, tint } = part;
-        const node = nodes.get(id);
-        const validVector = (values, max) => Array.isArray(values) && values.length === 3 &&
-          values.every(value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= max);
-        if (!node || node.name !== name || next.has(id) || !validVector(move, 2) || !validVector(rotate, 360) ||
-            typeof scale !== 'number' || !(scale >= .05 && scale <= 5) ||
-            typeof hidden !== 'boolean' || (hidden && node.object.isBone) ||
-            (tint !== null && (!node.object.isMesh || !/^#[\da-f]{6}$/i.test(tint)))) {
-          throw new Error('This pose contains an invalid or mismatched model part.');
-        }
-        next.set(id, { move, rotate, scale, hidden, tint });
-      }
+      const next = poseEdits(parts);
+      gesture?.end(true);
       playback.checked = false;
       commit(next);
       setStatus('');
@@ -215,6 +347,9 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
 
   return {
     setAsset(next, size) {
+      gesture?.end(true);
+      isolated = false;
+      syncIsolation();
       if (mixer && asset) { mixer.stopAllAction(); mixer.uncacheRoot(asset.root); }
       asset = next;
       unit = size;
@@ -224,9 +359,10 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
       undo.length = redo.length = 0;
       nodeSelect.replaceChildren();
       function addNodes(object, path, depth) {
-        if (!depth || object.isMesh || object.isBone) {
+        const namedGroup = object.name && object.children.length && !object.isMesh && !object.isBone;
+        if (!depth || (object.isMesh && !object.userData.modelRune) || object.isBone || namedGroup) {
           const name = depth ? object.name || (object.isBone ? 'Bone' : 'Mesh') : 'Whole model';
-          const type = object.isBone ? ' · Bone' : object.isMesh && depth ? ' · Mesh' : '';
+          const type = !depth ? '' : object.isBone ? ' · Bone' : object.isMesh ? ' · Mesh' : ' · Group';
           nodeSelect.add(new Option(' '.repeat(Math.min(depth, 8)) + name + type, path));
           nodes.set(path, { object, name });
         }
@@ -236,11 +372,64 @@ export function installModelTools({ invalidate, refreshLook, frameModel, setStat
       clip.replaceChildren(...next.animations.map((item, index) => new Option(item.name || ('Clip ' + (index + 1)), index)));
       action = null;
       mixer = next.animations.length ? new THREE.AnimationMixer(next.root) : null;
-      $('animation-control').hidden = $('animation-editor').hidden = !mixer;
+      $('show-animation').hidden = $('animation-control').hidden = $('animation-editor').hidden = !mixer;
       playback.checked = Boolean(mixer) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
       time.disabled = !mixer;
       selectClip();
+      modelKey = asset.backupKey;
+      backup = { draft: null, versions: [] };
+      backupMessage = '';
+      try {
+        backup = readModelBackup(modelKey);
+        const parts = backup.draft ?? backup.versions.at(-1)?.parts;
+        if (parts) replaceEdits(poseEdits(parts));
+      } catch {
+        backupMessage = 'Automatic backups unavailable. Use Save pose JSON.';
+      }
+      backupVersion.replaceChildren();
+      showVersions();
       showPart();
+    },
+    root: () => asset?.root,
+    selected: () => nodes.get(nodeSelect.value)?.object,
+    selectObject(object) {
+      for (const [id, node] of nodes) {
+        if (node.object !== object) continue;
+        nodeSelect.value = id;
+        changedPart();
+        break;
+      }
+    },
+    beginGesture() {
+      const id = nodeSelect.value;
+      const object = nodes.get(id)?.object;
+      if (!object?.parent) return null;
+      gesture?.end(true);
+      const wasPlaying = playback.checked;
+      playback.checked = false;
+      const before = edits;
+      const edit = before.get(id) ?? defaultEdit;
+      const session = {
+        unit, object, edit,
+        preview(change) {
+          if (gesture === session) replaceEdits(nextEdit(before, id, change));
+        },
+        end(cancel) {
+          if (gesture !== session) return;
+          gesture = null;
+          const next = edits;
+          const changed = JSON.stringify(before.get(id)) !== JSON.stringify(next.get(id));
+          if (cancel || !changed) {
+            if (cancel) playback.checked = wasPlaying;
+            if (next !== before) replaceEdits(before);
+          } else {
+            edits = before;
+            commit(next);
+          }
+        },
+      };
+      gesture = session;
+      return session;
     },
     update(delta) {
       if (!action || !playback.checked) return false;

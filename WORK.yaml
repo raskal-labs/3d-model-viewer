@@ -145,6 +145,34 @@ items:
       preserve source colours and a faithful original simplified Porygon2
       preset under deterministic visual regressions.
 
+  - id: model-edit-recovery
+    kind: task
+    title: Recover drafts and applied model edits
+    parent: m3
+    priority: P1
+    status: In Progress
+    acceptance: >-
+      Expose touch undo and reset for part edits, retain a draft after reopening
+      the same model, and keep applied versions available in the inspector.
+      Verify model identity and storage failure behavior in the browser.
+    evidence:
+      - tests/model-studio-touch.mjs
+      - PROGRESS.md
+
+  - id: phaseone-sprite-lighting
+    kind: task
+    title: Compare fixed white and live sprite highlights on PhaseOne Crystal
+    parent: m2
+    priority: P1
+    status: In Progress
+    acceptance: >-
+      Keep the PhaseOne Crystal GLB and the reference four surface colours.
+      Compare fixed and light-dependent white against the original sprite
+      at a matched camera angle on the private asset.
+    evidence:
+      - tests/model-studio-touch.mjs
+      - PROGRESS.md
+
   - id: stone-studio-controls
     kind: task
     title: Add stone motion, colours and effects in Model Studio
@@ -257,10 +285,14 @@ items:
 
   - id: mobile-precision
     kind: thread
-    title: Evaluate offset-crosshair selection and alternative precision input
+    title: Evaluate touch selection and direct manipulation of parts
     parent: m3
     priority: P1
-    status: Proposed
+    status: In Progress
     details: >-
-      Compare Onshape-style non-occluding touch selection against ordinary
-      raycast tap; preserve present gesture navigation and test accessibility.
+      Raycast tap selects a mesh. Direct gestures move, rotate or scale the
+      selection. Verify the controls on an iPhone and compare tap selection
+      against an offset crosshair on small meshes.
+    evidence:
+      - tests/model-studio-touch.mjs
+      - PROGRESS.md
