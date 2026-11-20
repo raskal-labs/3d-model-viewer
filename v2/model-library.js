@@ -165,13 +165,17 @@ export function installModelPicker(fileInput, openAsset, importModel) {
   let suppressClick = false;
   rail.addEventListener('pointerdown', event => {
     if (!event.isPrimary || event.button !== 0) return;
-    swipe = { id: event.pointerId, x: event.clientX, y: event.clientY, scroll: rail.scrollLeft };
+    swipe = {
+      id: event.pointerId, x: event.clientX, y: event.clientY, scroll: rail.scrollLeft,
+      card: event.target.closest('.library-card'), moved: false,
+    };
     suppressClick = false;
   });
   rail.addEventListener('pointermove', event => {
     if (event.pointerId !== swipe?.id) return;
     const dx = event.clientX - swipe.x;
     const dy = event.clientY - swipe.y;
+    swipe.moved ||= Math.hypot(dx, dy) > 8;
     if (event.pointerType === 'mouse' && (rail.hasPointerCapture(event.pointerId) ||
         (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)))) {
       rail.setPointerCapture(event.pointerId);
@@ -184,6 +188,7 @@ export function installModelPicker(fileInput, openAsset, importModel) {
     if (event.pointerId !== swipe?.id) return;
     const dx = event.clientX - swipe.x;
     const dy = event.clientY - swipe.y;
+    const { card, moved } = swipe;
     swipe = null;
     rail.removeAttribute('data-dragging');
     if (event.type === 'pointercancel') return;
@@ -191,6 +196,13 @@ export function installModelPicker(fileInput, openAsset, importModel) {
       suppressClick = true;
       const index = modes.findIndex(button => button.dataset.mode === mode);
       setMode(modes[(index + (dy < 0 ? 1 : modes.length - 1)) % modes.length].dataset.mode);
+      return;
+    }
+    // A browser can drop the compatibility click after a swipe changes the rail.
+    if (event.pointerType === 'touch' && card && !moved && Math.hypot(dx, dy) <= 8 &&
+        document.elementFromPoint(event.clientX, event.clientY)?.closest('.library-card') === card) {
+      suppressClick = true;
+      card.click();
     }
   }
   rail.addEventListener('pointerup', endSwipe);
