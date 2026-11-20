@@ -25,7 +25,7 @@ async function ready(page) {
       markup: '<path d="M50 8 L90 85 H10 Z" fill="none" stroke="white" stroke-width="11"/>' },
   } }));
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await page.locator('#model-canvas[data-ready="true"]').waitFor();
+  await page.locator('#model-canvas[data-ready]').waitFor();
 }
 
 async function frame(page) {
@@ -136,7 +136,12 @@ try {
   await page.locator('#stone-reset').click();
   assert.equal(await effect.inputValue(), 'off');
   assert.equal(await move.inputValue(), 'off');
-  await page.getByRole('button', { name: 'Studio sample' }).click();
+  await page.locator('#files').setInputFiles({
+    name: 'plain-qa.stl',
+    mimeType: 'model/stl',
+    buffer: Buffer.from('solid plain\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid plain'),
+  });
+  await page.waitForFunction(() => document.querySelector('#model-name')?.textContent === 'plain-qa.stl');
   assert.equal(await studio.isVisible(), false);
 
   await page.close();

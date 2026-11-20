@@ -57,6 +57,8 @@ try {
   assert.equal(await page.locator('#look').inputValue(), 'original');
   assert.equal(await page.locator('#lighting').inputValue(), 'neutral');
   assert.equal(await page.locator('#bloom').isChecked(), false);
+  assert.equal(await page.locator('#model-name').innerText(), 'No model loaded');
+  assert.equal(await page.locator('#model-canvas').getAttribute('data-ready'), 'empty');
   await screenshot(page, '01-neutral-studio');
 
   const textureFiles = await readdir(`${fixture}/SimpleTexture/glTF`);
@@ -90,7 +92,7 @@ try {
     buffer: Buffer.from('solid sample\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid sample'),
   }, 'example.stl');
 
-  await page.getByRole('button', { name: 'Studio sample' }).click();
+  await open(page, textureFiles.map(file => `${fixture}/SimpleTexture/glTF/${file}`), 'SimpleTexture.gltf');
   for (const id of ['unlit', 'normals', 'resonance-mineral', 'banana-cel', 'banana-ps1',
     'legacy-pixel', 'legacy-watercolour', 'legacy-ink', 'legacy-mono']) {
     await styled.selectOption(id);
