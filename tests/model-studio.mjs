@@ -200,7 +200,7 @@ try {
   }));
   await libraryPhone.route('**/test-model-library/assets/34/thumbnail.png', route => route.fulfill({
     contentType: 'image/png',
-    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aAdsAAAAASUVORK5CYII=', 'base64'),
+    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNI6tsFAAMAAatF3neQAAAAAElFTkSuQmCC', 'base64'),
   }));
   await ready(libraryPhone);
   await libraryPhone.getByRole('button', { name: 'Open model' }).tap();
