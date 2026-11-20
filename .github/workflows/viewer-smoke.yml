@@ -40,8 +40,8 @@ jobs:
           node tests/model-studio.mjs
       - name: Exercise V2 stone controls
         run: STUDIO_URL=http://127.0.0.1:8765/v2/ node tests/model-studio-stones.mjs
-      - name: Exercise desktop and mobile V1
-        run: node tests/viewer-smoke.mjs
+      - name: Verify privacy guardrails and code-only landing
+        run: node tests/public-assets.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

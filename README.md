@@ -1,5 +1,6 @@
 # 3D Model Viewer
 
+> **Asset privacy:** This is a code-only public repository. GameCube hosts the private model library, and the public root redirects to V2, which supports local file import. See [PRIVATE_ASSET_POLICY.md](./PRIVATE_ASSET_POLICY.md). Legacy V1 notes below describe a discontinued deployment; bundled model paths are no longer present.\n\n
 ## Model Studio (V2)
 
 Serve the checkout with `python3 -m http.server 8765` and open `/v2/`. Open or drop a GLB, glTF, OBJ or STL. Select the buffers, textures or MTL alongside the model when they are separate files. The default view uses the model’s original materials and neutral studio lighting.
